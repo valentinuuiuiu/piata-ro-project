@@ -17,6 +17,20 @@ from typing import Dict, List, Optional, Any, Union, Tuple
 from pathlib import Path
 from math import radians, cos, sin, asin, sqrt
 from urllib.parse import urlencode
+from fastapi import FastAPI, Response
+
+app = FastAPI()
+
+def handle_health_check(params):
+    """Native MCP health check handler"""
+    return {"status": "healthy", "service": "content-media-agent"}
+
+# Register MCP health check handler
+mcp.register_handler("health_check", handle_health_check)
+
+@app.get("/health")
+async def health_check():
+    return Response(status_code=200, content="OK")
 
 # Add project root to Python path
 project_root = Path(__file__).parent.parent
@@ -1118,13 +1132,13 @@ if __name__ == "__main__":
         print("⚠️  Google Maps API key not found - geocoding features will be limited")
         print("   Set GOOGLE_MAPS_API_KEY environment variable to enable full location services")
     
-    print(f"🌐 REST API available at: http://localhost:8002")
-    print(f"📚 API docs at: http://localhost:8002/docs")
+    print(f"🌐 REST API available at: http://localhost:8004")
+    print(f"📚 API docs at: http://localhost:8004/docs")
     print("✨ Ready to process content for the marketplace!")
     
     uvicorn.run(
         rest_app, 
         host="0.0.0.0", 
-        port=8002,
+        port=8004,
         log_level="info"
     )

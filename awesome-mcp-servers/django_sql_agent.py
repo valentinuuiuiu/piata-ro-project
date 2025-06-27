@@ -14,9 +14,28 @@ from pathlib import Path
 import django
 from django.conf import settings
 
+# Add project root to Python path
+import sys
+sys.path.insert(0, '/workspace/piata-ro-project')
+
 # Setup Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'piata_ro.settings')
 django.setup()
+
+from fastapi import FastAPI, Response
+
+app = FastAPI()
+
+def handle_health_check(params):
+    """Native MCP health check handler"""
+    return {"status": "healthy", "service": "django-sql-agent"}
+
+# Register MCP health check handler
+mcp.register_handler("health_check", handle_health_check)
+
+@app.get("/health")
+async def health_check():
+    return Response(status_code=200, content="OK")
 
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
