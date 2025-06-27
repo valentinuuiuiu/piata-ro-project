@@ -44,6 +44,9 @@ urlpatterns = [
     path('despre-noi/', views.about_view, name='about'),
     path('ajutor/', views.help_view, name='help'),
     
+    # Stripe Webhook
+    path('stripe/webhook/', views.stripe_webhook, name='stripe_webhook'),
+
     # API endpoints (keeping existing structure)
     path("api/", include(router.urls)),
 ]

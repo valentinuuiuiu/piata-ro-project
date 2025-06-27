@@ -26,12 +26,12 @@
             <div class="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <div class="flex justify-between items-center">
                     <span class="text-blue-900 font-medium">Creditele tale actuale:</span>
-                    <span class="text-2xl font-bold text-blue-900">{{ user.profile.credits|floatformat:1 }} credite</span>
+                    <span class="text-2xl font-bold text-blue-900">{{ user.profile.credits_balance|floatformat:1 }} credite</span>
                 </div>
-                {% if user.profile.credits < 0.5 %}
+                {% if user.profile.credits_balance < 0.5 %}
                     <p class="text-red-600 mt-2 text-sm">
                         ⚠️ Nu ai suficiente credite. 
-                        <a href="{% url 'buy_credits' %}" class="underline font-medium">Cumpără credite aici</a>
+                        <a href="{% url 'marketplace:buy_credits' %}" class="underline font-medium">Cumpără credite aici</a>
                     </p>
                 {% endif %}
             </div>
