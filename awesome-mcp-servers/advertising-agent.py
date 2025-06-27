@@ -22,8 +22,33 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Initialize FastMCP server for advertising helper
-mcp = FastMCP("Piața.ro Advertising Helper Agent")
+from fastmcp.server import FastMCPServer
+from fastmcp.transports.http import HTTPTransport
+
+# Create HTTP transport
+transport = HTTPTransport(port=8001, host="0.0.0.0")
+
+# Initialize server
+mcp = FastMCPServer(
+    name="Piața.ro Advertising Helper Agent",
+    transport=transport
+)
+
+from fastmcp.resources import Resource
+
+class HealthCheckResource(Resource):
+    uri: str = "/health_check"
+    
+    async def read(self, params: dict) -> dict:
+        """Handle GET requests"""
+        return await self.handle(params)
+        
+    async def handle(self, params: dict) -> dict:
+        """Native MCP health check handler"""
+        return {"status": "healthy", "service": "advertising-agent"}
+
+# Register MCP health check handler
+mcp.add_resource(HealthCheckResource())
 
 # Database connection helper
 def get_db_connection():

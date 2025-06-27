@@ -27,6 +27,7 @@ from marketplace.views import register_view
 
 urlpatterns = [
     path('', include(('marketplace.urls', 'marketplace'), namespace='marketplace')),  # Include marketplace URLs for frontend
+    path('ai/', include(('ai_assistant.urls', 'ai_assistant'), namespace='ai_assistant')),  # Add AI assistant URLs
     path('admin/', admin.site.urls),
     
     # Allauth URLs (includes social auth)

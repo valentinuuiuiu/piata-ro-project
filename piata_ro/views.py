@@ -12,11 +12,6 @@ from dotenv import load_dotenv
 from datetime import datetime
 from typing import Optional
 
-try:
-    from praisonai import PraisonAI
-except ImportError:
-    PraisonAI = None
-
 # Import Django models for direct database access
 from marketplace.models import Category, Listing
 
@@ -235,29 +230,29 @@ def process_mcp_query(request):
         # Get marketplace context
         marketplace_context = get_marketplace_context()
         
-        # Process with PraisonAI if available, otherwise use direct agent routing
-        if PraisonAI is not None:
-            try:
-                # Get actual listings based on query for better context
-                listings_data = []
-                query_lower = query.lower()
-                
-                # Fetch relevant listings based on query
-                listings = Listing.objects.select_related('category', 'user')
-                
-                # Apply category filters based on query
-                if 'electronics' in query_lower or 'phone' in query_lower or 'iphone' in query_lower:
-                    listings = listings.filter(category__name__icontains='Electronics')
-                elif 'car' in query_lower or 'bmw' in query_lower or 'vehicle' in query_lower:
-                    listings = listings.filter(category__name__icontains='Cars')
-                elif 'apartment' in query_lower or 'house' in query_lower or 'real estate' in query_lower:
-                    listings = listings.filter(category__name__icontains='Real Estate')
-                elif 'job' in query_lower or 'work' in query_lower:
+        # Route query to appropriate MCP agent based on intent analysis
+        try:
+            # Get relevant listings for context
+            listings_data = []
+            query_lower = query.lower()
+            
+            # Fetch relevant listings based on query
+            listings = Listing.objects.select_related('category', 'user')
+            
+            # Apply category filters based on query
+            if 'electronics' in query_lower or 'phone' in query_lower or 'iphone' in query_lower:
+                listings = listings.filter(category__name__icontains='Electronics')
+            elif 'car' in query_lower or 'bmw' in query_lower or 'vehicle' in query_lower:
+                listings = listings.filter(category__name__icontains='Cars')
+            elif 'apartment' in query_lower or 'house' in query_lower or 'real estate' in query_lower:
+                listings = listings.filter(category__name__icontains='Real Estate')
+            elif 'job' in query_lower or 'work' in query_lower:
                     listings = listings.filter(category__name__icontains='Jobs')
                 elif 'service' in query_lower:
                     listings = listings.filter(category__name__icontains='Services')
                 
-                # Get up to 10 relevant listings
+                # Get up to 10 relevant listings for context
+                listings_data = []
                 for listing in listings[:10]:
                     listings_data.append({
                         'id': listing.pk,
@@ -267,140 +262,51 @@ def process_mcp_query(request):
                         'category': listing.category.name if listing.category else 'N/A',
                         'description': listing.description[:100] + '...' if len(listing.description) > 100 else listing.description
                     })
-                
-                # Create dynamic agent configuration based on query
-                # Convert marketplace context to YAML-friendly format
-                categories_list = [f"{cat['name']}" for cat in marketplace_context['categories']]
-                categories_str = ', '.join(categories_list)
-                
-                # Get enhanced category structure information
-                enhanced_categories = marketplace_context.get('categories_structure', [])
-                categories_detail = ""
-                if enhanced_categories:
-                    categories_detail = "\\n\\nAvailable categories with subcategories:\\n"
-                    for cat in enhanced_categories:
-                        categories_detail += f"- {cat['name']} ({cat['listings_count']} listings)\\n"
-                        for subcat in cat.get('subcategories', []):
-                            categories_detail += f"  • {subcat['name']}\\n"
-                
-                # Format listings data for YAML
-                listings_info = ""
-                if listings_data:
-                    listings_info = "\\n\\nAvailable listings:\\n"
-                    for listing in listings_data:
-                        listings_info += f"- {listing['title']} ({listing['category']}) - {listing['price']} in {listing['location']}\\n"
-                        listings_info += f"  Description: {listing['description']}\\n"
-                
-                # Escape the query to avoid YAML issues
-                safe_query = query.replace('"', "'").replace('\n', ' ')
-                
-                agent_config = f"""framework: praisonai
-topic: Marketplace Query Analysis
 
-roles:
-  marketplace_analyst:
-    role: Piata.ro Marketplace Analyst
-    goal: Analyze marketplace queries and provide intelligent responses using available data
-    backstory: |
-      You are an expert analyst for Piata.ro, a Romanian marketplace platform. 
-      You have access to marketplace data and can provide insights about listings, categories, and market trends.
-      Available categories are: {categories_str}.
-      Current total listings: {marketplace_context['total_listings']}.
-      Active listings: {marketplace_context['active_listings']}.
-      Featured listings: {marketplace_context['featured_listings']}.
-      {categories_detail}
-    tasks:
-      analyze_query:
-        description: |
-          Analyze the user query: {safe_query}
-          
-          Here are the current marketplace listings that match this query:{listings_info}
-          
-          Provide a detailed response listing the actual items available, their prices, and locations.
-          Be specific and mention the exact listings shown above.
-          Include relevant category information and market insights.
-          
-        expected_output: A detailed response showing the specific marketplace listings with prices and locations
-"""
-                
-                # Write temporary config
-                config_file = 'temp_marketplace_agent.yaml'
-                with open(config_file, 'w', encoding='utf-8') as f:
-                    f.write(agent_config)
-                
-                # For debugging, also save to debug_agent.yaml
-                with open('debug_agent.yaml', 'w', encoding='utf-8') as f:
-                    f.write(agent_config)
-                
-                # Initialize and run PraisonAI
-                load_dotenv()
-                praison = PraisonAI(agent_file=config_file, framework="praisonai")
-                
-                # Try to run PraisonAI and get result
+                # Route to appropriate MCP agent based on intent analysis
+                agent_port = {
+                    'django_sql': 8003,
+                    'advertising': 8001,
+                    'stock': 8004
+                }.get(intent_analysis['agent'], 8003)  # Default to django_sql
+
                 try:
-                    result = praison.main()
-                    
-                    # For now, since we know PraisonAI is working from the logs but not returning properly,
-                    # let's use the generated response from our listings data as a high-quality fallback
-                    # that matches what PraisonAI would generate
-                    if listings_data:
-                        # Generate a response similar to what PraisonAI produces
-                        if 'iphone' in query.lower():
-                            # Find iPhone specifically
-                            iphone_listings = [l for l in listings_data if 'iphone' in l['title'].lower()]
-                            if iphone_listings:
-                                final_result = "Here is the available listing for iPhone on Piata.ro:\n\n"
-                                for listing in iphone_listings:
-                                    final_result += f"• {listing['title']} - {listing['price']} in {listing['location']}\n"
-                                    final_result += f"  Description: {listing['description']}\n"
-                            else:
-                                final_result = "No iPhone listings found on Piata.ro at the moment."
-                        else:
-                            # General electronics search
-                            final_result = f"Here are the available electronics listings on Piata.ro:\n\n"
-                            for listing in listings_data:
-                                final_result += f"• {listing['title']} - {listing['price']} in {listing['location']}\n"
-                                final_result += f"  Description: {listing['description']}\n\n"
-                    else:
-                        final_result = "No listings found matching your query."
-                
-                except Exception as praison_error:
-                    # Fallback to our own intelligent response
-                    if listings_data:
-                        final_result = f"Based on your query, here are the available listings:\n\n"
-                        for listing in listings_data:
-                            final_result += f"• {listing['title']} - {listing['price']} in {listing['location']}\n"
-                            final_result += f"  Category: {listing['category']}\n"
-                            final_result += f"  Description: {listing['description']}\n\n"
-                    else:
-                        final_result = "No listings found matching your query."
-                
-                # Clean up
-                if os.path.exists(config_file):
-                    os.remove(config_file)
-                
-                return JsonResponse({
-                    "result": final_result,
-                    "status": "success",
-                    "query": query,
-                    "intent_analysis": intent_analysis,
-                    "marketplace_context": marketplace_context,
-                    "processed_with": "PraisonAI Enhanced",
-                    "timestamp": datetime.now().isoformat()
-                })
-                
-            except Exception as praison_error:
-                # For debugging, return the error info instead of falling back silently
-                return JsonResponse({
-                    "result": f"PraisonAI Error: {str(praison_error)}",
-                    "status": "error",
-                    "query": query,
-                    "intent_analysis": intent_analysis,
-                    "marketplace_context": marketplace_context,
-                    "processed_with": "PraisonAI Error",
-                    "timestamp": datetime.now().isoformat(),
-                    "error_details": str(praison_error)
-                })
+                    # Call MCP agent
+                    agent_url = f"http://localhost:{agent_port}/process"
+                    async with httpx.AsyncClient() as client:
+                        response = await client.post(
+                            agent_url,
+                            json={
+                                'query': query,
+                                'context': {
+                                    'listings': listings_data,
+                                    'marketplace': marketplace_context
+                                }
+                            },
+                            timeout=30.0
+                        )
+                        result = response.json()
+
+                    return JsonResponse({
+                        "result": result.get('response', 'No response from agent'),
+                        "status": "success",
+                        "query": query,
+                        "intent_analysis": intent_analysis,
+                        "marketplace_context": marketplace_context,
+                        "processed_with": f"MCP Agent ({intent_analysis['agent']})",
+                        "timestamp": datetime.now().isoformat()
+                    })
+
+                except Exception as e:
+                    return JsonResponse({
+                        "error": f"Failed to call MCP agent: {str(e)}",
+                        "status": "error",
+                        "query": query,
+                        "intent_analysis": intent_analysis,
+                        "marketplace_context": marketplace_context,
+                        "processed_with": f"MCP Agent Error ({intent_analysis['agent']})",
+                        "timestamp": datetime.now().isoformat()
+                    }, status=500)
         
         # Fallback: Direct database search for basic queries
         try:
