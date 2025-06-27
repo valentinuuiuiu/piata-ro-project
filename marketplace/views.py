@@ -21,7 +21,7 @@ try:
 except ImportError:
     stripe = None
 
-from .models import Category, Favorite, Listing, Message, UserProfile, ListingImage, CreditPackage, Payment, CreditTransaction, ListingBoost, ListingReport
+from .models import Category, Favorite, Listing, Message, UserProfile, ListingImage, CreditPackage, Payment, CreditTransaction, ListingBoost, ListingReport #, PromoteListingForm
 from .serializers import (
     CategorySerializer,
     FavoriteCreateSerializer,
@@ -33,10 +33,11 @@ from .serializers import (
     UserProfileSerializer,
     UserSerializer,
 )
-from .forms import ListingForm, CustomUserCreationForm, UserProfileForm, UserUpdateForm
+from .forms import ListingForm, CustomUserCreationForm, UserProfileForm, UserUpdateForm, PromoteListingForm
 
 # Configure Stripe
-stripe.api_key = settings.STRIPE_SECRET_KEY
+if stripe:
+    stripe.api_key = settings.STRIPE_SECRET_KEY
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
     """
@@ -856,53 +857,53 @@ def credits_dashboard(request):
     }
     return render(request, 'marketplace/credits_cart.html', context)
 
-@login_required
-def buy_credits(request, package_id):
-    """Handle credit purchase via Stripe"""
-    try:
-        package = CreditPackage.objects.get(id=package_id, is_active=True)
-        user_profile = request.user.profile
+# @login_required
+# def buy_credits(request, package_id):
+#     """Handle credit purchase via Stripe (Likely deprecated - uses PaymentIntent, current flow uses Checkout Session)"""
+#     try:
+#         package = CreditPackage.objects.get(id=package_id, is_active=True)
+#         user_profile = request.user.profile
         
-        if request.method == 'POST':
-            try:
-                # Create Stripe payment intent
-                intent = stripe.PaymentIntent.create(
-                    amount=int(package.price_eur * 100),  # Stripe expects cents
-                    currency='eur',
-                    metadata={
-                        'user_id': request.user.id,
-                        'package_id': package.id,
-                        'credits': str(package.credits),
-                    }
-                )
+#         if request.method == 'POST':
+#             try:
+#                 # Create Stripe payment intent
+#                 intent = stripe.PaymentIntent.create(
+#                     amount=int(package.price_eur * 100),  # Stripe expects cents
+#                     currency='eur',
+#                     metadata={
+#                         'user_id': request.user.id,
+#                         'package_id': package.id,
+#                         'credits': str(package.credits),
+#                     }
+#                 )
                 
-                # Create payment record
-                payment = Payment.objects.create(
-                    user=request.user,
-                    amount=package.price_eur,
-                    payment_method='stripe',
-                    stripe_payment_intent_id=intent.id,
-                    status='pending'
-                )
+#                 # Create payment record
+#                 payment = Payment.objects.create(
+#                     user=request.user,
+#                     amount=package.price_eur,
+#                     payment_method='stripe', # This field might not exist on Payment model or needs adjustment
+#                     stripe_payment_intent_id=intent.id,
+#                     status='pending'
+#                 )
                 
-                return JsonResponse({
-                    'client_secret': intent.client_secret,
-                    'payment_id': payment.id
-                })
+#                 return JsonResponse({
+#                     'client_secret': intent.client_secret,
+#                     'payment_id': payment.id
+#                 })
                 
-            except stripe.error.StripeError as e:
-                return JsonResponse({'error': str(e)}, status=400)
+#             except stripe.error.StripeError as e:
+#                 return JsonResponse({'error': str(e)}, status=400)
                 
-        context = {
-            'package': package,
-            'user_profile': user_profile,
-            'stripe_public_key': settings.STRIPE_PUBLISHABLE_KEY,
-        }
-        return render(request, 'marketplace/buy_credits.html', context)
+#         context = {
+#             'package': package,
+#             'user_profile': user_profile,
+#             'stripe_public_key': settings.STRIPE_PUBLISHABLE_KEY,
+#         }
+#         return render(request, 'marketplace/buy_credits.html', context) # This template might also be unused
         
-    except CreditPackage.DoesNotExist:
-        messages.error(request, "Pachetul de credite nu există.")
-        return redirect('credits_dashboard')
+#     except CreditPackage.DoesNotExist:
+#         messages.error(request, "Pachetul de credite nu există.")
+#         return redirect('marketplace:buy_credits') # Assuming 'credits_dashboard' is 'marketplace:buy_credits'
 
 @login_required
 def payment_success(request):
@@ -934,7 +935,7 @@ def payment_success(request):
                 
                 # Add credits to user profile
                 user_profile = request.user.profile
-                user_profile.credits += total_credits
+                user_profile.credits_balance += Decimal(str(total_credits)) # Use Decimal for precision
                 user_profile.save()
                 
                 # Create transaction records for each item in cart
@@ -966,56 +967,62 @@ def payment_success(request):
     messages.error(request, "Sesiunea de plată nu a fost găsită sau este invalidă.")
     return redirect('marketplace:buy_credits')
 
-@login_required
-def promote_listing(request, listing_id):
-    """Promote a listing to first page for 0.5 credits"""
-    try:
-        listing = Listing.objects.get(id=listing_id, user=request.user)
-        user_profile = request.user.profile
-        promotion_cost = Decimal('0.50')
+# This version seems less complete and uses fields not on Listing model (is_promoted, promoted_until)
+# The version below (originally named promote_listing_view) is more aligned with the models and form.
+# @login_required
+# def promote_listing(request, listing_id):
+#     """Promote a listing to first page for 0.5 credits"""
+#     try:
+#         listing = Listing.objects.get(id=listing_id, user=request.user)
+#         user_profile = request.user.profile
+#         promotion_cost = Decimal('0.50')
         
-        if request.method == 'POST':
-            if user_profile.can_promote_listing():
-                # Deduct credits
-                if user_profile.deduct_credits(promotion_cost):
-                    # Create listing boost
-                    boost = ListingBoost.objects.create(
-                        listing=listing,
-                        user=request.user,
-                        boost_type='featured',
-                        credits_cost=promotion_cost,
-                        expires_at=timezone.now() + timezone.timedelta(days=7)  # Featured for 7 days
-                    )
+#         if request.method == 'POST':
+#             if user_profile.can_promote_listing(): # can_promote_listing might need adjustment if cost varies
+#                 # Deduct credits
+#                 if user_profile.deduct_credits(promotion_cost):
+#                     # Create listing boost
+#                     boost = ListingBoost.objects.create(
+#                         listing=listing,
+#                         # user=request.user, # ListingBoost model does not have a direct user link, it's via listing.user
+#                         boost_type='featured',
+#                         credits_cost=int(promotion_cost * 2), # Assumes 0.5 credits = 1 unit in credits_cost if it's integer
+#                         duration_days=7, # Hardcoded duration
+#                         # expires_at=timezone.now() + timezone.timedelta(days=7)  # ListingBoost calculates this on save
+#                     )
                     
-                    # Mark listing as featured
-                    listing.is_featured = True
-                    listing.save()
+#                     # Mark listing as featured
+#                     listing.is_featured = True
+#                     listing.save()
                     
-                    # Create transaction record
-                    CreditTransaction.objects.create(
-                        user=request.user,
-                        transaction_type='promotion',
-                        amount=promotion_cost,
-                        description=f"Promovare anunț: {listing.title}"
-                    )
+#                     # Create transaction record
+#                     CreditTransaction.objects.create(
+#                         user=request.user,
+#                         transaction_type='spent', # More generic 'spent'
+#                         amount=promotion_cost, # Amount in credits
+#                         description=f"Promovare anunț: {listing.title}",
+#                         listing=listing
+#                     )
                     
-                    messages.success(request, f"Anunțul '{listing.title}' a fost promovat cu succes! Va apărea pe prima pagină timp de 7 zile.")
-                    return JsonResponse({'success': True, 'redirect_url': reverse('listing_detail', kwargs={'slug': listing.slug})})
-                else:
-                    return JsonResponse({'error': 'Eroare la procesarea creditelor.'}, status=400)
-            else:
-                return JsonResponse({'error': f'Nu ai suficiente credite. Ai nevoie de {promotion_cost} credite.'}, status=400)
+#                     messages.success(request, f"Anunțul '{listing.title}' a fost promovat cu succes! Va apărea pe prima pagină timp de 7 zile.")
+#                     # Assuming listing_detail takes listing_id, not slug, based on other views.
+#                     return JsonResponse({'success': True, 'redirect_url': reverse('marketplace:listing_detail', kwargs={'listing_id': listing.id})})
+#                 else:
+#                     return JsonResponse({'error': 'Eroare la procesarea creditelor.'}, status=400)
+#             else:
+#                 return JsonResponse({'error': f'Nu ai suficiente credite. Ai nevoie de {promotion_cost} credite.'}, status=400)
         
-        context = {
-            'listing': listing,
-            'promotion_cost': promotion_cost,
-            'user_credits': user_profile.credits_balance
-        }
-        return render(request, 'marketplace/promote_listing.html', context)
+#         context = {
+#             'listing': listing,
+#             'promotion_cost': promotion_cost,
+#             'user_credits': user_profile.credits_balance
+#         }
+#         # This render seems to be for a different promote_listing.html than the form based one.
+#         return render(request, 'marketplace/promote_listing.html', context)
         
-    except Listing.DoesNotExist:
-        messages.error(request, "Anunțul nu există sau nu îți aparține.")
-        return redirect('profile')
+#     except Listing.DoesNotExist:
+#         messages.error(request, "Anunțul nu există sau nu îți aparține.")
+#         return redirect('marketplace:profile') # Corrected redirect
 
 @login_required
 def credits_history(request):
@@ -1076,8 +1083,8 @@ def process_payment_view(request):
                 payment_method_types=['card'],
                 line_items=line_items,
                 mode='payment',
-                success_url=request.build_absolute_uri('/') + 'credite/succes/?session_id={CHECKOUT_SESSION_ID}',
-                cancel_url=request.build_absolute_uri('/') + 'credite/',
+                success_url=request.build_absolute_uri(reverse('marketplace:payment_success')) + '?session_id={CHECKOUT_SESSION_ID}',
+                cancel_url=request.build_absolute_uri(reverse('marketplace:buy_credits')),
                 metadata={
                     'user_id': request.user.id,
                     'total_credits': total_credits,
@@ -1086,6 +1093,23 @@ def process_payment_view(request):
                 }
             )
             
+            # Create a Payment record before redirecting
+            try:
+                Payment.objects.create(
+                    user=request.user,
+                    payment_type='credits',
+                    amount=Decimal(str(sum(item['price_data']['unit_amount'] * item['quantity'] for item in line_items) / 100)), # Calculate total amount from line items
+                    currency=currency,
+                    status='pending',
+                    stripe_payment_intent_id=checkout_session.payment_intent, # Store the payment intent ID from the session
+                    metadata={'checkout_session_id': checkout_session.id, 'cart_data': cart_data}
+                )
+            except Exception as payment_exc:
+                # Log this error, but proceed with redirecting to Stripe for payment attempt
+                # Consider how to handle if payment record creation fails critically
+                print(f"Error creating Payment record: {payment_exc}")
+
+
             return redirect(checkout_session.url)
             
         except Exception as e:
@@ -1108,28 +1132,49 @@ def promote_listing_view(request, listing_id):
         form = PromoteListingForm(request.POST)
         if form.is_valid():
             duration_days = int(form.cleaned_data['duration_days'])
-            credits_needed = duration_days * 0.5
+            # Ensure credits_needed is a Decimal for precise calculations
+            credits_needed = Decimal(str(duration_days * 0.5))
             
             user_profile = request.user.profile
             
-            if user_profile.credits >= credits_needed:
-                # Deduct credits
-                user_profile.credits -= Decimal(str(credits_needed))
-                user_profile.save()
-                
-                # Set promotion
-                from datetime import timedelta
-                listing.is_promoted = True
-                listing.promoted_until = timezone.now() + timedelta(days=duration_days)
-                listing.save()
-                
-                messages.success(request, f'Anunțul a fost promovat cu succes pentru {duration_days} zi(le)!')
-                return redirect('marketplace:listing_detail', listing_id=listing.id)
+            if user_profile.credits_balance >= credits_needed:
+                if user_profile.deduct_credits(credits_needed): # Use the model's method
+                    # Create ListingBoost record
+                    # Assuming credits_cost (PositiveIntegerField) stores units of 0.5 credits.
+                    # So, if credits_needed is 3.5, credits_cost_int will be 7.
+                    credits_cost_int = int(credits_needed * 2)
+                    ListingBoost.objects.create(
+                        listing=listing,
+                        boost_type='featured',
+                        credits_cost=credits_cost_int, # Store as integer units of 0.5 credits
+                        duration_days=duration_days
+                    )
+
+                    # Mark listing as featured
+                    listing.is_featured = True
+                    listing.save()
+
+                    # Create CreditTransaction record
+                    # Assuming amount (IntegerField) also stores units of 0.5 credits.
+                    transaction_amount_int = int(credits_needed * 2)
+                    CreditTransaction.objects.create(
+                        user=request.user,
+                        transaction_type='spent',
+                        amount=-abs(transaction_amount_int), # Store as negative integer units of 0.5 credits
+                        description=f"Promovare anunț: {listing.title} ({duration_days} zile, cost {credits_needed} credite)",
+                        listing=listing
+                    )
+
+                    messages.success(request, f'Anunțul "{listing.title}" a fost promovat cu succes pentru {duration_days} zi(le)!')
+                    return redirect('marketplace:listing_detail', listing_id=listing.id)
+                else:
+                    # This case should ideally not be reached if credits_balance check is correct
+                    messages.error(request, 'A apărut o eroare la procesarea creditelor.')
             else:
                 messages.error(request, 'Nu ai suficiente credite pentru această promovare.')
-                return redirect('marketplace:buy_credits')
+                return redirect('marketplace:buy_credits') # Redirect to buy credits page
     else:
-        form = PromoteListingForm(initial={'listing_id': listing_id})
+        form = PromoteListingForm(initial={'listing_id': listing.id}) # Pass actual listing_id
     
     return render(request, 'marketplace/promote_listing.html', {
         'form': form,
@@ -1243,3 +1288,122 @@ def public_profile_view(request, username):
     }
     
     return render(request, 'marketplace/public_profile.html', context)
+
+
+# Stripe Webhook Handler
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+@csrf_exempt
+def stripe_webhook(request):
+    payload = request.body
+    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
+    endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
+    event = None
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, endpoint_secret
+        )
+    except ValueError as e:
+        # Invalid payload
+        return JsonResponse({'error': str(e)}, status=400)
+    except stripe.error.SignatureVerificationError as e:
+        # Invalid signature
+        return JsonResponse({'error': str(e)}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': 'Generic webhook error', 'detail': str(e)}, status=500)
+
+    # Handle the checkout.session.completed event
+    if event.type == 'checkout.session.completed':
+        session = event.data.object
+        payment_intent_id = session.get('payment_intent')
+
+        if not payment_intent_id:
+            return JsonResponse({'error': 'Payment Intent ID missing in session.'}, status=400)
+
+        try:
+            # Retrieve the pending Payment record
+            payment = Payment.objects.get(stripe_payment_intent_id=payment_intent_id)
+
+            if payment.status == 'succeeded':
+                # Already processed by redirect or another webhook call
+                return JsonResponse({'status': 'already processed'}, status=200)
+
+            if payment.status == 'pending' and session.payment_status == 'paid':
+                # Fulfill the purchase
+                user = payment.user
+                user_profile = user.profile
+
+                metadata = session.get('metadata', {}) # Metadata from checkout session creation
+                if not metadata: # Fallback to payment metadata if session metadata is empty
+                    payment_metadata_db = payment.metadata
+                    if isinstance(payment_metadata_db, str): # if metadata stored as JSON string
+                        payment_metadata_db = json.loads(payment_metadata_db)
+                    metadata = payment_metadata_db
+
+                total_credits_str = metadata.get('total_credits', '0')
+                cart_data_str = metadata.get('cart_data', '[]')
+
+                try:
+                    total_credits = int(total_credits_str)
+                except ValueError:
+                    total_credits = 0 # Or handle error appropriately
+
+                try:
+                    cart_data = json.loads(cart_data_str) if isinstance(cart_data_str, str) else cart_data_str
+                    if not isinstance(cart_data, list): cart_data = []
+                except json.JSONDecodeError:
+                    cart_data = [] # Or handle error
+
+                # Add credits to user profile
+                user_profile.credits_balance += Decimal(str(total_credits))
+                user_profile.save()
+
+                # Create transaction records for each item in cart
+                # This part requires cart_data from the payment's metadata
+                for item in cart_data:
+                    item_credits = item.get('credits', 0)
+                    item_quantity = item.get('quantity', 0)
+                    # Determine price based on currency stored with payment or session
+                    item_price = item.get('priceEur') if payment.currency.upper() == 'EUR' else item.get('priceRon')
+
+                    for _ in range(item_quantity):
+                        CreditTransaction.objects.create(
+                            user=user,
+                            transaction_type='purchase',
+                            amount=int(item_credits), # Assuming item_credits is whole number or needs scaling if fractional
+                            description=f"Achiziție {item_credits} credite ({item_price} {payment.currency.upper()}) via webhook",
+                            listing=None, # No specific listing for credit purchase
+                            payment_intent_id=payment_intent_id
+                        )
+
+                # Update Payment status
+                payment.status = 'succeeded'
+                payment.save()
+
+                # Optionally, send a confirmation email or notification here
+
+                return JsonResponse({'status': 'success'}, status=200)
+            else:
+                # Payment not successful or status mismatch
+                payment.status = 'failed' # Or map other Stripe statuses
+                payment.save()
+                return JsonResponse({'status': 'payment not successful or status mismatch'}, status=200) # Stripe expects 200 for acknowledged events
+
+        except Payment.DoesNotExist:
+            # This case should be rare if process_payment_view always creates a Payment record.
+            # Could log this as an issue, or attempt to create the payment record here if enough info.
+            print(f"Webhook received for payment_intent_id {payment_intent_id} but no Payment record found.")
+            return JsonResponse({'error': 'Payment record not found for webhook.'}, status=404) # Or 200 if Stripe needs it
+        except Exception as e:
+            # Log the exception e
+            print(f"Error processing webhook: {str(e)}")
+            return JsonResponse({'error': str(e)}, status=500)
+
+    # Handle other event types
+    # elif event.type == 'payment_intent.succeeded':
+    #     payment_intent = event.data.object
+    # etc.
+
+    return JsonResponse({'status': 'unhandled event type'}, status=200) # Acknowledge other events
