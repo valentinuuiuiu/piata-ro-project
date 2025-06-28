@@ -22,7 +22,10 @@ from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
 
-from piata_ro.views import process_mcp_query, test_endpoint, home, interact_with_mcp_agents, natural_language_query
+from piata_ro.views import (
+    process_mcp_query, test_endpoint, home, interact_with_mcp_agents, 
+    natural_language_query, openai_models_endpoint, openai_chat_completions
+)
 from marketplace.views import register_view
 
 urlpatterns = [
@@ -35,6 +38,10 @@ urlpatterns = [
     
     # Keep custom register view
     path('register/', register_view, name='register'),
+    
+    # OpenAI API compatibility endpoints
+    path('v1/models', openai_models_endpoint, name='openai_models'),
+    path('v1/chat/completions', openai_chat_completions, name='openai_chat'),
     
     path('api/', include('api.urls')),
     path('api/query/', natural_language_query, name='natural_language_query'),

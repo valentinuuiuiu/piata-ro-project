@@ -34,19 +34,39 @@ def home(request):
             .api-links { margin-top: 20px; }
             .api-links a { display: inline-block; margin: 5px 10px; padding: 8px 15px; background: #27ae60; color: white; border-radius: 5px; text-decoration: none; }
             .api-links a:hover { background: #219a52; }
+            .stats { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center; }
+            .stat-item { display: inline-block; margin: 0 15px; }
+            .stat-number { font-size: 24px; font-weight: bold; color: #3498db; }
+            .stat-label { font-size: 14px; color: #7f8c8d; }
         </style>
     </head>
     <body>
         <div class="container">
             <h1>🛒 Piața RO - Romanian Marketplace Platform</h1>
-            <p class="motto">Acknowledging The Limitations of The AI is acknowledging The Limitations of Our OLD Patterns Stupid Mind, Dare to Dream and The AI will make it Real</p>
+            <p class="motto">Your Modern Romanian Marketplace - Buy & Sell Everything!</p>
             
-            <p>Welcome to the Romanian Marketplace Platform! This is a modern marketplace application built with Django.</p>
+            <p>Welcome to <strong>Piața RO</strong>, the modern Romanian marketplace platform! 
+            Built with cutting-edge technology and powered by AI to help you find exactly what you need.</p>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number">11</div>
+                    <div class="stat-label">Main Categories</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">107</div>
+                    <div class="stat-label">Total Categories</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">AI</div>
+                    <div class="stat-label">Powered Search</div>
+                </div>
+            </div>
             
             <div class="links">
                 <a href="/admin/" class="link-card">
                     <h3>📊 Admin Panel</h3>
-                    <p>Manage the marketplace</p>
+                    <p>Manage your marketplace</p>
                 </a>
                 <a href="/api/" class="link-card">
                     <h3>🔧 API Documentation</h3>
@@ -69,6 +89,19 @@ def home(request):
                 <p>1. Visit <strong>/admin/</strong> to manage the application</p>
                 <p>2. Explore <strong>/api/</strong> to see the REST API endpoints</p>
                 <p>3. Check out the marketplace categories and listings</p>
+                <p>4. Try the AI-powered search with <strong>/mcp/process/</strong></p>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
+                <h4>✨ Features:</h4>
+                <ul style="margin: 10px 0;">
+                    <li>🤖 AI-powered search and recommendations</li>
+                    <li>📱 Modern responsive design</li>
+                    <li>🔒 Secure user authentication</li>
+                    <li>💬 Real-time messaging</li>
+                    <li>📍 Location-based search</li>
+                    <li>⭐ Featured listings</li>
+                </ul>
             </div>
         </div>
     </body>
@@ -100,9 +133,25 @@ def analyze_query_intent(query: str) -> dict:
     """Analyze user query to determine intent and routing"""
     query_lower = query.lower()
     
+    # Stock/inventory queries - check first
+    if any(word in query_lower for word in ['stock', 'inventory', 'available', 'quantity', 'summary']):
+        return {
+            'intent': 'inventory',
+            'agent': 'stock',
+            'filters': {}
+        }
+    
+    # Marketing/optimization queries
+    elif any(word in query_lower for word in ['optimize', 'improve', 'marketing', 'advertise', 'promote', 'price', 'pricing']):
+        return {
+            'intent': 'marketing',
+            'agent': 'advertising',
+            'filters': {}
+        }
+    
     # Database/search queries
-    if any(word in query_lower for word in ['show', 'find', 'search', 'list', 'what', 'how many']):
-        if any(word in query_lower for word in ['cheap', 'price', 'expensive', 'cost']):
+    elif any(word in query_lower for word in ['show', 'find', 'search', 'list', 'what', 'how many']):
+        if any(word in query_lower for word in ['cheap', 'expensive', 'cost']):
             return {
                 'intent': 'search',
                 'agent': 'django_sql',
@@ -121,22 +170,6 @@ def analyze_query_intent(query: str) -> dict:
                 'filters': {}
             }
     
-    # Marketing/optimization queries
-    elif any(word in query_lower for word in ['optimize', 'improve', 'marketing', 'advertise', 'promote']):
-        return {
-            'intent': 'marketing',
-            'agent': 'advertising',
-            'filters': {}
-        }
-    
-    # Stock/inventory queries
-    elif any(word in query_lower for word in ['stock', 'inventory', 'available', 'quantity']):
-        return {
-            'intent': 'inventory',
-            'agent': 'stock',
-            'filters': {}
-        }
-    
     # Default to search
     return {
         'intent': 'search',
@@ -145,18 +178,18 @@ def analyze_query_intent(query: str) -> dict:
     }
 
 def get_marketplace_context() -> dict:
-    """Get current marketplace context from database"""
+    """Get current marketplace context from database with clean hierarchical structure"""
     try:
-        # Get categories with hierarchical structure
-        main_categories = Category.objects.filter(parent__isnull=True).values(
-            'id', 'name', 'slug', 'icon', 'color'
-        )
+        # Get all main categories (clean structure, duplicates already removed)
+        main_categories = Category.objects.filter(
+            parent__isnull=True
+        ).values('id', 'name', 'slug', 'icon', 'color').order_by('name')
         
         # Get subcategories grouped by parent
         subcategories = {}
         for subcat in Category.objects.filter(parent__isnull=False).values(
             'id', 'name', 'slug', 'parent_id', 'icon', 'color'
-        ):
+        ).order_by('name'):
             parent_id = subcat['parent_id']
             if parent_id not in subcategories:
                 subcategories[parent_id] = []
@@ -166,10 +199,15 @@ def get_marketplace_context() -> dict:
         categories_structure = []
         for category in main_categories:
             cat_data = dict(category)
-            cat_data['subcategories'] = subcategories.get(category['id'], [])
+            cat_subcategories = subcategories.get(category['id'], [])
+            cat_data['subcategories'] = cat_subcategories
+            
+            # Calculate listings count for category and all its subcategories
+            category_ids = [category['id']] + [sub['id'] for sub in cat_subcategories]
             cat_data['listings_count'] = Listing.objects.filter(
-                category_id__in=[category['id']] + [sub['id'] for sub in cat_data['subcategories']]
+                category_id__in=category_ids
             ).count()
+            
             categories_structure.append(cat_data)
         
         # Get overall statistics
@@ -178,9 +216,17 @@ def get_marketplace_context() -> dict:
         featured_count = Listing.objects.filter(is_featured=True).count()
         
         # Get recent listings for context
-        recent_listings = list(Listing.objects.filter(status='active').select_related('category', 'user').values(
-            'id', 'title', 'price', 'currency', 'location', 'category__name', 'created_at'
-        ).order_by('-created_at')[:20])
+        recent_listings = []
+        for listing in Listing.objects.filter(status='active').select_related('category', 'user').order_by('-created_at')[:20]:
+            recent_listings.append({
+                'id': listing.pk,
+                'title': listing.title,
+                'price': str(listing.price) if listing.price else None,
+                'currency': listing.currency,
+                'location': listing.location,
+                'category__name': listing.category.name if listing.category else None,
+                'created_at': listing.created_at.isoformat() if listing.created_at else None
+            })
         
         return {
             'categories': list(main_categories),  # Keep simple format for backward compatibility
@@ -267,10 +313,10 @@ def process_mcp_query(request):
 
             # Route to appropriate MCP agent based on intent analysis
             agent_port = {
-                'django_sql': 8003,
+                'django_sql': 8002,
                 'advertising': 8001,
-                'stock': 8004
-            }.get(intent_analysis['agent'], 8003)  # Default to django_sql
+                'stock': 8003
+            }.get(intent_analysis['agent'], 8002)  # Default to django_sql
 
             try:
                 # Call MCP agent (using synchronous request)
