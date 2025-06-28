@@ -7,6 +7,8 @@ import json
 import asyncio
 import httpx
 import yaml
+import decimal
+import requests
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import datetime
@@ -247,66 +249,96 @@ def process_mcp_query(request):
             elif 'apartment' in query_lower or 'house' in query_lower or 'real estate' in query_lower:
                 listings = listings.filter(category__name__icontains='Real Estate')
             elif 'job' in query_lower or 'work' in query_lower:
-                    listings = listings.filter(category__name__icontains='Jobs')
-                elif 'service' in query_lower:
-                    listings = listings.filter(category__name__icontains='Services')
+                listings = listings.filter(category__name__icontains='Jobs')
+            elif 'service' in query_lower:
+                listings = listings.filter(category__name__icontains='Services')
+            
+            # Get up to 10 relevant listings for context
+            listings_data = []
+            for listing in listings[:10]:
+                listings_data.append({
+                    'id': listing.pk,
+                    'title': listing.title,
+                    'price': f"{listing.price} {listing.currency}",
+                    'location': listing.location,
+                    'category': listing.category.name if listing.category else 'N/A',
+                    'description': listing.description[:100] + '...' if len(listing.description) > 100 else listing.description
+                })
+
+            # Route to appropriate MCP agent based on intent analysis
+            agent_port = {
+                'django_sql': 8003,
+                'advertising': 8001,
+                'stock': 8004
+            }.get(intent_analysis['agent'], 8003)  # Default to django_sql
+
+            try:
+                # Call MCP agent (using synchronous request)
+                agent_url = f"http://localhost:{agent_port}/process"
                 
-                # Get up to 10 relevant listings for context
-                listings_data = []
-                for listing in listings[:10]:
-                    listings_data.append({
-                        'id': listing.pk,
-                        'title': listing.title,
-                        'price': f"{listing.price} {listing.currency}",
-                        'location': listing.location,
-                        'category': listing.category.name if listing.category else 'N/A',
-                        'description': listing.description[:100] + '...' if len(listing.description) > 100 else listing.description
-                    })
+                # Convert context to JSON-serializable format
+                serializable_context = {
+                    'listings': [],
+                    'marketplace': {}
+                }
+                
+                # Convert listings data to serializable format
+                for listing in listings_data:
+                    serializable_listing = {}
+                    for key, value in listing.items():
+                        if isinstance(value, decimal.Decimal):
+                            serializable_listing[key] = float(value)
+                        else:
+                            serializable_listing[key] = value
+                    serializable_context['listings'].append(serializable_listing)
+                
+                # Convert marketplace context to serializable format
+                def make_serializable(obj):
+                    if isinstance(obj, dict):
+                        return {k: make_serializable(v) for k, v in obj.items()}
+                    elif isinstance(obj, list):
+                        return [make_serializable(item) for item in obj]
+                    elif isinstance(obj, decimal.Decimal):
+                        return float(obj)
+                    else:
+                        return obj
+                
+                serializable_context['marketplace'] = make_serializable(marketplace_context)
+                
+                response = requests.post(
+                    agent_url,
+                    json={
+                        'query': query,
+                        'context': serializable_context
+                    },
+                    timeout=30.0
+                )
+                result = response.json()
 
-                # Route to appropriate MCP agent based on intent analysis
-                agent_port = {
-                    'django_sql': 8003,
-                    'advertising': 8001,
-                    'stock': 8004
-                }.get(intent_analysis['agent'], 8003)  # Default to django_sql
+                return JsonResponse({
+                    "result": result.get('response', 'No response from agent'),
+                    "status": "success",
+                    "query": query,
+                    "intent_analysis": intent_analysis,
+                    "marketplace_context": marketplace_context,
+                    "processed_with": f"MCP Agent ({intent_analysis['agent']})",
+                    "timestamp": datetime.now().isoformat()
+                })
 
-                try:
-                    # Call MCP agent
-                    agent_url = f"http://localhost:{agent_port}/process"
-                    async with httpx.AsyncClient() as client:
-                        response = await client.post(
-                            agent_url,
-                            json={
-                                'query': query,
-                                'context': {
-                                    'listings': listings_data,
-                                    'marketplace': marketplace_context
-                                }
-                            },
-                            timeout=30.0
-                        )
-                        result = response.json()
-
-                    return JsonResponse({
-                        "result": result.get('response', 'No response from agent'),
-                        "status": "success",
-                        "query": query,
-                        "intent_analysis": intent_analysis,
-                        "marketplace_context": marketplace_context,
-                        "processed_with": f"MCP Agent ({intent_analysis['agent']})",
-                        "timestamp": datetime.now().isoformat()
-                    })
-
-                except Exception as e:
-                    return JsonResponse({
-                        "error": f"Failed to call MCP agent: {str(e)}",
-                        "status": "error",
-                        "query": query,
-                        "intent_analysis": intent_analysis,
-                        "marketplace_context": marketplace_context,
-                        "processed_with": f"MCP Agent Error ({intent_analysis['agent']})",
-                        "timestamp": datetime.now().isoformat()
-                    }, status=500)
+            except Exception as e:
+                return JsonResponse({
+                    "error": f"Failed to call MCP agent: {str(e)}",
+                    "status": "error",
+                    "query": query,
+                    "intent_analysis": intent_analysis,
+                    "marketplace_context": marketplace_context,
+                    "processed_with": f"MCP Agent Error ({intent_analysis['agent']})",
+                    "timestamp": datetime.now().isoformat()
+                }, status=500)
+        
+        except Exception as agent_error:
+            # If there's an error with the agent routing, continue to fallback
+            pass
         
         # Fallback: Direct database search for basic queries
         try:
