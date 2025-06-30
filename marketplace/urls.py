@@ -46,6 +46,9 @@ urlpatterns = [
     
     # Stripe Webhook
     path('stripe/webhook/', views.stripe_webhook, name='stripe_webhook'),
+    
+    # Floating Chat
+    path('chat/', views.floating_chat_view, name='floating_chat'),
 
     # API endpoints (keeping existing structure)
     path("api/", include(router.urls)),

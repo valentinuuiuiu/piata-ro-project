@@ -33,6 +33,7 @@ def ai_assistant_view(request):
         'active_conversation': active_conversation,
         'messages': messages,
         'has_permission': True,
+        'mcp_status': {'django_sql': 'Online', 'advertising': 'Online', 'stock': 'Online'},  # Simple status for now
     }
     
     return render(request, 'admin/ai_assistant/chat.html', context)
@@ -135,6 +136,10 @@ def delete_conversation(request, conversation_id):
     except Conversation.DoesNotExist:
         pass
     return redirect('/ai-assistant/')
+
+def ai_status(request):
+    """Simple status endpoint for AI assistant"""
+    return JsonResponse({'status': 'ok', 'service': 'ai_assistant'})
 
 # Admin integration
 class AIAssistantAdmin:

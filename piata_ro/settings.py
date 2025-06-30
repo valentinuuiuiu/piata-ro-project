@@ -51,6 +51,9 @@ PRAISONAI_CONFIG = {
 # OpenAI Configuration
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
+# Deepseek Configuration
+DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
+
 # LangSmith Configuration
 LANGCHAIN_TRACING_V2 = True
 LANGCHAIN_ENDPOINT = "https://api.smith.langchain.com"
@@ -171,8 +174,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'marketplace', 'static'),
+]
 
 # Media files (user uploads)
 MEDIA_URL = '/media/'

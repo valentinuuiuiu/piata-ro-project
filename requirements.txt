@@ -13,3 +13,5 @@ cryptography>=41.0.0
 langchain>=0.3.25
 langchain-openai>=0.3.21
 langsmith>=0.3.45
+
+ratelimit==2.2.1

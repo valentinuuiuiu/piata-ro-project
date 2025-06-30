@@ -1,0 +1,129 @@
+{% load static %}
+{% load static %}
+<!-- Load Tailwind from CDN (development only) -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Load main CSS -->
+<link rel="stylesheet" href="{% static 'css/main.css' %}">
+
+<!-- Floating Chat Widget -->
+<div id="floating-chat" class="fixed bottom-4 right-4 z-50">
+    <button id="chat-toggle" class="w-14 h-14 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg flex items-center justify-center">
+        <i class="fas fa-robot text-xl"></i>
+    </button>
+    
+    <div id="chat-window" class="absolute bottom-16 right-0 w-80 h-96 bg-white rounded-lg shadow-xl border hidden flex flex-col">
+        <div class="bg-indigo-600 text-white p-3 rounded-t-lg flex justify-between items-center">
+            <span class="font-semibold">🤖 AI Assistant</span>
+            <button id="chat-close" class="text-white text-xl">&times;</button>
+        </div>
+        
+        <div id="chat-messages" class="flex-1 p-3 overflow-y-auto space-y-2">
+            <div class="bg-gray-100 rounded-lg p-2 text-sm">
+                Buna,sunt Piata.ro asistent,cu ce va pot ajuta?
+                
+            </div>
+        </div>
+        
+        <div class="p-3 border-t">
+            <div class="flex space-x-2">
+                <input id="chat-input" type="text" placeholder="Type message..." class="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-indigo-500">
+                <button id="chat-send" class="bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700">➤</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// API Key configuration
+const DEEPSEEK_API_KEY = '{{ deepseek_api_key }}';
+console.log('API Key:', DEEPSEEK_API_KEY);  // Debug
+
+document.addEventListener('DOMContentLoaded', function() {
+    const toggle = document.getElementById('chat-toggle');
+    const chatWindow = document.getElementById('chat-window');
+    const close = document.getElementById('chat-close');
+    const send = document.getElementById('chat-send');
+    const input = document.getElementById('chat-input');
+    const messages = document.getElementById('chat-messages');
+    
+    async function callDeepseekChat(message) {
+        try {
+            const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: 'deepseek-chat',
+                    messages: [{
+                        role: 'user',
+                        content: message
+                    }],
+                    temperature: 0.7
+                })
+            });
+
+            if (!response.ok) throw new Error('API request failed');
+            const data = await response.json();
+            return data.choices[0].message.content;
+        } catch (error) {
+            console.error('Deepseek API error:', error);
+            return 'Sorry, I encountered an error. Please try again.';
+        }
+    }
+    
+    function addMessage(text, isUser) {
+        const div = document.createElement('div');
+        div.className = `rounded-lg p-2 text-sm ${isUser ? 'bg-indigo-600 text-white ml-8' : 'bg-gray-100 mr-8'}`;
+        div.textContent = text;
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+        return div;
+    }
+    
+    async function sendMessage() {
+        const text = input.value.trim();
+        if (!text) return;
+        
+        addMessage(text, true);
+        input.value = '';
+        
+        const loadingMsg = addMessage('Thinking...', false);
+        try {
+            const response = await callDeepseekChat(text);
+            if (loadingMsg && loadingMsg.parentNode) {
+                messages.removeChild(loadingMsg);
+            }
+            addMessage(response, false);
+        } catch (error) {
+            if (loadingMsg && loadingMsg.parentNode) {
+                messages.removeChild(loadingMsg);
+            }
+            addMessage('Error getting response from assistant', false);
+        }
+    }
+    
+    toggle.onclick = () => {
+        if (chatWindow.classList.contains('hidden')) {
+            chatWindow.classList.remove('hidden');
+            chatWindow.classList.add('flex');
+        } else {
+            chatWindow.classList.add('hidden');
+            chatWindow.classList.remove('flex');
+        }
+    };
+    
+    close.onclick = () => {
+        chatWindow.classList.add('hidden');
+        chatWindow.classList.remove('flex');
+    };
+    send.onclick = sendMessage;
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+});
+</script>

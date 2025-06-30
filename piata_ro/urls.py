@@ -31,6 +31,7 @@ from marketplace.views import register_view
 urlpatterns = [
     path('', include(('marketplace.urls', 'marketplace'), namespace='marketplace')),  # Include marketplace URLs for frontend
     path('ai/', include(('ai_assistant.urls', 'ai_assistant'), namespace='ai_assistant')),  # Add AI assistant URLs
+    path('ai-assistant/', include(('ai_assistant.urls', 'ai_assistant'), namespace='ai_assistant_alt')),  # Alternative path
     path('admin/', admin.site.urls),
     
     # Allauth URLs (includes social auth)
@@ -51,6 +52,7 @@ urlpatterns = [
     path('legacy/', home, name='legacy_home'),  # Keep old home as legacy
 ]
 
-# Add media serving in development
+# Add media and static serving in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

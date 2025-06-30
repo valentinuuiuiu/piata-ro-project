@@ -4,13 +4,33 @@ Provides utilities for geocoding, reverse geocoding, and location-based search.
 """
 
 import requests
+import time
 from django.conf import settings
 from django.core.cache import cache
 from typing import Dict, List, Optional, Tuple
 import logging
 from decimal import Decimal
+from ratelimit import limits, sleep_and_retry
+
+# Nominatim usage policy requires max 1 request per second
+NOMINATIM_RATE_LIMIT = 1  # requests per second
 
 logger = logging.getLogger(__name__)
+
+@sleep_and_retry
+@limits(calls=NOMINATIM_RATE_LIMIT, period=1)
+def call_nominatim(params):
+    headers = {
+        'User-Agent': 'PiataRo/1.0 (marketplace application)'
+    }
+    response = requests.get(
+        "https://nominatim.openstreetmap.org/search",
+        params=params,
+        headers=headers,
+        timeout=5
+    )
+    response.raise_for_status()
+    return response.json()
 
 
 class LocationService:
@@ -92,22 +112,22 @@ class LocationService:
         cached_result = cache.get(cache_key)
         if cached_result:
             return cached_result
-        
-        # First try with known Romanian cities
-        if city:
-            coords = LocationService.get_coordinates_from_city(city)
-            if coords:
-                result = {
-                    'latitude': coords[0],
-                    'longitude': coords[1],
-                    'formatted_address': f"{address}, {city}, {country}" if address else f"{city}, {country}",
-                    'city': city,
-                    'country': country
-                }
-                cache.set(cache_key, result, 86400)  # Cache for 24 hours
-                return result
-        
-        # Fallback to free geocoding service (OpenStreetMap Nominatim)
+        # Use OpenStreetMap Nominatim API with rate limiting
+
+        query_parts = []
+        def call_nominatim(params):
+            headers = {
+                'User-Agent': 'PiataRo/1.0 (marketplace application)'
+            }
+            response = requests.get(
+                "https://nominatim.openstreetmap.org/search",
+                params=params,
+                headers=headers,
+                timeout=5
+            )
+            response.raise_for_status()
+            return response.json()
+
         try:
             query_parts = []
             if address:
@@ -118,7 +138,6 @@ class LocationService:
             
             query = ", ".join(query_parts)
             
-            url = "https://nominatim.openstreetmap.org/search"
             params = {
                 'q': query,
                 'format': 'json',
@@ -127,14 +146,7 @@ class LocationService:
                 'addressdetails': 1
             }
             
-            headers = {
-                'User-Agent': 'PiataRo/1.0 (marketplace application)'
-            }
-            
-            response = requests.get(url, params=params, headers=headers, timeout=5)
-            response.raise_for_status()
-            
-            data = response.json()
+            data = call_nominatim(params)
             if data:
                 result = data[0]
                 geocoded = {
@@ -165,7 +177,6 @@ class LocationService:
             return cached_result
         
         try:
-            url = "https://nominatim.openstreetmap.org/reverse"
             params = {
                 'lat': latitude,
                 'lon': longitude,
@@ -173,14 +184,7 @@ class LocationService:
                 'addressdetails': 1
             }
             
-            headers = {
-                'User-Agent': 'PiataRo/1.0 (marketplace application)'
-            }
-            
-            response = requests.get(url, params=params, headers=headers, timeout=5)
-            response.raise_for_status()
-            
-            data = response.json()
+            data = call_nominatim(params)
             if data and 'address' in data:
                 address_info = data['address']
                 result = {
@@ -235,7 +239,6 @@ class LocationService:
         
         # Otherwise, search using Nominatim
         try:
-            url = "https://nominatim.openstreetmap.org/search"
             params = {
                 'q': f"{query}, România",
                 'format': 'json',
@@ -244,14 +247,7 @@ class LocationService:
                 'addressdetails': 1
             }
             
-            headers = {
-                'User-Agent': 'PiataRo/1.0 (marketplace application)'
-            }
-            
-            response = requests.get(url, params=params, headers=headers, timeout=5)
-            response.raise_for_status()
-            
-            data = response.json()
+            data = call_nominatim(params)
             for item in data:
                 address = item.get('address', {})
                 results.append({

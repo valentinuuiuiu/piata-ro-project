@@ -127,6 +127,10 @@ async def websocket_chat(websocket: WebSocket):
         logger.error(f"Chat error: {str(e)}")
         await websocket.send_json({"error": "Internal server error"})
 
+@app.get("/")
+async def root():
+    return {"message": "Piata.ro Chatbot Service", "version": "2.0"}
+
 @app.get("/health")
 async def health_check():
     """Service health endpoint"""
