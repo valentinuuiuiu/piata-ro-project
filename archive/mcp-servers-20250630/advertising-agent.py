@@ -22,14 +22,14 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-from fastmcp.server import FastMCPServer
+from fastmcp.server import FastMCP
 from fastmcp.transports.http import HTTPTransport
 
 # Create HTTP transport
 transport = HTTPTransport(port=8001, host="0.0.0.0")
 
 # Initialize server
-mcp = FastMCPServer(
+mcp = FastMCP(
     name="Piața.ro Advertising Helper Agent",
     transport=transport
 )
@@ -49,6 +49,35 @@ class HealthCheckResource(Resource):
 
 # Register MCP health check handler
 mcp.add_resource(HealthCheckResource())
+
+class ChatbotResource(Resource):
+    uri: str = "/chatbot"
+    
+    async def read(self, params: dict) -> dict:
+        """Handle GET requests from chatbot"""
+        return await self.handle(params)
+        
+    async def handle(self, params: dict) -> dict:
+        """Process chatbot requests"""
+        intent = params.get('intent', '')
+        
+        if intent == 'optimize_title':
+            return await optimize_listing_title(
+                params.get('title', ''),
+                params.get('category', ''),
+                params.get('location', '')
+            )
+        elif intent == 'generate_description':
+            return await generate_description_template(
+                params.get('category', ''),
+                params.get('product_type', ''),
+                params.get('selling_points', [])
+            )
+        else:
+            return {"error": "Unsupported chatbot intent"}
+
+# Register chatbot handler
+mcp.add_resource(ChatbotResource())
 
 # Database connection helper
 def get_db_connection():

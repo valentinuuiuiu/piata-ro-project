@@ -1,0 +1,47 @@
+
+
+/* Modern chat styles that complement existing templates */
+.chat-container {
+    font-family: 'Inter', system-ui, sans-serif;
+    max-width: 100%;
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.chat-message {
+    padding: 0.75rem 1rem;
+    margin: 0.5rem 0;
+    border-radius: 0.375rem;
+    max-width: 80%;
+    line-height: 1.5;
+}
+
+.user-message {
+    background: #2563eb;
+    color: white;
+    margin-left: auto;
+}
+
+.bot-message {
+    background: #f3f4f6;
+    margin-right: auto;
+}
+
+/* Responsive improvements */
+@media (min-width: 768px) {
+    .chat-container {
+        max-width: 48rem;
+    }
+}
+
+/* Animation for new messages */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(0.5rem); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.new-message {
+    animation: fadeIn 0.3s ease-out;
+}
+
