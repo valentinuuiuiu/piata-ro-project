@@ -9,6 +9,7 @@ import httpx
 import yaml
 import decimal
 import requests
+import time
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import datetime
@@ -612,3 +613,44 @@ def natural_language_query(request):
             "status": "error",
             "timestamp": datetime.now().isoformat()
         }, status=500)
+
+
+
+def openai_models_endpoint(request):
+    """Temporary placeholder for OpenAI models endpoint"""
+    return JsonResponse({
+        "object": "list",
+        "data": [{
+            "id": "gpt-3.5-turbo",
+            "object": "model", 
+            "ready": True
+        }]
+    })
+
+
+@csrf_exempt
+def openai_chat_completions(request):
+    """Temporary placeholder for OpenAI chat completions endpoint"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            return JsonResponse({
+                "id": "chatcmpl-123",
+                "object": "chat.completion",
+                "created": int(time.time()),
+                "model": "gpt-3.5-turbo",
+                "choices": [{
+                    "index": 0,
+                    "message": {
+                        "role": "assistant",
+                        "content": "This is a simulated response from the OpenAI API"
+                    },
+                    "finish_reason": "stop"
+                }]
+            })
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+
+
