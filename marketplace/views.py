@@ -1410,14 +1410,8 @@ def stripe_webhook(request):
 
 
 def floating_chat_view(request):
-    """Render the floating chat widget with API key."""
-    from django.conf import settings
-    import os
-    print(f"Debug - DEEPSEEK_API_KEY in settings: {settings.DEEPSEEK_API_KEY}")  # Debug output
-    print(f"Debug - DEEPSEEK_API_KEY in env: {os.getenv('DEEPSEEK_API_KEY')}")  # Additional debug
+    """Render the floating chat widget with local agent configuration."""
     context = {
-        'deepseek_api_key': settings.DEEPSEEK_API_KEY.strip() if settings.DEEPSEEK_API_KEY else '',
+        'agent_endpoint': 'http://localhost:8001/chat',  # Local MCP agent endpoint
     }
-    response = render(request, 'floating_chat.html', context)
-    print(f"Debug - Template context API key: {context['deepseek_api_key']}")  # Debug output
-    return response
+    return render(request, 'floating_chat.html', context)

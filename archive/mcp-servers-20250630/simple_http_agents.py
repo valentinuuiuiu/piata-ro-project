@@ -11,15 +11,41 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 import os
 import sys
+import logging
+
+# Setup logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('/tmp/python_script_output.log'),
+        logging.StreamHandler()
+    ]
+)
 from asgiref.sync import sync_to_async
 
 # Add the project root to the Python path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, project_root)
+
+# Verify the piata_ro package exists
+piata_ro_path = os.path.join(project_root, 'piata_ro')
+if not os.path.exists(piata_ro_path):
+    raise ImportError(f"Cannot find piata_ro package at: {piata_ro_path}")
+
+# Verify Django can find the settings
+print(f"Python path: {sys.path}")
+print(f"Looking for settings in: {project_root}/piata_ro/settings.py")
 
 # Set up Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'piata_ro.settings')
 import django
-django.setup()
+try:
+    django.setup()
+    print("Django setup completed successfully")
+except Exception as e:
+    print(f"Django setup failed: {e}")
+    raise
 
 from marketplace.models import Category, Listing
 from fastapi import FastAPI, HTTPException
@@ -29,6 +55,11 @@ import uvicorn
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+class DeepseekRequest(BaseModel):
+    query: str
+    api_key: str
+    context: Dict[str, Any] = {}
 
 class QueryRequest(BaseModel):
     query: str
@@ -58,6 +89,16 @@ def optimize_listing_title(title: str, category: str = "") -> str:
         optimized = optimized[:77] + "..."
     
     return optimized
+
+def validate_deepseek_key(api_key: str) -> bool:
+    """Validate Deepseek API key"""
+    # TODO: Implement actual validation
+    return len(api_key) > 10  # Basic length check for now
+
+async def process_deepseek_query(query: str, context: Dict[str, Any]) -> str:
+    """Process query using Deepseek API"""
+    # TODO: Implement actual API call
+    return f"Processed Deepseek query: {query}"
 
 def suggest_pricing_strategy(title: str, category: str = "") -> Dict[str, Any]:
     """Suggest pricing strategy based on market analysis"""
@@ -91,9 +132,14 @@ def suggest_pricing_strategy(title: str, category: str = "") -> Dict[str, Any]:
 @sync_to_async
 def get_inventory_summary(category: str = "") -> Dict[str, Any]:
     """Get inventory summary for a category"""
+    from django.db.models import Q
     try:
         if category:
-            listings = Listing.objects.filter(category__name__icontains=category)
+            # Filter by category name containing the search term
+            listings = Listing.objects.filter(
+                Q(category__name__icontains=category) | 
+                Q(title__icontains=category)
+            )
         else:
             listings = Listing.objects.all()
         
@@ -101,11 +147,24 @@ def get_inventory_summary(category: str = "") -> Dict[str, Any]:
         active_items = listings.filter(status='active').count()
         featured_items = listings.filter(is_featured=True).count()
         
+        # Get sample listings for the category
+        sample_listings = []
+        for listing in listings.filter(status='active')[:5]:
+            sample_listings.append({
+                "id": listing.id,
+                "title": listing.title,
+                "price": float(listing.price) if listing.price else 0,
+                "category": listing.category.name if listing.category else "N/A",
+                "location": listing.location
+            })
+        
         return {
+            "category_filter": category if category else "all",
             "total_items": total_items,
             "active_items": active_items,
             "featured_items": featured_items,
-            "categories": list(Category.objects.values_list('name', flat=True))
+            "sample_listings": sample_listings,
+            "total_categories": Category.objects.count()
         }
     except Exception as e:
         logger.error(f"Error getting inventory: {e}")
@@ -199,7 +258,50 @@ async def advertising_status():
 async def advertising_health():
     return {"status": "healthy", "agent": "advertising", "port": 8001, "timestamp": datetime.now().isoformat()}
 
-# Stock Agent Endpoints  
+@advertising_app.post("/deepseek/query")
+async def deepseek_query(request: DeepseekRequest):
+    """Handle Deepseek API queries"""
+    # Validate API key
+    if not validate_deepseek_key(request.api_key):
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    
+    try:
+        # Process query
+        result = await process_deepseek_query(request.query, request.context)
+        return ResponseModel(
+            response=result,
+            timestamp=datetime.now().isoformat()
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Shared Deepseek Functions
+async def process_deepseek_query(query: str, context: Dict[str, Any]) -> str:
+    """Process query using Deepseek API"""
+    # TODO: Implement actual API call
+    return f"Processed Deepseek query: {query}"
+
+def validate_deepseek_key(api_key: str) -> bool:
+    """Validate Deepseek API key"""
+    # TODO: Implement actual validation
+    return len(api_key) > 10  # Basic length check for now
+
+# Stock Agent Endpoints
+@stock_app.post("/deepseek/query")
+async def stock_deepseek_query(request: DeepseekRequest):
+    """Handle Deepseek API queries for stock agent"""
+    if not validate_deepseek_key(request.api_key):
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    
+    try:
+        result = await process_deepseek_query(request.query, request.context)
+        return ResponseModel(
+            response=result,
+            timestamp=datetime.now().isoformat()
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @stock_app.post("/process")
 async def process_stock_query(request: QueryRequest):
     """Process stock/inventory-related queries"""
@@ -210,7 +312,7 @@ async def process_stock_query(request: QueryRequest):
         if 'inventory' in query or 'stock' in query:
             category = context.get('category', '')
             result = await get_inventory_summary(category)
-            response = f"Inventory Summary: {json.dumps(result, indent=2)}"
+            response = f"Inventory Summary for '{category if category else 'all categories'}': {json.dumps(result, indent=2)}"
         else:
             response = "I can help with inventory management, stock levels, and product availability. Try asking about inventory levels."
         
@@ -230,6 +332,21 @@ async def stock_health():
     return {"status": "healthy", "agent": "stock", "port": 8003, "timestamp": datetime.now().isoformat()}
 
 # Django SQL Agent Endpoints
+@django_sql_app.post("/deepseek/query")
+async def sql_deepseek_query(request: DeepseekRequest):
+    """Handle Deepseek API queries for SQL agent"""
+    if not validate_deepseek_key(request.api_key):
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    
+    try:
+        result = await process_deepseek_query(request.query, request.context)
+        return ResponseModel(
+            response=result,
+            timestamp=datetime.now().isoformat()
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @django_sql_app.post("/process")
 async def process_sql_query(request: QueryRequest):
     """Process database queries"""

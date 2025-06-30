@@ -137,5 +137,6 @@ async def health_check():
     return JSONResponse({"status": "healthy", "services": list(AGENTS.keys())})
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    # This service should be run via external ASGI server (uvicorn/gunicorn)
+    # For local development use: uvicorn main:app --host 0.0.0.0 --port 8080
+    print("FastAPI application ready - configure your ASGI server to run this app")

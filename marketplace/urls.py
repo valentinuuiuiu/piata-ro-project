@@ -2,6 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from . import views
+from .deepseek_chat import deepseek_chat_view
 
 app_name = 'marketplace'
 
@@ -49,6 +50,7 @@ urlpatterns = [
     
     # Floating Chat
     path('chat/', views.floating_chat_view, name='floating_chat'),
+    path('api/deepseek-chat/', deepseek_chat_view, name='deepseek_chat'),
 
     # API endpoints (keeping existing structure)
     path("api/", include(router.urls)),

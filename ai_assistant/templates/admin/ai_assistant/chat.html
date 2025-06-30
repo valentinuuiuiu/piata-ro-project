@@ -154,7 +154,7 @@
         <p>Your intelligent marketplace management assistant</p>
         
         <div class="ai-status">
-            <strong>MCP Agents Status:</strong>
+            <strong>MCP Agents Status (DeepSeek Powered):</strong>
             {% for agent, status in mcp_status.items %}
                 <span class="status-item status-{{ status|lower }}">
                     {{ agent }}: {{ status }}
@@ -186,11 +186,11 @@
             <div class="chat-container">
                 <div class="chat-messages" id="chat-messages">
                     <div class="message message-assistant">
-                        <div>👋 Hello! I'm your Piața.ro AI Assistant. I can help you with:</div>
+                        <div>👋 Hello! I'm your Piața.ro AI Assistant powered by DeepSeek. I can help you with:</div>
                         <ul style="margin: 10px 0; padding-left: 20px;">
-                            <li><strong>Database:</strong> Manage listings, users, and data</li>
-                            <li><strong>Accounting:</strong> Handle payments, invoices, and finances</li>
-                            <li><strong>Marketing:</strong> Optimize ads, SEO, and promotions</li>
+                            <li><strong>Database:</strong> Manage listings, users, and data queries</li>
+                            <li><strong>Advertising:</strong> Optimize marketing, pricing, and promotions</li>
+                            <li><strong>Stock:</strong> Handle inventory, supply chain, and forecasting</li>
                         </ul>
                         <div>What would you like to help you with today?</div>
                     </div>

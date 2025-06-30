@@ -16,14 +16,8 @@ if not settings.configured:
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'piata_ro.settings')
     django.setup()
 
-# LangChain imports for intelligent orchestration
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_core.output_parsers import PydanticOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.tools import tool
-from langchain_core.runnables import RunnablePassthrough
-from langsmith import traceable
+# Direct HTTP client for DeepSeek API
+import httpx
 
 # Set up LangSmith tracing from Django settings
 os.environ["LANGCHAIN_TRACING_V2"] = str(getattr(settings, 'LANGCHAIN_TRACING_V2', True))
@@ -101,8 +95,9 @@ class SmartMCPOrchestrator(BaseModel):
     class Config:
         arbitrary_types_allowed = True
     
-    # Declare the LLM as a model field
-    llm: Optional[ChatOpenAI] = Field(default=None, exclude=True)
+    # DeepSeek API configuration
+    deepseek_api_key: str = Field(default_factory=lambda: getattr(settings, 'DEEPSEEK_API_KEY', ''))
+    deepseek_api_url: str = Field(default='https://api.deepseek.com/v1/chat/completions')
     mcp_servers: Dict[MCPServerType, MCPServerConfig] = Field(
         default_factory=lambda: {
             MCPServerType.ADVERTISING: MCPServerConfig(
@@ -152,60 +147,82 @@ class SmartMCPOrchestrator(BaseModel):
     
     def __init__(self, **data):
         super().__init__(**data)
-        # Initialize LangChain LLM with tracing
-        self.llm = ChatOpenAI(
-            model="gpt-4o-mini",
-            temperature=0.1,
-            api_key=settings.OPENAI_API_KEY
-        )
+        # Initialize DeepSeek API key
+        if not self.deepseek_api_key:
+            raise ValueError("DeepSeek API key not configured")
     
-    @traceable(name="analyze_intent")
-    def analyze_intent(self, user_message: str) -> RequestIntent:
+    async def analyze_intent(self, user_message: str) -> RequestIntent:
         """
         Analyze user intent using Pydantic model and LLM with LangSmith tracing
         This is where the smart routing decisions happen
         """
         
-        # Ensure LLM is initialized
-        if not self.llm:
-            self.llm = ChatOpenAI(
-                model="gpt-4o-mini",
-                temperature=0.1,
-                api_key=settings.OPENAI_API_KEY
-            )
-        
-        # Create the output parser for structured response
-        parser = PydanticOutputParser(pydantic_object=RequestIntent)
-        
-        # Define the prompt template
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", """You are an intelligent routing agent for a marketplace platform. 
-            Analyze user requests and determine which MCP server should handle them.
-            
-            Available servers and their capabilities:
-            1. DATABASE (port 8002): User management, listings, SQL queries, database stats
-            2. ADVERTISING (port 8001): Marketing optimization, pricing, content generation  
-            3. STOCK (port 8003): Inventory management, stock tracking, supply chain
-            
-            Classify the intent as: database, advertising, stock, or general
-            
-            {format_instructions}
-            """),
-            ("human", "User request: {user_message}")
-        ])
-        
-        # Create the chain with structured output
-        chain = prompt | self.llm | parser
-        
         try:
-            result = chain.invoke({
-                "user_message": user_message,
-                "format_instructions": parser.get_format_instructions()
-            })
-            
-            logger.info(f"Intent analysis successful: {result.intent_type} (confidence: {result.confidence})")
-            return result
-            
+            # Use DeepSeek API for intent analysis
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    self.deepseek_api_url,
+                    headers={
+                        'Content-Type': 'application/json',
+                        'Authorization': f'Bearer {self.deepseek_api_key}'
+                    },
+                    json={
+                        'model': 'deepseek-chat',
+                        'messages': [
+                            {
+                                'role': 'system',
+                                'content': '''You are an intelligent routing agent for a marketplace platform. 
+                                Analyze user requests and determine which MCP server should handle them.
+                                
+                                Available servers and their capabilities:
+                                1. DATABASE (port 8002): User management, listings, SQL queries, database stats
+                                2. ADVERTISING (port 8001): Marketing optimization, pricing, content generation  
+                                3. STOCK (port 8003): Inventory management, stock tracking, supply chain
+                                
+                                Respond with JSON in this exact format:
+                                {
+                                    "intent_type": "database|advertising|stock|general",
+                                    "confidence": 0.8,
+                                    "required_tools": [],
+                                    "server_needed": "database|advertising|stock|null",
+                                    "reasoning": "explanation"
+                                }'''
+                            },
+                            {
+                                'role': 'user',
+                                'content': f'User request: {user_message}'
+                            }
+                        ],
+                        'max_tokens': 200,
+                        'temperature': 0.1
+                    },
+                    timeout=30.0
+                )
+                
+                if response.status_code == 200:
+                    result_data = response.json()
+                    content = result_data['choices'][0]['message']['content']
+                    
+                    # Parse JSON response
+                    intent_data = json.loads(content)
+                    
+                    # Map server_needed to enum
+                    server_map = {
+                        'database': MCPServerType.DATABASE,
+                        'advertising': MCPServerType.ADVERTISING,
+                        'stock': MCPServerType.STOCK
+                    }
+                    
+                    return RequestIntent(
+                        intent_type=intent_data['intent_type'],
+                        confidence=intent_data['confidence'],
+                        required_tools=intent_data.get('required_tools', []),
+                        server_needed=server_map.get(intent_data.get('server_needed')),
+                        reasoning=intent_data['reasoning']
+                    )
+                else:
+                    raise Exception(f"DeepSeek API error: {response.status_code}")
+                    
         except Exception as e:
             logger.error(f"Intent analysis failed: {e}")
             # Fallback to simple keyword matching
@@ -256,8 +273,7 @@ class SmartMCPOrchestrator(BaseModel):
                 reasoning="Fallback: No specific keywords detected"
             )
     
-    @traceable(name="route_to_mcp_server")
-    def route_to_mcp_server(self, intent: RequestIntent, user_message: str) -> List[MCPToolCall]:
+    async def route_to_mcp_server(self, intent: RequestIntent, user_message: str) -> List[MCPToolCall]:
         """
         Route request to appropriate MCP server based on intent analysis
         Returns list of tool calls to make
@@ -266,66 +282,15 @@ class SmartMCPOrchestrator(BaseModel):
         if not intent.server_needed:
             return []
         
-        # Ensure LLM is initialized
-        if not self.llm:
-            self.llm = ChatOpenAI(
-                model="gpt-4o-mini",
-                temperature=0.1,
-                api_key=settings.OPENAI_API_KEY
-            )
-        
         server_config = self.mcp_servers[intent.server_needed]
         
-        # Create prompt for tool selection
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", """You are a tool selection expert. Based on the user's request and available tools, 
-            select the most appropriate tools to use and their parameters.
-            
-            Available tools: {available_tools}
-            Server: {server_name}
-            
-            Return a JSON list of tool calls in this format:
-            [
-                {{
-                    "server": "{server_type}",
-                    "tool": "tool_name",
-                    "params": {{"param1": "value1"}},
-                    "expected_result": "what this tool should return"
-                }}
-            ]
-            """),
-            ("human", "User request: {user_message}")
-        ])
-        
-        try:
-            response = self.llm.invoke(
-                prompt.format_messages(
-                    available_tools=server_config.tools,
-                    server_name=server_config.name,
-                    server_type=intent.server_needed.value,
-                    user_message=user_message
-                )
-            )
-            
-            # Parse the response as JSON
-            tool_calls_json = json.loads(response.content)
-            tool_calls = []
-            
-            for call in tool_calls_json:
-                tool_calls.append(MCPToolCall(**call))
-            
-            logger.info(f"Generated {len(tool_calls)} tool calls for {intent.server_needed}")
-            return tool_calls
-            
-        except Exception as e:
-            logger.error(f"Tool routing failed: {e}")
-            # Fallback: return a generic tool call
-            return [MCPToolCall(
-                server=intent.server_needed,
-                tool=server_config.tools[0] if server_config.tools else "generic_tool",
-                params={"query": user_message},
-                expected_result="Generic response based on user query"
-            )]
+        # Simple tool selection based on intent - no need for complex LLM routing
+        return [MCPToolCall(
+            server=intent.server_needed,
+            tool="process",  # Use the generic process endpoint
+            params={"query": user_message},
+            expected_result="Response from MCP agent"
+        )]
     
     async def execute_mcp_tools(self, tool_calls: List[MCPToolCall]) -> List[Dict[str, Any]]:
         """Execute the selected MCP tools via real SSE communication"""
@@ -367,10 +332,13 @@ class SmartMCPOrchestrator(BaseModel):
         
         async with httpx.AsyncClient(timeout=30.0) as client:
             try:
-                # Call the tool endpoint on the MCP server
+                # Call the process endpoint on the MCP server
                 response = await client.post(
-                    f"{server_config.url}/call",
-                    json=payload,
+                    f"{server_config.url}/process",
+                    json={
+                        "query": tool_call.params.get("query", ""),
+                        "context": tool_call.params
+                    },
                     headers={"Content-Type": "application/json"}
                 )
                 
@@ -396,18 +364,17 @@ class SmartMCPOrchestrator(BaseModel):
                 logger.error(f"Unexpected error calling {tool_call.server}: {e}")
                 return {"error": f"Unexpected error: {str(e)}"}
     
-    @traceable(name="process_request")
     async def process_request(self, user_message: str, conversation_history: Optional[List[Dict]] = None) -> MCPResponse:
         """
         Main orchestration method - analyzes intent and routes to appropriate MCP servers
         """
         
         # Step 1: Analyze user intent using Pydantic model
-        intent = self.analyze_intent(user_message)
+        intent = await self.analyze_intent(user_message)
         logger.info(f"Intent analysis: {intent.dict()}")
         
         # Step 2: Route to appropriate MCP server 
-        tool_calls = self.route_to_mcp_server(intent, user_message)
+        tool_calls = await self.route_to_mcp_server(intent, user_message)
         logger.info(f"Generated tool calls: {[call.dict() for call in tool_calls]}")
         
         # Step 3: Execute MCP tools
@@ -427,7 +394,6 @@ class SmartMCPOrchestrator(BaseModel):
             reasoning=f"Analyzed as {intent.intent_type} with {intent.confidence:.2f} confidence"
         )
     
-    @traceable(name="generate_final_response")
     async def _generate_final_response(
         self, 
         user_message: str, 
@@ -435,15 +401,7 @@ class SmartMCPOrchestrator(BaseModel):
         tool_results: List[Dict[str, Any]],
         conversation_history: Optional[List[Dict]] = None
     ) -> str:
-        """Generate final response using LLM with tool results and LangSmith tracing"""
-        
-        # Ensure LLM is initialized
-        if not self.llm:
-            self.llm = ChatOpenAI(
-                model="gpt-4o-mini",
-                temperature=0.1,
-                api_key=settings.OPENAI_API_KEY
-            )
+        """Generate final response using DeepSeek API with tool results"""
         
         # Prepare context
         context = f"""
@@ -460,28 +418,44 @@ class SmartMCPOrchestrator(BaseModel):
             else:
                 context += f"❌ {result['tool']}: {result.get('error', 'Unknown error')}\n"
         
-        # Create prompt template
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", """You are an AI assistant for Piața.ro marketplace. 
-            
-            Based on the tool results provided, give a helpful, concise response to the user.
-            Be specific about the actions taken and results obtained.
-            
-            Context: {context}"""),
-            ("human", "{user_message}")
-        ])
-        
         try:
-            response = self.llm.invoke(
-                prompt.format_messages(
-                    context=context,
-                    user_message=user_message
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    self.deepseek_api_url,
+                    headers={
+                        'Content-Type': 'application/json',
+                        'Authorization': f'Bearer {self.deepseek_api_key}'
+                    },
+                    json={
+                        'model': 'deepseek-chat',
+                        'messages': [
+                            {
+                                'role': 'system',
+                                'content': f'''You are an AI assistant for Piața.ro marketplace admin panel. 
+                                
+                                Based on the tool results provided, give a helpful, concise response to the user.
+                                Be specific about the actions taken and results obtained.
+                                
+                                Context: {context}'''
+                            },
+                            {
+                                'role': 'user',
+                                'content': user_message
+                            }
+                        ],
+                        'max_tokens': 500,
+                        'temperature': 0.3
+                    },
+                    timeout=30.0
                 )
-            )
-            
-            logger.info("Generated final response successfully")
-            return response.content
-            
+                
+                if response.status_code == 200:
+                    result_data = response.json()
+                    logger.info("Generated final response successfully")
+                    return result_data['choices'][0]['message']['content']
+                else:
+                    raise Exception(f"DeepSeek API error: {response.status_code}")
+                    
         except Exception as e:
             logger.error(f"Final response generation failed: {e}")
             return f"I apologize, but I encountered an error while processing your request: {str(e)}"
@@ -495,11 +469,19 @@ class MCPOrchestrator:
     
     async def process_request(self, user_message: str, conversation_history: Optional[List[Dict]] = None) -> Dict[str, Any]:
         """Process request using smart Pydantic orchestrator"""
-        mcp_response = await self.smart_orchestrator.process_request(user_message, conversation_history)
-        
-        # Convert to legacy format
-        return {
-            'response': mcp_response.response,
-            'tools_used': mcp_response.tools_used,
-            'tool_results': mcp_response.tool_results
-        }
+        try:
+            mcp_response = await self.smart_orchestrator.process_request(user_message, conversation_history)
+            
+            # Convert to legacy format
+            return {
+                'response': mcp_response.response,
+                'tools_used': mcp_response.tools_used,
+                'tool_results': mcp_response.tool_results
+            }
+        except Exception as e:
+            logger.error(f"MCP Orchestrator error: {e}")
+            return {
+                'response': f"I apologize, but I encountered an error: {str(e)}",
+                'tools_used': [],
+                'tool_results': []
+            }

@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.db import models
 from django.urls import path
 from django.shortcuts import render
 from django.http import JsonResponse
@@ -83,6 +84,62 @@ class ListingReportAdmin(admin.ModelAdmin):
                 obj.reviewed_by = request.user
             if not obj.reviewed_at:
                 from django.utils import timezone
-
                 obj.reviewed_at = timezone.now()
         super().save_model(request, obj, form, change)
+
+# Admin Assistant Implementation
+class AdminAssistant:
+    def __init__(self, request):
+        self.request = request
+        self.agent_url = "http://localhost:8001/process"
+
+    async def query(self, message):
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    self.agent_url,
+                    json={
+                        "query": message,
+                        "context": {
+                            "user_id": str(self.request.user.id),
+                            "is_admin": True
+                        }
+                    },
+                    timeout=10.0
+                )
+                return response.json()["response"]
+        except Exception as e:
+            return f"Assistant error: {str(e)}"
+
+def admin_site_view(request):
+    assistant = AdminAssistant(request)
+    
+    if request.method == "POST":
+        message = request.POST.get("message", "")
+        response = asyncio.run(assistant.query(message))
+        return JsonResponse({"response": response})
+    
+    return render(request, "admin/assistant.html")
+
+# Register admin assistant view via ModelAdmin
+class AdminAssistantAdmin(admin.ModelAdmin):
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                "assistant/",
+                self.admin_site.admin_view(admin_site_view),
+                name="admin-assistant"
+            ),
+        ]
+        return custom_urls + urls
+
+# Create a dummy model to attach our admin view
+class AdminAssistantModel(models.Model):
+    class Meta:
+        verbose_name = "Admin Assistant"
+        verbose_name_plural = "Admin Assistants"
+        managed = False  # Don't create DB table
+
+# Register the dummy model with our custom admin
+admin.site.register(AdminAssistantModel, AdminAssistantAdmin)
