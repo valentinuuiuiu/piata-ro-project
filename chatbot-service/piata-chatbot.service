@@ -1,0 +1,18 @@
+
+[Unit]
+Description=Piata.ro Unified Chatbot Service
+After=network.target
+
+[Service]
+User=openhands
+Group=openhands
+WorkingDirectory=/workspace/piata-ro-project/chatbot-service
+ExecStart=/openhands/poetry/openhands-ai-5O4_aCHf-py3.12/bin/uvicorn main:app --host 0.0.0.0 --port 8080
+Restart=always
+Environment="PYTHONPATH=/workspace/piata-ro-project"
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=piata-chatbot
+
+[Install]
+WantedBy=multi-user.target

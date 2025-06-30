@@ -1,0 +1,112 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Piata.ro Chatbot Demo</title>
+    <style>
+        #chat-container {
+            width: 500px;
+            margin: 0 auto;
+            font-family: Arial, sans-serif;
+        }
+        #messages {
+            height: 300px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            overflow-y: scroll;
+            margin-bottom: 10px;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .user-message {
+            background: #e3f2fd;
+            text-align: right;
+        }
+        .bot-message {
+            background: #f5f5f5;
+        }
+        #message-form {
+            display: flex;
+        }
+        #message-input {
+            flex-grow: 1;
+            padding: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <h2>Piata.ro AI Assistant</h2>
+        <div id="messages"></div>
+        <form id="message-form">
+            <input type="text" id="message-input" autocomplete="off" placeholder="Type your message...">
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <script>
+        const chatSocket = new WebSocket(`ws://${window.location.host}/chat`);
+        const messagesDiv = document.getElementById('messages');
+        const form = document.getElementById('message-form');
+        const input = document.getElementById('message-input');
+
+        // Handle incoming messages
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message bot-message';
+            
+            if (data.error) {
+                messageDiv.innerHTML = `<strong>Error:</strong> ${data.error}`;
+            } else {
+                messageDiv.innerHTML = `<strong>Bot:</strong> ${JSON.stringify(data)}`;
+            }
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        };
+
+        // Handle form submission
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const message = input.value.trim();
+            if (message) {
+                // Add user message to UI
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message user-message';
+                messageDiv.textContent = `You: ${message}`;
+                messagesDiv.appendChild(messageDiv);
+                
+                // Send to chatbot service
+                chatSocket.send(JSON.stringify({
+                    intent: detectIntent(message),
+                    message: message,
+                    timestamp: new Date().toISOString()
+                }));
+                
+                input.value = '';
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+        });
+
+        // Simple intent detection
+        function detectIntent(message) {
+            message = message.toLowerCase();
+            if (message.includes('optimize') || message.includes('title')) {
+                return 'title_optimize';
+            } else if (message.includes('stock') || message.includes('inventory')) {
+                return 'stock_check';
+            } else if (message.includes('product') || message.includes('item')) {
+                return 'product_query';
+            }
+            return 'general_query';
+        }
+    </script>
+</body>
+</html>
+
