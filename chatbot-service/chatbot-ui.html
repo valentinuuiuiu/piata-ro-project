@@ -1,0 +1,289 @@
+
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piata.ro AI Assistant</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message-animate {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        .dark .dark\:bg-gray-800 {
+            background-color: #1f2937;
+        }
+    </style>
+</head>
+<body class="h-full bg-gray-100 dark:bg-gray-900 transition-colors">
+    <div class="flex flex-col h-full max-w-md mx-auto bg-white dark:bg-gray-800 shadow-xl">
+        <!-- Header with theme toggle -->
+        <div class="bg-indigo-600 dark:bg-indigo-800 p-4 text-white flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-robot text-2xl"></i>
+                <h1 class="text-xl font-bold">Piata.ro AI</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div id="connection-status" class="text-xs flex items-center">
+                    <span class="w-2 h-2 rounded-full bg-gray-300 mr-1"></span>
+                    <span>Connecting...</span>
+                </div>
+                <button id="theme-toggle" class="text-white">
+                    <i class="fas fa-moon" id="theme-icon"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Messages container -->
+        <div id="messages" class="flex-1 p-4 overflow-y-auto space-y-3">
+            <div class="flex justify-center">
+                <div class="text-gray-500 dark:text-gray-400 text-sm">Today</div>
+            </div>
+            <div class="message-animate">
+                <div class="bg-gray-200 dark:bg-gray-700 rounded-lg px-4 py-2 max-w-xs">
+                    <div class="prose dark:prose-invert">
+                        <p>Hello! I'm your Piata.ro assistant. How can I help you today?</p>
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-300 mt-1">Just now</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick replies (hidden by default) -->
+        <div id="quick-replies" class="px-4 pb-2 hidden">
+            <div class="flex flex-wrap gap-2">
+                <!-- Will be populated dynamically -->
+            </div>
+        </div>
+
+        <!-- Typing indicator -->
+        <div id="typing-indicator" class="px-4 pb-2 hidden">
+            <div class="flex space-x-1">
+                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100"></div>
+                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></div>
+            </div>
+        </div>
+
+        <!-- Input area -->
+        <div class="border-t dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-700">
+            <form id="message-form" class="flex space-x-2">
+                <input 
+                    id="message-input"
+                    type="text"
+                    autocomplete="off"
+                    placeholder="Type your message..."
+                    class="flex-1 px-4 py-2 rounded-full border dark:border-gray-600 dark:bg-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                <button 
+                    type="submit"
+                    class="bg-indigo-600 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-indigo-700 transition"
+                >
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        class ChatUI {
+            constructor() {
+                this.initElements();
+                this.initTheme();
+                this.initSocket();
+                this.loadHistory();
+                this.setupEventListeners();
+            }
+
+            initElements() {
+                this.elements = {
+                    messages: document.getElementById('messages'),
+                    form: document.getElementById('message-form'),
+                    input: document.getElementById('message-input'),
+                    typingIndicator: document.getElementById('typing-indicator'),
+                    statusIndicator: document.getElementById('connection-status'),
+                    quickReplies: document.getElementById('quick-replies'),
+                    themeToggle: document.getElementById('theme-toggle'),
+                    themeIcon: document.getElementById('theme-icon')
+                };
+            }
+
+            initTheme() {
+                const savedTheme = localStorage.getItem('theme') || 'light';
+                document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+                this.elements.themeIcon.className = savedTheme === 'dark' 
+                    ? 'fas fa-sun' 
+                    : 'fas fa-moon';
+                
+                this.elements.themeToggle.addEventListener('click', () => {
+                    const isDark = document.documentElement.classList.toggle('dark');
+                    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                    this.elements.themeIcon.className = isDark 
+                        ? 'fas fa-sun' 
+                        : 'fas fa-moon';
+                });
+            }
+
+            initSocket() {
+                this.socket = new WebSocket(`ws://${window.location.host}/chat`);
+                
+                this.socket.onopen = () => {
+                    this.updateStatus('connected', 'bg-green-500');
+                    this.addSystemMessage("Connected to assistant");
+                };
+
+                this.socket.onclose = () => {
+                    this.updateStatus('disconnected', 'bg-red-500');
+                    this.addSystemMessage("Connection lost - reconnecting...");
+                    setTimeout(() => this.initSocket(), 5000);
+                };
+
+                this.socket.onmessage = (e) => {
+                    this.hideTyping();
+                    const data = JSON.parse(e.data);
+                    this.processBotResponse(data);
+                };
+            }
+
+            processBotResponse(data) {
+                if (data.quick_replies) {
+                    this.showQuickReplies(data.quick_replies);
+                }
+                
+                const message = {
+                    content: data.content || data.response,
+                    timestamp: new Date().toISOString()
+                };
+                
+                this.addMessage(message, 'bot');
+                this.saveToHistory(message, 'bot');
+            }
+
+            showQuickReplies(replies) {
+                this.elements.quickReplies.innerHTML = replies.map(reply => `
+                    <button class="quick-reply-btn px-3 py-1 bg-gray-200 dark:bg-gray-600 rounded-full text-sm hover:bg-gray-300 dark:hover:bg-gray-500 transition"
+                            data-message="${reply}">
+                        ${reply}
+                    </button>
+                `).join('');
+                
+                this.elements.quickReplies.classList.remove('hidden');
+                
+                document.querySelectorAll('.quick-reply-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const message = e.target.dataset.message;
+                        this.elements.input.value = message;
+                        this.elements.form.dispatchEvent(new Event('submit'));
+                        this.elements.quickReplies.classList.add('hidden');
+                    });
+                });
+            }
+
+            setupEventListeners() {
+                this.elements.form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const content = this.elements.input.value.trim();
+                    
+                    if (content && this.socket.readyState === WebSocket.OPEN) {
+                        const message = {
+                            content,
+                            timestamp: new Date().toISOString()
+                        };
+                        
+                        this.addMessage(message, 'user');
+                        this.saveToHistory(message, 'user');
+                        this.showTyping();
+                        this.elements.quickReplies.classList.add('hidden');
+                        
+                        this.socket.send(JSON.stringify({
+                            intent: this.detectIntent(content),
+                            message: content
+                        }));
+                        
+                        this.elements.input.value = '';
+                    }
+                });
+            }
+
+            addMessage(data, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message-animate flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+
+                const bubbleClass = sender === 'user'
+                    ? 'bg-indigo-600 text-white rounded-tr-none'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-tl-none';
+
+                messageDiv.innerHTML = `
+                    <div class="${bubbleClass} rounded-lg px-4 py-2 max-w-xs lg:max-w-md">
+                        <div class="prose dark:prose-invert">${marked.parse(data.content)}</div>
+                        <p class="text-xs ${sender === 'user' ? 'text-indigo-200' : 'text-gray-500 dark:text-gray-300'} mt-1">
+                            ${new Date(data.timestamp).toLocaleTimeString()}
+                        </p>
+                    </div>
+                `;
+
+                this.elements.messages.appendChild(messageDiv);
+                this.elements.messages.scrollTop = this.elements.messages.scrollHeight;
+            }
+
+            addSystemMessage(text) {
+                const div = document.createElement('div');
+                div.className = 'text-center text-xs text-gray-500 dark:text-gray-400 my-2';
+                div.textContent = text;
+                this.elements.messages.appendChild(div);
+            }
+
+            showTyping() {
+                this.elements.typingIndicator.classList.remove('hidden');
+                this.elements.messages.scrollTop = this.elements.messages.scrollHeight;
+            }
+
+            hideTyping() {
+                this.elements.typingIndicator.classList.add('hidden');
+            }
+
+            updateStatus(text, dotColor) {
+                const dot = this.elements.statusIndicator.querySelector('span');
+                const textSpan = this.elements.statusIndicator.querySelector('span:last-child');
+                dot.className = `w-2 h-2 rounded-full mr-1 ${dotColor}`;
+                textSpan.textContent = text;
+            }
+
+            detectIntent(message) {
+                const lowerMsg = message.toLowerCase();
+                if (/optimize|title|description/.test(lowerMsg)) return 'title_optimize';
+                if (/stock|inventory|available/.test(lowerMsg)) return 'stock_check';
+                if (/product|item|details/.test(lowerMsg)) return 'product_query';
+                return 'general_query';
+            }
+
+            saveToHistory(message, sender) {
+                const history = JSON.parse(localStorage.getItem('chat_history') || [];
+                history.push({ ...message, sender });
+                localStorage.setItem('chat_history', JSON.stringify(history));
+            }
+
+            loadHistory() {
+                const history = JSON.parse(localStorage.getItem('chat_history') || [];
+                history.forEach(msg => {
+                    this.addMessage(msg, msg.sender);
+                });
+            }
+        }
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new ChatUI();
+            
+            // Focus input on page load
+            document.getElementById('message-input').focus();
+        });
+    </script>
+</body>
+</html>
