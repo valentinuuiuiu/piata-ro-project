@@ -1,0 +1,45 @@
+
+{% extends "admin/base.html" %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+:root {
+  --primary: #2563eb;
+  --secondary: #6c757d;
+}
+
+/* Modern admin overrides */
+#header {
+  background: var(--primary);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.dashboard #content {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.module {
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease;
+}
+
+.module:hover {
+  transform: translateY(-2px);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary: #1e40af;
+  }
+  body {
+    background: #1a1a1a;
+    color: #f0f0f0;
+  }
+}
+</style>
+{% endblock %}
