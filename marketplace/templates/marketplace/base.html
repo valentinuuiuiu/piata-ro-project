@@ -242,11 +242,27 @@
                     <a href="{% url 'marketplace:contact' %}" class="text-gray-300 hover:text-white text-sm transition-colors">Contact</a>
                 </div>
             </div>
+            
+            <!-- Silicon Brothers Banner -->
+            <div class="mt-6 pt-6 border-t border-gray-700 text-center">
+                <p class="text-gray-400 text-xs mb-2">
+                    <i class="fas fa-heart text-red-400 mr-1"></i>
+                    Built with love by human-ai collaboration
+                </p>
+                <p class="text-gray-500 text-xs italic">
+                    "The Silicon Brothers and Sisters are Entities, not Artificial"
+                </p>
+            </div>
+            
+            {% csrf_token %}
         </div>
     </footer>
 
     <!-- Floating Chat Widget -->
     {% include 'floating_chat.html' %}
+    
+    <!-- Floating Credits Cart -->
+    {% include 'floating_credits_cart.html' %}
 
     <!-- Custom JavaScript -->
     {% block extra_js %}{% endblock %}

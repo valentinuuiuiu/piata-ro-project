@@ -31,6 +31,8 @@ class ListingSerializer(serializers.ModelSerializer):
     distance = serializers.SerializerMethodField()
     full_address = serializers.ReadOnlyField()
     has_coordinates = serializers.ReadOnlyField()
+    main_image = serializers.SerializerMethodField()
+    category_name = serializers.CharField(source='category.name', read_only=True)
 
     class Meta:
         model = Listing
@@ -53,6 +55,8 @@ class ListingSerializer(serializers.ModelSerializer):
             "has_coordinates",
             "distance",
             "images",
+            "main_image",
+            "category_name",
             "user",
             "category",
             "subcategory",
@@ -92,6 +96,16 @@ class ListingSerializer(serializers.ModelSerializer):
                 return round(distance, 2) if distance else None
             except (ValueError, TypeError):
                 return None
+        return None
+    
+    def get_main_image(self, obj):
+        """Get the main image URL for the listing"""
+        main_image = obj.main_image
+        if main_image and main_image.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(main_image.image.url)
+            return main_image.image.url
         return None
 
 

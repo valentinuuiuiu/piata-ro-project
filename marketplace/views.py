@@ -252,15 +252,15 @@ def home(request):
 
 def home_view(request):
     """Homepage view with enhanced functionality."""
-    # Get all categories for the dropdown
-    categories = Category.objects.all()
+    # Get all categories for the dropdown (only parent categories)
+    categories = Category.objects.filter(parent__isnull=True).order_by('name')
 
     # Get featured/promoted listings
     featured_listings = Listing.objects.filter(
         status="active", is_featured=True
     ).order_by("-created_at")[:8]
 
-    # Get recent listings
+    # Get recent listings (by date only)
     recent_listings = Listing.objects.filter(status="active").order_by("-created_at")[:12]
 
     # Get statistics
@@ -301,10 +301,20 @@ def category_detail_view(request, category_slug):
     
     # Get listings in this category and subcategories
     category_ids = [category.id] + list(subcategories.values_list('id', flat=True))
-    listings = Listing.objects.filter(
-        category_id__in=category_ids,
-        status="active"
-    ).order_by("-created_at")
+    
+    # If this is a parent category, group by subcategory with featured first in each
+    if subcategories.exists():
+        # Show subcategory listings with featured first within each subcategory
+        listings = Listing.objects.filter(
+            category_id__in=category_ids,
+            status="active"
+        ).order_by("category_id", "-is_featured", "-created_at")
+    else:
+        # This is a subcategory - featured first within this specific subcategory
+        listings = Listing.objects.filter(
+            category_id=category.id,
+            status="active"
+        ).order_by("-is_featured", "-created_at")
     
     # Handle pagination
     from django.core.paginator import Paginator
@@ -388,6 +398,9 @@ def listing_detail_view(request, listing_id):
     listing.views += 1
     listing.save(update_fields=['views'])
     
+    # Get all images for this listing
+    listing_images = ListingImage.objects.filter(listing=listing).order_by('order', 'id')
+    
     # Get related listings
     related_listings = Listing.objects.filter(
         category=listing.category,
@@ -396,6 +409,7 @@ def listing_detail_view(request, listing_id):
     
     context = {
         "listing": listing,
+        "listing_images": listing_images,
         "related_listings": related_listings,
         "page_title": listing.title,
     }
@@ -671,7 +685,7 @@ def search_view(request):
     min_price = request.GET.get('min_price', '')
     max_price = request.GET.get('max_price', '')
     location = request.GET.get('location', '')
-    sort_by = request.GET.get('sort', '-created_at')
+    sort_by = request.GET.get('sort', '-featured')
     enable_distance = request.GET.get('enable_distance', False)
     distance = request.GET.get('distance', '10')
     user_lat = request.GET.get('user_lat', '')
@@ -1041,8 +1055,6 @@ def process_payment_view(request):
     """Process Stripe payment for credits from shopping cart."""
     if request.method == 'POST':
         import json
-        import stripe
-        from django.conf import settings
         
         try:
             # Get cart data from the form
@@ -1052,8 +1064,6 @@ def process_payment_view(request):
             if not cart_data:
                 messages.error(request, 'Coșul este gol.')
                 return redirect('marketplace:buy_credits')
-            
-            stripe.api_key = settings.STRIPE_SECRET_KEY
             
             # Calculate totals and prepare line items
             line_items = []
@@ -1073,7 +1083,7 @@ def process_payment_view(request):
                             'name': f'{credits} Credite Piata.ro',
                             'description': f'Pachet cu {credits} credite pentru promovarea anunțurilor',
                         },
-                        'unit_amount': price * 100,  # Convert to cents
+                        'unit_amount': int(price * 100),  # Convert to cents
                     },
                     'quantity': quantity,
                 })
@@ -1084,102 +1094,76 @@ def process_payment_view(request):
                 line_items=line_items,
                 mode='payment',
                 success_url=request.build_absolute_uri(reverse('marketplace:payment_success')) + '?session_id={CHECKOUT_SESSION_ID}',
-                cancel_url=request.build_absolute_uri(reverse('marketplace:buy_credits')),
+                cancel_url=request.build_absolute_uri(reverse('marketplace:home')),
                 metadata={
-                    'user_id': request.user.id,
-                    'total_credits': total_credits,
+                    'user_id': str(request.user.id),
+                    'total_credits': str(total_credits),
                     'cart_data': json.dumps(cart_data),
                     'currency': currency,
                 }
             )
             
-            # Create a Payment record before redirecting
-            try:
-                Payment.objects.create(
-                    user=request.user,
-                    payment_type='credits',
-                    amount=Decimal(str(sum(item['price_data']['unit_amount'] * item['quantity'] for item in line_items) / 100)), # Calculate total amount from line items
-                    currency=currency,
-                    status='pending',
-                    stripe_payment_intent_id=checkout_session.payment_intent, # Store the payment intent ID from the session
-                    metadata={'checkout_session_id': checkout_session.id, 'cart_data': cart_data}
-                )
-            except Exception as payment_exc:
-                # Log this error, but proceed with redirecting to Stripe for payment attempt
-                # Consider how to handle if payment record creation fails critically
-                print(f"Error creating Payment record: {payment_exc}")
-
-
             return redirect(checkout_session.url)
             
         except Exception as e:
             messages.error(request, f'Eroare la procesarea plății: {str(e)}')
-            return redirect('marketplace:buy_credits')
+            print(f"Stripe error: {str(e)}")  # Debug
+            return redirect('marketplace:home')
     
-    return redirect('marketplace:buy_credits')
+    return redirect('marketplace:home')
 
 
 @login_required
 def promote_listing_view(request, listing_id):
-    """Promote a listing to first page."""
+    """Promote a listing to first page in its subcategory for 0.5 credits."""
     try:
         listing = Listing.objects.get(id=listing_id, user=request.user)
     except Listing.DoesNotExist:
         messages.error(request, 'Anunțul nu a fost găsit sau nu îți aparține.')
         return redirect('marketplace:profile')
     
-    if request.method == 'POST':
-        form = PromoteListingForm(request.POST)
-        if form.is_valid():
-            duration_days = int(form.cleaned_data['duration_days'])
-            # Ensure credits_needed is a Decimal for precise calculations
-            credits_needed = Decimal(str(duration_days * 0.5))
-            
-            user_profile = request.user.profile
-            
-            if user_profile.credits_balance >= credits_needed:
-                if user_profile.deduct_credits(credits_needed): # Use the model's method
-                    # Create ListingBoost record
-                    # Assuming credits_cost (PositiveIntegerField) stores units of 0.5 credits.
-                    # So, if credits_needed is 3.5, credits_cost_int will be 7.
-                    credits_cost_int = int(credits_needed * 2)
-                    ListingBoost.objects.create(
-                        listing=listing,
-                        boost_type='featured',
-                        credits_cost=credits_cost_int, # Store as integer units of 0.5 credits
-                        duration_days=duration_days
-                    )
-
-                    # Mark listing as featured
-                    listing.is_featured = True
-                    listing.save()
-
-                    # Create CreditTransaction record
-                    # Assuming amount (IntegerField) also stores units of 0.5 credits.
-                    transaction_amount_int = int(credits_needed * 2)
-                    CreditTransaction.objects.create(
-                        user=request.user,
-                        transaction_type='spent',
-                        amount=-abs(transaction_amount_int), # Store as negative integer units of 0.5 credits
-                        description=f"Promovare anunț: {listing.title} ({duration_days} zile, cost {credits_needed} credite)",
-                        listing=listing
-                    )
-
-                    messages.success(request, f'Anunțul "{listing.title}" a fost promovat cu succes pentru {duration_days} zi(le)!')
-                    return redirect('marketplace:listing_detail', listing_id=listing.id)
-                else:
-                    # This case should ideally not be reached if credits_balance check is correct
-                    messages.error(request, 'A apărut o eroare la procesarea creditelor.')
-            else:
-                messages.error(request, 'Nu ai suficiente credite pentru această promovare.')
-                return redirect('marketplace:buy_credits') # Redirect to buy credits page
-    else:
-        form = PromoteListingForm(initial={'listing_id': listing.id}) # Pass actual listing_id
+    # Determine the target category (subcategory if exists, otherwise main category)
+    target_category = listing.category
+    category_name = target_category.name
     
-    return render(request, 'marketplace/promote_listing.html', {
-        'form': form,
+    if request.method == 'POST':
+        credits_needed = Decimal('0.5')  # Fixed cost: 0.5 credits
+        user_profile = request.user.profile
+        
+        if user_profile.credits_balance >= credits_needed:
+            # Deduct credits
+            user_profile.credits_balance -= credits_needed
+            user_profile.save()
+            
+            # Mark listing as featured (goes to top of its subcategory)
+            listing.is_featured = True
+            listing.save()
+            
+            # Create transaction record
+            CreditTransaction.objects.create(
+                user=request.user,
+                transaction_type='spent',
+                amount=credits_needed,
+                description=f"Promovare în categoria '{category_name}': {listing.title}",
+                listing=listing
+            )
+            
+            # TODO: Add auto-repost functionality later
+            messages.success(request, f'Anunțul "{listing.title}" a fost promovat! Acum apare primul în categoria "{category_name}".')
+            
+            return redirect('marketplace:listing_detail', listing_id=listing.id)
+        else:
+            messages.error(request, 'Nu ai suficiente credite. Ai nevoie de 0.5 credite pentru promovare.')
+            return redirect('marketplace:credits_dashboard')
+    
+    context = {
         'listing': listing,
-    })
+        'target_category': category_name,
+        'promotion_cost': Decimal('0.5'),
+        'user_credits': request.user.profile.credits_balance
+    }
+    
+    return render(request, 'marketplace/promote_listing.html', context)
 
 
 # Legal Pages Views

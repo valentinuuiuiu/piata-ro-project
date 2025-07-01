@@ -1,0 +1,271 @@
+{% load static %}
+
+<!-- Floating Credits Cart -->
+<div id="floating-credits-cart" class="fixed top-20 right-20 z-40">
+    <!-- Cart Toggle Button -->
+    <button id="credits-cart-toggle" class="w-14 h-14 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg flex items-center justify-center relative">
+        <i class="fas fa-coins text-xl"></i>
+        <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center hidden">0</span>
+    </button>
+    
+    <!-- Cart Window -->
+    <div id="credits-cart-window" class="absolute top-16 right-0 w-80 bg-white rounded-lg shadow-xl border hidden">
+        <!-- Header -->
+        <div class="bg-green-600 text-white p-3 rounded-t-lg flex justify-between items-center">
+            <span class="font-semibold">💰 Cumpără Credite</span>
+            <button id="credits-cart-close" class="text-white text-xl">&times;</button>
+        </div>
+        
+        <!-- Current Balance -->
+        <div class="p-3 bg-green-50 border-b">
+            <div class="text-sm text-gray-600">Credite disponibile:</div>
+            <div class="text-lg font-bold text-green-600">
+                {% if user.is_authenticated %}
+                    {{ user.profile.credits_balance|floatformat:1 }} credite
+                {% else %}
+                    0 credite
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Credit Packages -->
+        <div class="p-3 max-h-64 overflow-y-auto">
+            <div class="space-y-2">
+                <!-- 5 Credits Package -->
+                <div class="credit-package border rounded-lg p-3 hover:bg-gray-50 cursor-pointer" 
+                     data-credits="5" data-price-ron="25" data-price-eur="5">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="font-semibold">5 Credite</div>
+                            <div class="text-sm text-gray-500">Pentru 10 promovări</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-green-600">25 RON</div>
+                            <div class="text-xs text-gray-500">5 EUR</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 10 Credits Package -->
+                <div class="credit-package border rounded-lg p-3 hover:bg-gray-50 cursor-pointer" 
+                     data-credits="10" data-price-ron="45" data-price-eur="9">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="font-semibold">10 Credite</div>
+                            <div class="text-sm text-gray-500">Pentru 20 promovări</div>
+                            <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Economie 10%</span>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-green-600">45 RON</div>
+                            <div class="text-xs text-gray-500">9 EUR</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 25 Credits Package -->
+                <div class="credit-package border rounded-lg p-3 hover:bg-gray-50 cursor-pointer" 
+                     data-credits="25" data-price-ron="100" data-price-eur="20">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="font-semibold">25 Credite</div>
+                            <div class="text-sm text-gray-500">Pentru 50 promovări</div>
+                            <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Economie 20%</span>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-green-600">100 RON</div>
+                            <div class="text-xs text-gray-500">20 EUR</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 50 Credits Package -->
+                <div class="credit-package border rounded-lg p-3 hover:bg-gray-50 cursor-pointer" 
+                     data-credits="50" data-price-ron="175" data-price-eur="35">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="font-semibold">50 Credite</div>
+                            <div class="text-sm text-gray-500">Pentru 100 promovări</div>
+                            <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">Economie 30%</span>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-green-600">175 RON</div>
+                            <div class="text-xs text-gray-500">35 EUR</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Cart Items -->
+        <div id="cart-items" class="p-3 border-t hidden">
+            <div class="text-sm font-semibold mb-2">În coș:</div>
+            <div id="cart-list" class="space-y-1 text-sm"></div>
+        </div>
+        
+        <!-- Total and Checkout -->
+        <div id="cart-total" class="p-3 border-t bg-gray-50 hidden">
+            <div class="flex justify-between items-center mb-3">
+                <span class="font-semibold">Total:</span>
+                <div class="text-right">
+                    <div class="font-bold text-green-600" id="total-ron">0 RON</div>
+                    <div class="text-xs text-gray-500" id="total-eur">0 EUR</div>
+                </div>
+            </div>
+            <button id="checkout-btn" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors">
+                <i class="fas fa-credit-card mr-2"></i>Plătește cu Stripe
+            </button>
+        </div>
+        
+        <!-- Login Required -->
+        {% if not user.is_authenticated %}
+        <div class="p-3 border-t bg-yellow-50">
+            <div class="text-sm text-yellow-800 mb-2">
+                <i class="fas fa-info-circle mr-1"></i>
+                Trebuie să te conectezi pentru a cumpăra credite
+            </div>
+            <a href="{% url 'account_login' %}" class="w-full bg-primary text-white py-2 rounded-lg hover:bg-blue-700 transition-colors text-center block">
+                Conectează-te
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cartToggle = document.getElementById('credits-cart-toggle');
+    const cartWindow = document.getElementById('credits-cart-window');
+    const cartClose = document.getElementById('credits-cart-close');
+    const cartCount = document.getElementById('cart-count');
+    const cartItems = document.getElementById('cart-items');
+    const cartTotal = document.getElementById('cart-total');
+    const cartList = document.getElementById('cart-list');
+    const totalRon = document.getElementById('total-ron');
+    const totalEur = document.getElementById('total-eur');
+    const checkoutBtn = document.getElementById('checkout-btn');
+    
+    let cart = [];
+    
+    // Toggle cart
+    cartToggle.onclick = () => {
+        cartWindow.classList.toggle('hidden');
+    };
+    
+    cartClose.onclick = () => {
+        cartWindow.classList.add('hidden');
+    };
+    
+    // Add package to cart
+    document.querySelectorAll('.credit-package').forEach(package => {
+        package.onclick = () => {
+            if (!{{ user.is_authenticated|yesno:"true,false" }}) {
+                alert('Trebuie să te conectezi pentru a cumpăra credite!');
+                return;
+            }
+            
+            const credits = parseInt(package.dataset.credits);
+            const priceRon = parseInt(package.dataset.priceRon);
+            const priceEur = parseInt(package.dataset.priceEur);
+            
+            // Check if already in cart
+            const existing = cart.find(item => item.credits === credits);
+            if (existing) {
+                existing.quantity += 1;
+            } else {
+                cart.push({
+                    credits: credits,
+                    priceRon: priceRon,
+                    priceEur: priceEur,
+                    quantity: 1
+                });
+            }
+            
+            updateCartDisplay();
+            
+            // Visual feedback
+            package.style.backgroundColor = '#dcfce7';
+            setTimeout(() => {
+                package.style.backgroundColor = '';
+            }, 300);
+        };
+    });
+    
+    function updateCartDisplay() {
+        if (cart.length === 0) {
+            cartCount.classList.add('hidden');
+            cartItems.classList.add('hidden');
+            cartTotal.classList.add('hidden');
+            return;
+        }
+        
+        // Update count
+        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+        cartCount.textContent = totalItems;
+        cartCount.classList.remove('hidden');
+        
+        // Update cart list
+        cartList.innerHTML = cart.map(item => `
+            <div class="flex justify-between items-center">
+                <span>${item.quantity}x ${item.credits} credite</span>
+                <div class="flex items-center space-x-2">
+                    <span class="text-green-600 font-semibold">${item.priceRon * item.quantity} RON</span>
+                    <button onclick="removeFromCart(${item.credits})" class="text-red-500 hover:text-red-700">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+        
+        // Update totals
+        const totalRonValue = cart.reduce((sum, item) => sum + (item.priceRon * item.quantity), 0);
+        const totalEurValue = cart.reduce((sum, item) => sum + (item.priceEur * item.quantity), 0);
+        
+        totalRon.textContent = totalRonValue + ' RON';
+        totalEur.textContent = totalEurValue + ' EUR';
+        
+        cartItems.classList.remove('hidden');
+        cartTotal.classList.remove('hidden');
+    }
+    
+    // Remove from cart
+    window.removeFromCart = function(credits) {
+        cart = cart.filter(item => item.credits !== credits);
+        updateCartDisplay();
+    };
+    
+    // Checkout
+    checkoutBtn.onclick = () => {
+        if (cart.length === 0) return;
+        
+        // Create form and submit to payment processing
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{% url "marketplace:process_payment" %}';
+        
+        // Add CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+        
+        // Add cart data
+        const cartInput = document.createElement('input');
+        cartInput.type = 'hidden';
+        cartInput.name = 'cart_data';
+        cartInput.value = JSON.stringify(cart);
+        form.appendChild(cartInput);
+        
+        // Add currency
+        const currencyInput = document.createElement('input');
+        currencyInput.type = 'hidden';
+        currencyInput.name = 'currency';
+        currencyInput.value = 'ron';
+        form.appendChild(currencyInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    };
+});
+</script>

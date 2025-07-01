@@ -1,0 +1,6 @@
+<svg width="200" height="200">
+  <rect width="200" height="200" fill="#cd7f32"/>
+  <text x="100" y="120" font-size="24" text-anchor="middle" fill="white">
+    Bronze Tier
+  </text>
+</svg>

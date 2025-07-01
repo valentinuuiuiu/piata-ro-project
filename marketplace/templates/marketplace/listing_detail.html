@@ -32,19 +32,12 @@
         <div class="lg:col-span-2">
             <!-- Image Gallery -->
             <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-                {% if listing.images.all %}
+                {% if listing_images %}
                     <!-- Main Image Display -->
                     <div class="h-96 bg-gray-200 relative">
-                        {% if listing.main_image %}
+                        {% if listing_images.first %}
                         <img id="main-image" 
-                             src="{{ listing.main_image.image.url }}" 
-                             alt="{{ listing.title }}" 
-                             class="w-full h-full object-cover cursor-pointer"
-                             onclick="openImageModal(this.src)">
-                        {% else %}
-                        <!-- Fallback if no main image -->
-                        <img id="main-image" 
-                             src="{{ listing.images.first.image.url }}" 
+                             src="{{ listing_images.first.image.url }}" 
                              alt="{{ listing.title }}" 
                              class="w-full h-full object-cover cursor-pointer"
                              onclick="openImageModal(this.src)">
@@ -52,11 +45,11 @@
                         
                         <!-- Image Counter -->
                         <div class="absolute top-4 right-4 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-sm">
-                            <span id="current-image">1</span> / {{ listing.images.count }}
+                            <span id="current-image">1</span> / {{ listing_images.count }}
                         </div>
                         
                         <!-- Navigation Arrows (if multiple images) -->
-                        {% if listing.images.count > 1 %}
+                        {% if listing_images.count > 1 %}
                         <button onclick="previousImage()" class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 transition-all">
                             <i class="fas fa-chevron-left"></i>
                         </button>
@@ -67,10 +60,10 @@
                     </div>
                     
                     <!-- Thumbnail Gallery -->
-                    {% if listing.images.count > 1 %}
+                    {% if listing_images.count > 1 %}
                     <div class="p-4 bg-gray-50">
                         <div class="flex space-x-2 overflow-x-auto">
-                            {% for image in listing.images.all %}
+                            {% for image in listing_images %}
                             <img src="{{ image.image.url }}" 
                                  alt="Thumbnail {{ forloop.counter }}"
                                  class="w-20 h-20 object-cover rounded cursor-pointer border-2 {% if forloop.first %}border-primary{% else %}border-transparent{% endif %} hover:border-primary transition-all thumbnail"
@@ -130,7 +123,11 @@
                 <div class="mt-8 pt-6 border-t border-gray-200">
                     <div class="flex flex-wrap gap-4">
                         {% if user.is_authenticated %}
-                            {% if listing.user != user %}
+                            {% if listing.user == user %}
+                            <a href="{% url 'marketplace:promote_listing' listing.id %}" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                                <i class="fas fa-rocket mr-2"></i>Promovează anunțul (0.5 credite)
+                            </a>
+                            {% else %}
                             <button onclick="openMessageModal()" class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
                                 <i class="fas fa-envelope mr-2"></i>Trimite mesaj
                             </button>
@@ -666,8 +663,8 @@ function getNotificationIcon(type) {
 }
 
 // Image Gallery Functions
-let currentImageIndex = 1;
-const totalImages = {{ listing.images.count|add:"0" }};
+var currentImageIndex = 1;
+const totalImages = {{ listing_images.count|add:"0" }};
 
 function setMainImage(imageUrl, index, thumbnailElement) {
     const mainImage = document.getElementById('main-image');
@@ -759,8 +756,10 @@ function cleanupMap() {
 // Initialize map when page loads
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing page components');
-    cleanupMap(); // Ensure no existing map
-    initializeMap();
+    // Only initialize if map element exists and no map is already created
+    if (document.getElementById('listing-map') && !map) {
+        initializeMap();
+    }
     loadNearbyListings();
 });
 
@@ -779,6 +778,12 @@ function initializeMap() {
     const mapElement = document.getElementById('listing-map');
     if (!mapElement) {
         console.log('Map element not found');
+        return;
+    }
+    
+    // Check if map is already initialized by checking for leaflet container
+    if (mapElement.querySelector('.leaflet-container')) {
+        console.log('Map container already exists, skipping...');
         return;
     }
     
@@ -802,8 +807,16 @@ function initializeMap() {
             attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
         
+        // Create custom icon to avoid 404 errors
+        const customIcon = L.divIcon({
+            className: 'custom-marker',
+            html: '<i class="fas fa-map-marker-alt" style="color: #dc2626; font-size: 24px;"></i>',
+            iconSize: [24, 24],
+            iconAnchor: [12, 24]
+        });
+        
         // Add marker for the listing
-        const marker = L.marker([lat, lng]).addTo(map);
+        const marker = L.marker([lat, lng], {icon: customIcon}).addTo(map);
         marker.bindPopup(`<b>${title}</b><br>Locația anunțului`);
         
         // Disable map interaction by default to prevent scroll conflicts
@@ -986,6 +999,15 @@ function displayNearbyListings(listings) {
     height: 100%;
     color: #6b7280;
     font-size: 14px;
+}
+
+/* Custom marker styling */
+.custom-marker {
+    background: transparent !important;
+    border: none !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 </style>
 {% endblock %}

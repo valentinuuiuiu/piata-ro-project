@@ -154,8 +154,8 @@
             <a href="{% url 'marketplace:listing_detail' listing.id %}" class="block">
                 <!-- Image -->
                 <div class="h-48 bg-gray-200 relative">
-                    {% if listing.image %}
-                    <img src="{{ listing.image.url }}" alt="{{ listing.title }}" 
+                    {% if listing.main_image %}
+                    <img src="{{ listing.main_image.image.url }}" alt="{{ listing.title }}" 
                          class="w-full h-full object-cover">
                     {% else %}
                     <div class="w-full h-full flex items-center justify-center text-gray-400">
@@ -212,8 +212,8 @@
                 <div class="flex">
                     <!-- Image -->
                     <div class="w-48 h-32 bg-gray-200 relative flex-shrink-0">
-                        {% if listing.image %}
-                        <img src="{{ listing.image.url }}" alt="{{ listing.title }}" 
+                        {% if listing.main_image %}
+                        <img src="{{ listing.main_image.image.url }}" alt="{{ listing.title }}" 
                              class="w-full h-full object-cover">
                         {% else %}
                         <div class="w-full h-full flex items-center justify-center text-gray-400">
@@ -310,7 +310,7 @@
 {% block extra_js %}
 <script>
 // Location search functionality
-let locationTimeout;
+var locationTimeout;
 const locationInput = document.getElementById('location-search');
 const locationSuggestions = document.getElementById('location-suggestions');
 const distanceFilter = document.getElementById('distance-filter');
