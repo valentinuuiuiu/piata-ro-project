@@ -2,7 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from . import views
-from .deepseek_chat import deepseek_chat_view
+from .deepseek_chat_refactored import deepseek_chat_view
 
 app_name = 'marketplace'
 

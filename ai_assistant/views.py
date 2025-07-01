@@ -9,6 +9,7 @@ from django.contrib import admin
 from django.urls import path
 from .models import Conversation, Message
 from .mcp_orchestrator import MCPOrchestrator
+from marketplace.services.chat_service import marketplace_chat_service
 
 @staff_member_required
 def ai_assistant_view(request):

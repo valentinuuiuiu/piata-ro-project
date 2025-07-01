@@ -1,0 +1,65 @@
+# Azure Container Instances deployment for Piața.ro
+apiVersion: 2021-03-01
+location: westeurope
+name: piata-ro-marketplace
+properties:
+  containers:
+  - name: piata-web
+    properties:
+      image: piata-ro:latest
+      resources:
+        requests:
+          cpu: 1.0
+          memoryInGb: 2.0
+      ports:
+      - port: 8000
+        protocol: TCP
+      environmentVariables:
+      - name: DEBUG
+        value: 'False'
+      - name: DATABASE_URL
+        secureValue: 'postgresql://username:password@server.postgres.database.azure.com:5432/piata_ro'
+      - name: DEEPSEEK_API_KEY
+        secureValue: 'sk-a476a9683f274f449f081e9cb3a64fb8'
+      - name: SECRET_KEY
+        secureValue: 'your-secret-key-here'
+      - name: AZURE_STORAGE_ACCOUNT_NAME
+        value: 'your-storage-account'
+      - name: AZURE_STORAGE_ACCOUNT_KEY
+        secureValue: 'your-storage-key'
+      
+  - name: piata-mcp-agents
+    properties:
+      image: piata-ro:latest
+      command: ['python', 'archive/mcp-servers-20250630/simple_http_agents.py']
+      resources:
+        requests:
+          cpu: 0.5
+          memoryInGb: 1.0
+      ports:
+      - port: 8001
+      - port: 8002
+      - port: 8003
+      environmentVariables:
+      - name: DJANGO_SETTINGS_MODULE
+        value: 'piata_ro.settings'
+        
+  osType: Linux
+  restartPolicy: Always
+  ipAddress:
+    type: Public
+    ports:
+    - protocol: TCP
+      port: 80
+    - protocol: TCP
+      port: 8000
+    - protocol: TCP
+      port: 8001
+    - protocol: TCP
+      port: 8002
+    - protocol: TCP
+      port: 8003
+    dnsNameLabel: piata-ro-marketplace
+tags:
+  Environment: Production
+  Application: Piata.ro

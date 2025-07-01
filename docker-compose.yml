@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: piata_ro
+      POSTGRES_USER: piata_user
+      POSTGRES_PASSWORD: piata_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=False
+      - DATABASE_URL=postgresql://piata_user:piata_password@db:5432/piata_ro
+      - REDIS_URL=redis://redis:6379/0
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - SECRET_KEY=${SECRET_KEY}
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./media:/app/media
+      - ./staticfiles:/app/staticfiles
+
+  mcp-agents:
+    build: .
+    command: python archive/mcp-servers-20250630/simple_http_agents.py
+    ports:
+      - "8001:8001"
+      - "8002:8002" 
+      - "8003:8003"
+    environment:
+      - DJANGO_SETTINGS_MODULE=piata_ro.settings
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

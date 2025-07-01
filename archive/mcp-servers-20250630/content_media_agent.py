@@ -25,6 +25,9 @@ def handle_health_check(params):
     """Native MCP health check handler"""
     return {"status": "healthy", "service": "content-media-agent"}
 
+# Initialize FastMCP server for content processing
+mcp = FastMCP("Content & Media Processing Agent - Piața.ro")
+
 # Register MCP health check handler
 mcp.register_handler("health_check", handle_health_check)
 
