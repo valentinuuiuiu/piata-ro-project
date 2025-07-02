@@ -16,5 +16,6 @@ urlpatterns = [
     path("locations/search/", views.search_locations, name="search_locations"),
     path("locations/popular/", views.get_popular_locations, name="popular_locations"),
     path("locations/stats/", views.get_location_stats, name="location_stats"),
+    path("locations/analytics/", views.get_location_analytics, name="location_analytics"),
     path("listings/populate-coordinates/", views.populate_listing_coordinates, name="populate_coordinates"),
 ]

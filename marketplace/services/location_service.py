@@ -69,8 +69,58 @@ class LocationService:
         current_time = time.time()
         time_since_last = current_time - self._last_request_time
         if time_since_last < self.RATE_LIMIT_DELAY:
-            time.sleep(self.RATE_LIMIT_DELAY - time_since_last)
+            sleep_time = self.RATE_LIMIT_DELAY - time_since_last
+            logger.debug(f"Rate limiting: sleeping for {sleep_time:.2f}s")
+            time.sleep(sleep_time)
         self._last_request_time = time.time()
+    
+    def _make_request(self, endpoint: str, params: Dict) -> Optional[Dict]:
+        """Make a rate-limited request to Nominatim API with analytics"""
+        start_time = time.time()
+        success = False
+        
+        try:
+            self._ensure_rate_limit()
+            
+            headers = {'User-Agent': self.USER_AGENT}
+            response = requests.get(f"{self.BASE_URL}/{endpoint}", params=params, headers=headers, timeout=10)
+            
+            if response.status_code == 429:  # Rate limited
+                logger.warning("Rate limit hit, backing off")
+                from .location_analytics import LocationAnalytics
+                LocationAnalytics.log_rate_limit_hit()
+                time.sleep(2)  # Back off for 2 seconds
+                return None
+            
+            response.raise_for_status()
+            success = True
+            result = response.json()
+            
+            response_time = time.time() - start_time
+            
+            # Log analytics
+            try:
+                from .location_analytics import LocationAnalytics
+                query = params.get('q', f"lat:{params.get('lat', 'N/A')},lon:{params.get('lon', 'N/A')}")
+                LocationAnalytics.log_geocoding_request(query, success, response_time)
+            except ImportError:
+                pass  # Analytics not available
+            
+            return result
+            
+        except Exception as e:
+            response_time = time.time() - start_time
+            logger.error(f"Nominatim API error for {endpoint}: {e}")
+            
+            # Log failed request
+            try:
+                from .location_analytics import LocationAnalytics
+                query = params.get('q', f"lat:{params.get('lat', 'N/A')},lon:{params.get('lon', 'N/A')}")
+                LocationAnalytics.log_geocoding_request(query, False, response_time)
+            except ImportError:
+                pass
+            
+            return None
     
     def normalize_location_name(self, location: str) -> str:
         """Normalize location name for consistency"""
@@ -109,8 +159,8 @@ class LocationService:
     
 
     
-    async def geocode_async(self, address: str, city: Optional[str] = None, country: str = "România") -> Optional[LocationResult]:
-        """Async geocoding using OpenStreetMap Nominatim API"""
+    def geocode_sync(self, address: str, city: Optional[str] = None, country: str = "România") -> Optional[LocationResult]:
+        """Synchronous geocoding using OpenStreetMap Nominatim API"""
         if not address and not city:
             return None
         
@@ -120,63 +170,85 @@ class LocationService:
         if cached_result:
             return LocationResult(**cached_result)
         
-        # Build query
-        query_parts = []
-        if address:
-            query_parts.append(address)
-        if city:
-            query_parts.append(city)
-        query_parts.append(country)
-        query = ", ".join(query_parts)
+        # Build query - try multiple variations
+        queries = []
+        if address and city:
+            queries.append(f"{address}, {city}, {country}")
+            queries.append(f"{city}, {country}")
+        elif address:
+            queries.append(f"{address}, {country}")
+        elif city:
+            queries.append(f"{city}, {country}")
         
-        params = {
-            'q': query,
-            'format': 'json',
-            'limit': 1,
-            'countrycodes': 'ro' if country.lower() in ['romania', 'românia'] else None,
-            'addressdetails': 1
-        }
-        
-        try:
-            async with aiohttp.ClientSession() as session:
+        for query in queries:
+            try:
+                self._ensure_rate_limit()
+                
+                params = {
+                    'q': query,
+                    'format': 'json',
+                    'limit': 1,
+                    'countrycodes': 'ro',
+                    'addressdetails': 1
+                }
+                
                 headers = {'User-Agent': self.USER_AGENT}
-                async with session.get(f"{self.BASE_URL}/search", params=params, headers=headers) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        if data:
-                            result = data[0]
-                            address_info = result.get('address', {})
-                            
-                            location_result = LocationResult(
-                                name=result.get('display_name', query),
-                                latitude=float(result['lat']),
-                                longitude=float(result['lon']),
-                                formatted_address=result.get('display_name', query),
-                                city=address_info.get('city') or address_info.get('town') or city or "",
-                                county=address_info.get('county', ''),
-                                postal_code=address_info.get('postcode', ''),
-                                country=address_info.get('country', country),
-                                location_type=result.get('type', 'location')
-                            )
-                            
-                            # Cache successful result
-                            cache.set(cache_key, location_result.__dict__, 86400)
-                            return location_result
+                response = requests.get(f"{self.BASE_URL}/search", params=params, headers=headers, timeout=10)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if data:
+                        result = data[0]
+                        address_info = result.get('address', {})
+                        
+                        location_result = LocationResult(
+                            name=result.get('display_name', query),
+                            latitude=float(result['lat']),
+                            longitude=float(result['lon']),
+                            formatted_address=result.get('display_name', query),
+                            city=address_info.get('city') or address_info.get('town') or city or "",
+                            county=address_info.get('county', ''),
+                            postal_code=address_info.get('postcode', ''),
+                            country=address_info.get('country', country),
+                            location_type=result.get('type', 'location')
+                        )
+                        
+                        # Cache successful result
+                        cache.set(cache_key, location_result.__dict__, 86400)
+                        logger.info(f"✅ Geocoded: {query} -> {location_result.latitude}, {location_result.longitude}")
+                        return location_result
+                        
+            except Exception as e:
+                logger.error(f"Geocoding failed for '{query}': {e}")
+                continue
         
-        except Exception as e:
-            logger.error(f"Async geocoding failed for '{query}': {e}")
+        # Fallback to known cities
+        if city:
+            normalized_city = self.normalize_location_name(city)
+            coords = self.get_coordinates_from_city(normalized_city)
+            if coords:
+                location_result = LocationResult(
+                    name=f"{normalized_city}, România",
+                    latitude=coords[0],
+                    longitude=coords[1],
+                    formatted_address=f"{normalized_city}, România",
+                    city=normalized_city,
+                    country="România",
+                    location_type="city"
+                )
+                cache.set(cache_key, location_result.__dict__, 86400)
+                logger.info(f"✅ Fallback city: {normalized_city} -> {coords[0]}, {coords[1]}")
+                return location_result
         
         return None
     
+    async def geocode_async(self, address: str, city: Optional[str] = None, country: str = "România") -> Optional[LocationResult]:
+        """Async wrapper for sync geocoding"""
+        return self.geocode_sync(address, city, country)
+    
     def geocode(self, address: str, city: Optional[str] = None, country: str = "România") -> Optional[LocationResult]:
-        """Sync geocoding wrapper"""
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        
-        return loop.run_until_complete(self.geocode_async(address, city, country))
+        """Main geocoding method"""
+        return self.geocode_sync(address, city, country)
     
     def reverse_geocode(self, latitude: float, longitude: float) -> Optional[LocationResult]:
         """Reverse geocoding using OpenStreetMap Nominatim API"""
@@ -315,24 +387,52 @@ class LocationService:
         if listing.latitude and listing.longitude:
             return True  # Already has coordinates
         
-        # Try to geocode based on available information
-        address = listing.address or listing.location
-        city = listing.city or listing.location
+        # Extract city from location string
+        location_parts = listing.location.split(',') if listing.location else []
+        city = None
+        address = listing.location
         
-        location_result = self.geocode(address, city)
+        # Try to identify city from location string
+        for part in location_parts:
+            part = part.strip()
+            normalized = self.normalize_location_name(part)
+            if normalized in self.ROMANIA_CITIES:
+                city = normalized
+                break
+        
+        # Try geocoding with different strategies
+        location_result = None
+        
+        # Strategy 1: Full location string
+        if listing.location:
+            location_result = self.geocode(listing.location)
+        
+        # Strategy 2: Just the city if found
+        if not location_result and city:
+            location_result = self.geocode(city)
+        
+        # Strategy 3: Try each part of location
+        if not location_result and location_parts:
+            for part in location_parts:
+                part = part.strip()
+                if len(part) > 2:  # Skip very short parts
+                    location_result = self.geocode(part)
+                    if location_result:
+                        break
+        
         if location_result:
+            from decimal import Decimal
             listing.latitude = Decimal(str(location_result.latitude))
             listing.longitude = Decimal(str(location_result.longitude))
             if not listing.city and location_result.city:
                 listing.city = location_result.city
             if not listing.county and location_result.county:
                 listing.county = location_result.county
-            if not listing.postal_code and location_result.postal_code:
-                listing.postal_code = location_result.postal_code
-            listing.location_verified = True
             listing.save()
+            logger.info(f"✅ Populated coordinates for {listing.title}: {listing.latitude}, {listing.longitude}")
             return True
         
+        logger.warning(f"❌ Failed to populate coordinates for {listing.title} - {listing.location}")
         return False
 
 # Global instance

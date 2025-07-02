@@ -665,6 +665,12 @@ function getNotificationIcon(type) {
 // Image Gallery Functions
 var currentImageIndex = 1;
 const totalImages = {{ listing_images.count|add:"0" }};
+const imageUrls = [
+    {% for image in listing_images %}
+    '{{ image.image.url }}'{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+console.log('Gallery initialized with', totalImages, 'images:', imageUrls);
 
 function setMainImage(imageUrl, index, thumbnailElement) {
     const mainImage = document.getElementById('main-image');
@@ -687,27 +693,33 @@ function setMainImage(imageUrl, index, thumbnailElement) {
 }
 
 function nextImage() {
+    if (totalImages <= 1) return;
+    
     if (currentImageIndex < totalImages) {
         currentImageIndex++;
     } else {
         currentImageIndex = 1;
     }
     
+    const imageUrl = imageUrls[currentImageIndex - 1];
     const thumbnails = document.querySelectorAll('.thumbnail');
     const nextThumbnail = thumbnails[currentImageIndex - 1];
-    setMainImage(nextThumbnail.src, currentImageIndex, nextThumbnail);
+    setMainImage(imageUrl, currentImageIndex, nextThumbnail);
 }
 
 function previousImage() {
+    if (totalImages <= 1) return;
+    
     if (currentImageIndex > 1) {
         currentImageIndex--;
     } else {
         currentImageIndex = totalImages;
     }
     
+    const imageUrl = imageUrls[currentImageIndex - 1];
     const thumbnails = document.querySelectorAll('.thumbnail');
     const prevThumbnail = thumbnails[currentImageIndex - 1];
-    setMainImage(prevThumbnail.src, currentImageIndex, prevThumbnail);
+    setMainImage(imageUrl, currentImageIndex, prevThumbnail);
 }
 
 function openImageModal(imageSrc) {

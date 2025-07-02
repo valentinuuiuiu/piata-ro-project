@@ -317,8 +317,26 @@ def search_locations(request):
             status=status.HTTP_400_BAD_REQUEST
         )
     
+    import time
+    start_time = time.time()
+    
     results = LocationService.search_locations(query, limit)
-    return Response({'results': results})
+    
+    response_time = time.time() - start_time
+    
+    # Log search analytics
+    try:
+        from marketplace.services.location_analytics import LocationAnalytics
+        LocationAnalytics.log_location_search(query, len(results), response_time)
+    except ImportError:
+        pass
+    
+    return Response({
+        'results': results,
+        'query': query,
+        'count': len(results),
+        'response_time': round(response_time, 3)
+    })
 
 
 @api_view(['GET'])
@@ -388,3 +406,43 @@ def get_location_stats(request):
         'cities': list(city_stats),
         'counties': list(county_stats)
     })
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def get_location_analytics(request):
+    """Get location service analytics - admin only"""
+    if not request.user.is_staff:
+        return Response(
+            {"error": "Admin access required"},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    try:
+        from marketplace.services.location_analytics import LocationAnalytics
+        
+        period = request.GET.get('period', 'daily')  # daily, weekly
+        
+        if period == 'weekly':
+            stats = LocationAnalytics.get_weekly_stats()
+        else:
+            date = request.GET.get('date')
+            stats = LocationAnalytics.get_daily_stats(date)
+        
+        health = LocationAnalytics.get_service_health()
+        popular = LocationAnalytics.get_popular_locations()
+        
+        return Response({
+            'period': period,
+            'stats': stats,
+            'health': health,
+            'popular_locations': popular
+        })
+        
+    except ImportError:
+        return Response({
+            'error': 'Analytics not available',
+            'stats': {},
+            'health': {'status': 'unknown'},
+            'popular_locations': []
+        })

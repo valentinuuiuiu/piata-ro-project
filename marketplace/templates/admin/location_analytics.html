@@ -1,0 +1,386 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Location Service Analytics - {{ block.super }}{% endblock %}
+
+{% block extrahead %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.analytics-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.analytics-card h3 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #417690;
+    padding-bottom: 10px;
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.status-healthy { background-color: #28a745; }
+.status-degraded { background-color: #ffc107; }
+.status-unhealthy { background-color: #dc3545; }
+.status-unknown { background-color: #6c757d; }
+
+.metric {
+    display: flex;
+    justify-content: space-between;
+    margin: 10px 0;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.metric-value {
+    font-weight: bold;
+    color: #417690;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.error {
+    color: #dc3545;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+.refresh-btn {
+    background: #417690;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 10px 0;
+}
+
+.refresh-btn:hover {
+    background: #2c5aa0;
+}
+
+table.popular-locations {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table.popular-locations th,
+table.popular-locations td {
+    text-align: left;
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+}
+
+table.popular-locations th {
+    background: #f8f9fa;
+    font-weight: bold;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>📍 Location Service Analytics</h1>
+
+<div class="analytics-controls">
+    <button class="refresh-btn" onclick="refreshData()">🔄 Refresh Data</button>
+    <select id="period-selector" onchange="changePeriod()">
+        <option value="daily">Daily Stats</option>
+        <option value="weekly">Weekly Stats</option>
+    </select>
+</div>
+
+<div id="loading" class="loading">
+    <p>🔄 Loading analytics data...</p>
+</div>
+
+<div id="error" class="error" style="display: none;"></div>
+
+<div id="analytics-content" style="display: none;">
+    <div class="analytics-grid">
+        <!-- Service Health Card -->
+        <div class="analytics-card">
+            <h3>🏥 Service Health</h3>
+            <div id="health-status">
+                <div class="metric">
+                    <span>Status:</span>
+                    <span class="metric-value" id="status-text">
+                        <span class="status-indicator" id="status-indicator"></span>
+                        <span id="status-value">Unknown</span>
+                    </span>
+                </div>
+                <div class="metric">
+                    <span>Success Rate:</span>
+                    <span class="metric-value" id="success-rate">N/A</span>
+                </div>
+                <div class="metric">
+                    <span>Avg Response Time:</span>
+                    <span class="metric-value" id="response-time">N/A</span>
+                </div>
+                <div class="metric">
+                    <span>Requests Today:</span>
+                    <span class="metric-value" id="requests-today">N/A</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Geocoding Stats Card -->
+        <div class="analytics-card">
+            <h3>🌍 Geocoding Statistics</h3>
+            <div id="geocoding-stats">
+                <div class="metric">
+                    <span>Total Requests:</span>
+                    <span class="metric-value" id="total-requests">N/A</span>
+                </div>
+                <div class="metric">
+                    <span>Successful:</span>
+                    <span class="metric-value" id="successful-requests">N/A</span>
+                </div>
+                <div class="metric">
+                    <span>Failed:</span>
+                    <span class="metric-value" id="failed-requests">N/A</span>
+                </div>
+                <div class="metric">
+                    <span>Avg Response Time:</span>
+                    <span class="metric-value" id="avg-response-time">N/A</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Stats Card -->
+        <div class="analytics-card">
+            <h3>🔍 Search Statistics</h3>
+            <div id="search-stats">
+                <div class="metric">
+                    <span>Total Searches:</span>
+                    <span class="metric-value" id="total-searches">N/A</span>
+                </div>
+                <div class="metric">
+                    <span>Avg Results:</span>
+                    <span class="metric-value" id="avg-results">N/A</span>
+                </div>
+                <div class="metric">
+                    <span>Avg Response Time:</span>
+                    <span class="metric-value" id="search-response-time">N/A</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Popular Locations Card -->
+        <div class="analytics-card">
+            <h3>🔥 Popular Locations</h3>
+            <div id="popular-locations">
+                <table class="popular-locations">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Location</th>
+                            <th>Searches</th>
+                        </tr>
+                    </thead>
+                    <tbody id="popular-locations-body">
+                        <tr>
+                            <td colspan="3">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="analytics-card">
+        <h3>📊 Response Time Trend</h3>
+        <canvas id="responseTimeChart" width="400" height="200"></canvas>
+    </div>
+</div>
+
+<script>
+let currentPeriod = 'daily';
+let chartInstance = null;
+
+function showError(message) {
+    const errorDiv = document.getElementById('error');
+    errorDiv.textContent = '❌ Error: ' + message;
+    errorDiv.style.display = 'block';
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('analytics-content').style.display = 'none';
+}
+
+function hideError() {
+    document.getElementById('error').style.display = 'none';
+}
+
+function showLoading() {
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('analytics-content').style.display = 'none';
+    hideError();
+}
+
+function showContent() {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('analytics-content').style.display = 'block';
+    hideError();
+}
+
+function updateHealthStatus(health) {
+    const statusIndicator = document.getElementById('status-indicator');
+    const statusValue = document.getElementById('status-value');
+    const successRate = document.getElementById('success-rate');
+    const responseTime = document.getElementById('response-time');
+    const requestsToday = document.getElementById('requests-today');
+
+    statusIndicator.className = 'status-indicator status-' + health.status;
+    statusValue.textContent = health.status.toUpperCase();
+    successRate.textContent = health.success_rate + '%';
+    responseTime.textContent = health.avg_response_time + 's';
+    requestsToday.textContent = health.total_requests_today;
+}
+
+function updateGeocodingStats(geocoding) {
+    document.getElementById('total-requests').textContent = geocoding.total_requests || 0;
+    document.getElementById('successful-requests').textContent = geocoding.successful_requests || 0;
+    document.getElementById('failed-requests').textContent = geocoding.failed_requests || 0;
+    document.getElementById('avg-response-time').textContent = (geocoding.avg_response_time || 0) + 's';
+}
+
+function updateSearchStats(search) {
+    document.getElementById('total-searches').textContent = search.total_searches || 0;
+    document.getElementById('avg-results').textContent = (search.avg_results || 0).toFixed(1);
+    document.getElementById('search-response-time').textContent = (search.avg_response_time || 0) + 's';
+}
+
+function updatePopularLocations(popular) {
+    const tbody = document.getElementById('popular-locations-body');
+    
+    if (!popular || popular.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3">No data available</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = popular.slice(0, 10).map((location, index) => `
+        <tr>
+            <td>${index + 1}</td>
+            <td>${location.query}</td>
+            <td>${location.search_count}</td>
+        </tr>
+    `).join('');
+}
+
+function updateChart(stats) {
+    const ctx = document.getElementById('responseTimeChart').getContext('2d');
+    
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
+
+    let labels, data;
+
+    if (currentPeriod === 'weekly' && Array.isArray(stats)) {
+        labels = stats.map(day => day.date);
+        data = stats.map(day => day.geocoding.avg_response_time || 0);
+    } else {
+        labels = ['Today'];
+        data = [stats.geocoding ? stats.geocoding.avg_response_time || 0 : 0];
+    }
+
+    chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Average Response Time (seconds)',
+                data: data,
+                borderColor: '#417690',
+                backgroundColor: 'rgba(65, 118, 144, 0.1)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Response Time (seconds)'
+                    }
+                }
+            }
+        }
+    });
+}
+
+function loadAnalytics() {
+    showLoading();
+    
+    fetch(`location-health/?period=${currentPeriod}`)
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to load analytics');
+            }
+
+            updateHealthStatus(data.health);
+            updatePopularLocations(data.popular_locations);
+
+            if (currentPeriod === 'weekly') {
+                // For weekly data, use the latest day's stats for current metrics
+                const latestDay = data.stats[data.stats.length - 1];
+                updateGeocodingStats(latestDay.geocoding);
+                updateSearchStats(latestDay.search);
+            } else {
+                updateGeocodingStats(data.stats.geocoding);
+                updateSearchStats(data.stats.search);
+            }
+
+            updateChart(data.stats);
+            showContent();
+        })
+        .catch(error => {
+            showError(error.message);
+        });
+}
+
+function refreshData() {
+    loadAnalytics();
+}
+
+function changePeriod() {
+    currentPeriod = document.getElementById('period-selector').value;
+    loadAnalytics();
+}
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadAnalytics();
+    
+    // Auto-refresh every 5 minutes
+    setInterval(loadAnalytics, 5 * 60 * 1000);
+});
+</script>
+{% endblock %}

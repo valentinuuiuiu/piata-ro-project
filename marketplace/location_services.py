@@ -19,18 +19,36 @@ logger = logging.getLogger(__name__)
 
 @sleep_and_retry
 @limits(calls=NOMINATIM_RATE_LIMIT, period=1)
-def call_nominatim(params):
+def call_nominatim(params, endpoint="search"):
+    """
+    Call Nominatim API with proper rate limiting and error handling
+    """
     headers = {
-        'User-Agent': 'PiataRo/1.0 (marketplace application)'
+        'User-Agent': 'PiataRo/2.0 (marketplace@piata.ro; support@piata.ro)'
     }
-    response = requests.get(
-        "https://nominatim.openstreetmap.org/search",
-        params=params,
-        headers=headers,
-        timeout=5
-    )
-    response.raise_for_status()
-    return response.json()
+    
+    base_url = "https://nominatim.openstreetmap.org"
+    url = f"{base_url}/{endpoint}"
+    
+    try:
+        response = requests.get(
+            url,
+            params=params,
+            headers=headers,
+            timeout=10
+        )
+        response.raise_for_status()
+        
+        # Log successful requests for monitoring
+        logger.debug(f"Nominatim API call successful: {endpoint} - {params.get('q', params.get('lat', 'N/A'))}")
+        
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Nominatim API error for {endpoint}: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error calling Nominatim: {e}")
+        raise
 
 
 class LocationService:
@@ -101,7 +119,7 @@ class LocationService:
     @staticmethod
     def geocode_address(address: str, city: Optional[str] = None, country: str = "România") -> Optional[Dict]:
         """
-        Geocode an address using OpenStreetMap Nominatim API (free)
+        Enhanced geocoding using OpenStreetMap Nominatim API with multiple query strategies
         Returns dict with latitude, longitude, and formatted address
         """
         if not address and not city:
@@ -112,66 +130,92 @@ class LocationService:
         cached_result = cache.get(cache_key)
         if cached_result:
             return cached_result
-        # Use OpenStreetMap Nominatim API with rate limiting
 
-        query_parts = []
-        def call_nominatim(params):
-            headers = {
-                'User-Agent': 'PiataRo/1.0 (marketplace application)'
-            }
-            response = requests.get(
-                "https://nominatim.openstreetmap.org/search",
-                params=params,
-                headers=headers,
-                timeout=5
-            )
-            response.raise_for_status()
-            return response.json()
+        # Try multiple query strategies for better results
+        query_strategies = []
+        
+        if address and city:
+            # Strategy 1: Full address with city
+            query_strategies.append(f"{address}, {city}, {country}")
+            # Strategy 2: Just city (fallback)
+            query_strategies.append(f"{city}, {country}")
+            # Strategy 3: Address without city
+            query_strategies.append(f"{address}, {country}")
+        elif address:
+            # Strategy 1: Address only
+            query_strategies.append(f"{address}, {country}")
+            # Strategy 2: Try to extract city from address
+            address_parts = address.split(',')
+            if len(address_parts) > 1:
+                possible_city = address_parts[-1].strip()
+                query_strategies.append(f"{possible_city}, {country}")
+        elif city:
+            # Strategy 1: City only
+            query_strategies.append(f"{city}, {country}")
 
-        try:
-            query_parts = []
-            if address:
-                query_parts.append(address)
-            if city:
-                query_parts.append(city)
-            query_parts.append(country)
-            
-            query = ", ".join(query_parts)
-            
-            params = {
-                'q': query,
-                'format': 'json',
-                'limit': 1,
-                'countrycodes': 'ro' if country.lower() in ['romania', 'românia'] else None,
-                'addressdetails': 1
-            }
-            
-            data = call_nominatim(params)
-            if data:
-                result = data[0]
-                geocoded = {
-                    'latitude': float(result['lat']),
-                    'longitude': float(result['lon']),
-                    'formatted_address': result.get('display_name', query),
-                    'city': result.get('address', {}).get('city') or city,
-                    'country': result.get('address', {}).get('country') or country
+        for query in query_strategies:
+            try:
+                params = {
+                    'q': query,
+                    'format': 'json',
+                    'limit': 3,  # Get top 3 results for better accuracy
+                    'countrycodes': 'ro' if country.lower() in ['romania', 'românia'] else None,
+                    'addressdetails': 1,
+                    'extratags': 1  # Get additional information
                 }
                 
-                # Cache successful result
-                cache.set(cache_key, geocoded, 86400)
-                return geocoded
-                
-        except Exception as e:
-            logger.error(f"Geocoding failed for '{query}': {e}")
+                data = call_nominatim(params, "search")
+                if data:
+                    # Select best result based on ranking and type
+                    best_result = None
+                    for result in data:
+                        # Prefer results with higher importance score
+                        importance = float(result.get('importance', 0))
+                        if not best_result or importance > float(best_result.get('importance', 0)):
+                            best_result = result
+                    
+                    if best_result:
+                        address_info = best_result.get('address', {})
+                        geocoded = {
+                            'latitude': float(best_result['lat']),
+                            'longitude': float(best_result['lon']),
+                            'formatted_address': best_result.get('display_name', query),
+                            'city': (
+                                address_info.get('city') or 
+                                address_info.get('town') or 
+                                address_info.get('village') or 
+                                city
+                            ),
+                            'county': address_info.get('county', ''),
+                            'country': address_info.get('country', country),
+                            'postal_code': address_info.get('postcode', ''),
+                            'importance': float(best_result.get('importance', 0)),
+                            'place_type': best_result.get('type', 'unknown')
+                        }
+                        
+                        # Cache successful result
+                        cache.set(cache_key, geocoded, 86400)
+                        logger.info(f"✅ Geocoded: {query} -> {geocoded['latitude']}, {geocoded['longitude']} (importance: {geocoded['importance']})")
+                        return geocoded
+                        
+            except Exception as e:
+                logger.warning(f"Geocoding attempt failed for '{query}': {e}")
+                continue
         
+        logger.warning(f"❌ All geocoding strategies failed for address: {address}, city: {city}")
         return None
     
     @staticmethod
     def reverse_geocode(latitude: float, longitude: float) -> Optional[Dict]:
         """
-        Reverse geocode coordinates to get address information
+        Enhanced reverse geocode coordinates to get address information
         """
-        cache_key = f"reverse_geocode_{latitude}_{longitude}"
+        # Validate coordinates
+        if not (-90 <= latitude <= 90) or not (-180 <= longitude <= 180):
+            logger.error(f"Invalid coordinates: lat={latitude}, lng={longitude}")
+            return None
+        
+        cache_key = f"reverse_geocode_{latitude:.6f}_{longitude:.6f}"
         cached_result = cache.get(cache_key)
         if cached_result:
             return cached_result
@@ -181,28 +225,54 @@ class LocationService:
                 'lat': latitude,
                 'lon': longitude,
                 'format': 'json',
-                'addressdetails': 1
+                'addressdetails': 1,
+                'extratags': 1,
+                'zoom': 18  # High zoom for detailed results
             }
             
-            data = call_nominatim(params)
+            data = call_nominatim(params, "reverse")
             if data and 'address' in data:
                 address_info = data['address']
+                
+                # Extract address components with fallbacks
+                road = address_info.get('road', '')
+                house_number = address_info.get('house_number', '')
+                address = f"{road} {house_number}".strip() if road else ''
+                
+                city = (
+                    address_info.get('city') or 
+                    address_info.get('town') or 
+                    address_info.get('village') or 
+                    address_info.get('municipality') or
+                    address_info.get('suburb', '')
+                )
+                
                 result = {
                     'formatted_address': data.get('display_name', ''),
-                    'address': address_info.get('road', '') or address_info.get('house_number', ''),
-                    'city': (
-                        address_info.get('city') or 
-                        address_info.get('town') or 
-                        address_info.get('village') or 
-                        address_info.get('municipality', '')
-                    ),
+                    'address': address,
+                    'road': road,
+                    'house_number': house_number,
+                    'city': city,
                     'county': address_info.get('county', ''),
+                    'state': address_info.get('state', ''),
                     'postal_code': address_info.get('postcode', ''),
-                    'country': address_info.get('country', 'România')
+                    'country': address_info.get('country', 'România'),
+                    'country_code': address_info.get('country_code', 'ro'),
+                    'neighbourhood': address_info.get('neighbourhood', ''),
+                    'suburb': address_info.get('suburb', ''),
+                    'place_type': data.get('type', 'unknown'),
+                    'osm_id': data.get('osm_id', ''),
+                    'osm_type': data.get('osm_type', ''),
+                    'licence': data.get('licence', ''),
+                    'coordinates': {
+                        'latitude': latitude,
+                        'longitude': longitude
+                    }
                 }
                 
                 # Cache successful result
                 cache.set(cache_key, result, 86400)
+                logger.info(f"✅ Reverse geocoded: {latitude}, {longitude} -> {city}")
                 return result
                 
         except Exception as e:
@@ -212,60 +282,148 @@ class LocationService:
     
     @staticmethod
     def search_locations(query: str, limit: int = 10) -> List[Dict]:
-        """Search for locations matching a query"""
+        """Enhanced location search with fuzzy matching and multiple strategies"""
+        if not query or len(query.strip()) < 2:
+            return []
+            
         cache_key = f"location_search_{query}_{limit}".replace(" ", "_").lower()
         cached_result = cache.get(cache_key)
         if cached_result:
             return cached_result
         
         results = []
+        query_lower = query.lower().strip()
         
-        # First, search in our known Romanian cities
-        query_lower = query.lower()
+        # Strategy 1: Exact and fuzzy matching in known Romanian cities
+        def city_match_score(city_name, query):
+            """Calculate match score for city names"""
+            city_lower = city_name.lower()
+            if city_lower == query_lower:
+                return 100  # Exact match
+            elif city_lower.startswith(query_lower):
+                return 90   # Starts with query
+            elif query_lower in city_lower:
+                return 80   # Contains query
+            else:
+                # Fuzzy matching for diacritics and common variations
+                normalized_city = LocationService.normalize_location_name(city_name).lower()
+                normalized_query = LocationService.normalize_location_name(query).lower()
+                
+                if normalized_city == normalized_query:
+                    return 95
+                elif normalized_city.startswith(normalized_query):
+                    return 85
+                elif normalized_query in normalized_city:
+                    return 75
+            return 0
+        
+        # Search in known cities with scoring
+        city_matches = []
         for city, coords in LocationService.ROMANIA_CITIES.items():
-            if query_lower in city.lower():
-                results.append({
+            score = city_match_score(city, query)
+            if score > 0:
+                city_matches.append((score, {
                     'name': city,
                     'latitude': coords[0],
                     'longitude': coords[1],
                     'type': 'city',
-                    'formatted_address': f"{city}, România"
-                })
+                    'formatted_address': f"{city}, România",
+                    'city': city,
+                    'county': '',
+                    'match_score': score
+                }))
         
-        # If we have enough results, return them
-        if len(results) >= limit:
-            cache.set(cache_key, results[:limit], 3600)
-            return results[:limit]
+        # Sort by score and add to results
+        city_matches.sort(key=lambda x: x[0], reverse=True)
+        for score, city_result in city_matches[:min(5, limit)]:
+            results.append(city_result)
         
-        # Otherwise, search using Nominatim
-        try:
-            params = {
-                'q': f"{query}, România",
-                'format': 'json',
-                'limit': limit - len(results),
-                'countrycodes': 'ro',
-                'addressdetails': 1
-            }
-            
-            data = call_nominatim(params)
-            for item in data:
-                address = item.get('address', {})
-                results.append({
-                    'name': item.get('display_name', ''),
-                    'latitude': float(item['lat']),
-                    'longitude': float(item['lon']),
-                    'type': item.get('type', 'location'),
-                    'formatted_address': item.get('display_name', ''),
-                    'city': address.get('city') or address.get('town') or address.get('village', ''),
-                    'county': address.get('county', '')
-                })
+        # Strategy 2: OpenStreetMap search for more detailed results
+        if len(results) < limit:
+            try:
+                # Try multiple search variations
+                search_queries = [
+                    f"{query}, România",
+                    f"{query}",
+                    f"{LocationService.normalize_location_name(query)}, România"
+                ]
                 
-        except Exception as e:
-            logger.error(f"Location search failed for '{query}': {e}")
+                for search_query in search_queries:
+                    if len(results) >= limit:
+                        break
+                        
+                    params = {
+                        'q': search_query,
+                        'format': 'json',
+                        'limit': limit - len(results),
+                        'countrycodes': 'ro',
+                        'addressdetails': 1,
+                        'extratags': 1,
+                        'dedupe': 1  # Remove duplicates
+                    }
+                    
+                    data = call_nominatim(params, "search")
+                    
+                    # Process results and avoid duplicates
+                    existing_coords = {(r['latitude'], r['longitude']) for r in results}
+                    
+                    for item in data:
+                        lat, lon = float(item['lat']), float(item['lon'])
+                        
+                        # Skip if coordinates already exist
+                        if (lat, lon) in existing_coords:
+                            continue
+                            
+                        address = item.get('address', {})
+                        city = (
+                            address.get('city') or 
+                            address.get('town') or 
+                            address.get('village') or
+                            address.get('municipality', '')
+                        )
+                        
+                        importance = float(item.get('importance', 0))
+                        place_type = item.get('type', 'location')
+                        
+                        result = {
+                            'name': item.get('display_name', ''),
+                            'latitude': lat,
+                            'longitude': lon,
+                            'type': place_type,
+                            'formatted_address': item.get('display_name', ''),
+                            'city': city,
+                            'county': address.get('county', ''),
+                            'country': address.get('country', 'România'),
+                            'importance': importance,
+                            'osm_id': item.get('osm_id', ''),
+                            'osm_type': item.get('osm_type', '')
+                        }
+                        
+                        results.append(result)
+                        existing_coords.add((lat, lon))
+                        
+                        if len(results) >= limit:
+                            break
+                            
+            except Exception as e:
+                logger.error(f"OpenStreetMap search failed for '{query}': {e}")
+        
+        # Sort results by relevance (city matches first, then by importance)
+        def sort_key(result):
+            if result['type'] == 'city' and 'match_score' in result:
+                return (0, result['match_score'])  # Cities first, by match score
+            else:
+                return (1, result.get('importance', 0))  # Then by importance
+        
+        results.sort(key=sort_key, reverse=True)
+        
+        # Limit final results
+        final_results = results[:limit]
         
         # Cache results
-        cache.set(cache_key, results[:limit], 3600)
-        return results[:limit]
+        cache.set(cache_key, final_results, 3600)
+        logger.info(f"✅ Location search for '{query}' returned {len(final_results)} results")
+        return final_results
     
     @staticmethod
     def populate_listing_coordinates(listing):
@@ -273,20 +431,44 @@ class LocationService:
         if listing.latitude and listing.longitude:
             return True  # Already has coordinates
         
-        # Try to geocode based on available information
-        address = listing.address or listing.location
-        city = listing.city or listing.location
+        # Extract location information from different fields
+        location_info = []
         
-        geocoded = LocationService.geocode_address(address, city)
-        if geocoded:
-            listing.latitude = Decimal(str(geocoded['latitude']))
-            listing.longitude = Decimal(str(geocoded['longitude']))
-            if not listing.city and geocoded.get('city'):
-                listing.city = geocoded['city']
-            if not listing.address and address != city:
-                listing.formatted_address = geocoded['formatted_address']
-            listing.location_verified = True
-            listing.save()
-            return True
+        # Try different location fields
+        if hasattr(listing, 'address') and listing.address:
+            location_info.append(listing.address)
+        if hasattr(listing, 'location') and listing.location:
+            location_info.append(listing.location)
+        if hasattr(listing, 'city') and listing.city:
+            location_info.append(listing.city)
         
+        # If no location info, skip
+        if not location_info:
+            logger.warning(f"No location information available for listing: {listing.title}")
+            return False
+        
+        # Try geocoding with different strategies
+        for address_str in location_info:
+            city = getattr(listing, 'city', None) if hasattr(listing, 'city') else None
+            
+            geocoded = LocationService.geocode_address(address_str, city)
+            if geocoded:
+                listing.latitude = Decimal(str(geocoded['latitude']))
+                listing.longitude = Decimal(str(geocoded['longitude']))
+                
+                # Update additional fields if available and empty
+                if hasattr(listing, 'city') and not listing.city and geocoded.get('city'):
+                    listing.city = geocoded['city']
+                if hasattr(listing, 'county') and not getattr(listing, 'county', None) and geocoded.get('county'):
+                    setattr(listing, 'county', geocoded['county'])
+                if hasattr(listing, 'formatted_address') and geocoded.get('formatted_address'):
+                    setattr(listing, 'formatted_address', geocoded['formatted_address'])
+                if hasattr(listing, 'location_verified'):
+                    listing.location_verified = True
+                
+                listing.save()
+                logger.info(f"✅ Populated coordinates for {listing.title}: {listing.latitude}, {listing.longitude}")
+                return True
+        
+        logger.warning(f"❌ Failed to populate coordinates for {listing.title}")
         return False

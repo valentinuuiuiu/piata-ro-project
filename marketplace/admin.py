@@ -6,20 +6,27 @@ from django.http import JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from django.utils.html import format_html
+from django.contrib.admin import AdminSite
 import json
 import asyncio
 import httpx
 from datetime import datetime
 
-from .models import Category, Favorite, Listing, Message, UserProfile, ListingReport
+from .models import Category, Favorite, Listing, Message, UserProfile, ListingReport, Location
 from .models_chat import ChatConversation, ChatMessage
+from .admin_location import location_admin
 
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "parent")
+    list_display = ("name", "slug", "parent", "listing_count")
     search_fields = ("name", "slug")
     prepopulated_fields = {"slug": ("name",)}
+    
+    def listing_count(self, obj):
+        return obj.listing_set.count()
+    listing_count.short_description = 'Listings'
 
 
 @admin.register(Listing)
@@ -33,10 +40,48 @@ class ListingAdmin(admin.ModelAdmin):
         "category",
         "status",
         "created_at",
+        "has_coordinates"
     )
-    list_filter = ("status", "is_premium", "is_verified", "category")
-    search_fields = ("title", "description", "location")
+    list_filter = ("status", "is_premium", "is_verified", "category", "location_verified")
+    search_fields = ("title", "description", "location", "city")
     date_hierarchy = "created_at"
+    actions = ['populate_coordinates']
+    
+    fieldsets = (
+        (None, {
+            'fields': ('title', 'description', 'category', 'price', 'currency', 'user', 'status')
+        }),
+        ('Location Information', {
+            'fields': ('location', 'city', 'county', 'latitude', 'longitude', 'location_verified'),
+            'classes': ('collapse',)
+        }),
+        ('Premium Features', {
+            'fields': ('is_premium', 'is_verified', 'is_featured'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def has_coordinates(self, obj):
+        if obj.latitude and obj.longitude:
+            return format_html(
+                '<span style="color: green;">✓ ({}, {})</span>',
+                obj.latitude, obj.longitude
+            )
+        return format_html('<span style="color: red;">✗ Missing</span>')
+    has_coordinates.short_description = 'Coordinates'
+    
+    def populate_coordinates(self, request, queryset):
+        from .services.location_service import location_service
+        updated = 0
+        for listing in queryset:
+            if location_service.populate_listing_coordinates(listing):
+                updated += 1
+        
+        self.message_user(
+            request,
+            f'Successfully updated coordinates for {updated} listings.'
+        )
+    populate_coordinates.short_description = "Populate missing coordinates"
 
 
 @admin.register(Message)
@@ -59,6 +104,13 @@ class UserProfileAdmin(admin.ModelAdmin):
     list_display = ("user", "phone", "location", "is_premium", "premium_until")
     list_filter = ("is_premium",)
     search_fields = ("user__username", "user__email", "phone", "location")
+
+
+@admin.register(Location)
+class LocationAdmin(admin.ModelAdmin):
+    list_display = ['name', 'latitude', 'longitude', 'location_type']
+    list_filter = ['location_type']
+    search_fields = ['name']
 
 
 @admin.register(ListingReport)
@@ -87,7 +139,60 @@ class ListingReportAdmin(admin.ModelAdmin):
                 obj.reviewed_at = timezone.now()
         super().save_model(request, obj, form, change)
 
-# Admin Assistant Implementation
+
+# Custom AdminSite to add our location analytics
+class PiataRoAdminSite(AdminSite):
+    site_header = "Piața.ro Administration"
+    site_title = "Piața.ro Admin"
+    index_title = "Welcome to Piața.ro Administration"
+    
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('location-analytics/', location_admin.location_analytics_view, name='location_analytics'),
+            path('location-health/', location_admin.location_health_api, name='location_health_api'),
+        ]
+        return custom_urls + urls
+    
+    def get_app_list(self, request, app_label=None):
+        """
+        Return a sorted list of all the installed apps that have been
+        registered in this site.
+        """
+        app_dict = self._build_app_dict(request, app_label)
+        
+        # Add our custom analytics link to the marketplace app
+        if 'marketplace' in app_dict:
+            app_dict['marketplace']['models'].append({
+                'name': 'Location Analytics',
+                'object_name': 'LocationAnalytics',
+                'perms': {'view': True},
+                'admin_url': '/admin/location-analytics/',
+                'add_url': None,
+                'view_only': True,
+            })
+        
+        # Sort the models alphabetically within each app.
+        for app in app_dict.values():
+            app['models'].sort(key=lambda x: x['name'])
+        
+        return app_dict.values()
+
+
+# Override the default admin site
+admin_site = PiataRoAdminSite(name='admin')
+
+# Re-register all models with the custom admin site
+admin_site.register(Category, CategoryAdmin)
+admin_site.register(Listing, ListingAdmin)
+admin_site.register(Message, MessageAdmin)
+admin_site.register(Favorite, FavoriteAdmin)
+admin_site.register(UserProfile, UserProfileAdmin)
+admin_site.register(Location, LocationAdmin)
+admin_site.register(ListingReport, ListingReportAdmin)
+
+
+# Admin Assistant Implementation for default admin site
 class AdminAssistant:
     def __init__(self, request):
         self.request = request
@@ -140,6 +245,7 @@ class AdminAssistantModel(models.Model):
         verbose_name = "Admin Assistant"
         verbose_name_plural = "Admin Assistants"
         managed = False  # Don't create DB table
+        default_permissions = ()
 
-# Register the dummy model with our custom admin
+# Register the dummy model with our custom admin (default admin site only)
 admin.site.register(AdminAssistantModel, AdminAssistantAdmin)

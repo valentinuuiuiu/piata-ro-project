@@ -21,7 +21,7 @@ try:
 except ImportError:
     stripe = None
 
-from .models import Category, Favorite, Listing, Message, UserProfile, ListingImage, CreditPackage, Payment, CreditTransaction, ListingBoost, ListingReport #, PromoteListingForm
+from .models import Category, Favorite, Listing, Message, UserProfile, ListingImage, CreditPackage, Payment, CreditTransaction, ListingBoost, ListingReport
 from .serializers import (
     CategorySerializer,
     FavoriteCreateSerializer,

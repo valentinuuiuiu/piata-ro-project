@@ -27,12 +27,13 @@ from piata_ro.views import (
     natural_language_query, openai_models_endpoint, openai_chat_completions
 )
 from marketplace.views import register_view
+from marketplace.admin import admin_site
 
 urlpatterns = [
     path('', include(('marketplace.urls', 'marketplace'), namespace='marketplace')),  # Include marketplace URLs for frontend
     path('ai/', include(('ai_assistant.urls', 'ai_assistant'), namespace='ai_assistant')),  # Add AI assistant URLs
     path('ai-assistant/', include(('ai_assistant.urls', 'ai_assistant'), namespace='ai_assistant_alt')),  # Alternative path
-    path('admin/', admin.site.urls),
+    path('admin/', admin_site.urls),
     
     # Allauth URLs (includes social auth)
     path('accounts/', include('allauth.urls')),
