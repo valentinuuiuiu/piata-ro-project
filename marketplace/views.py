@@ -13,7 +13,10 @@ from django.conf import settings
 from django.http import JsonResponse
 from django.urls import reverse
 from django.utils import timezone
+from django.db import transaction
+from datetime import timedelta
 from decimal import Decimal
+import logging
 # Note: stripe will be installed separately
 try:
     import stripe
@@ -34,6 +37,9 @@ from .serializers import (
     UserSerializer,
 )
 from .forms import ListingForm, CustomUserCreationForm, UserProfileForm, UserUpdateForm, PromoteListingForm
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 # Configure Stripe
 if stripe:
@@ -1114,53 +1120,110 @@ def process_payment_view(request):
 
 
 @login_required
+@login_required
 def promote_listing_view(request, listing_id):
-    """Promote a listing to first page in its subcategory for 0.5 credits."""
+    """Promote a listing to first page with atomic transaction handling."""
     try:
         listing = Listing.objects.get(id=listing_id, user=request.user)
     except Listing.DoesNotExist:
         messages.error(request, 'Anunțul nu a fost găsit sau nu îți aparține.')
         return redirect('marketplace:profile')
     
-    # Determine the target category (subcategory if exists, otherwise main category)
+    # Check if listing is already featured
+    if listing.is_featured:
+        messages.info(request, 'Acest anunț este deja promovat.')
+        return redirect('marketplace:listing_detail', listing_id=listing.id)
+    
+    # Determine the target category
     target_category = listing.category
     category_name = target_category.name
     
     if request.method == 'POST':
-        credits_needed = Decimal('0.5')  # Fixed cost: 0.5 credits
-        user_profile = request.user.profile
+        form = PromoteListingForm(request.POST)
         
-        if user_profile.credits_balance >= credits_needed:
-            # Deduct credits
-            user_profile.credits_balance -= credits_needed
-            user_profile.save()
+        if form.is_valid():
+            duration_days = int(form.cleaned_data['duration_days'])
+            credits_needed = Decimal(str(duration_days * 0.5))
+            auto_repost_interval = request.POST.get('auto_repost_interval', 'none')
             
-            # Mark listing as featured (goes to top of its subcategory)
-            listing.is_featured = True
-            listing.save()
+            user_profile = request.user.profile
             
-            # Create transaction record
-            CreditTransaction.objects.create(
-                user=request.user,
-                transaction_type='spent',
-                amount=credits_needed,
-                description=f"Promovare în categoria '{category_name}': {listing.title}",
-                listing=listing
-            )
+            # Check if user has enough credits
+            if user_profile.credits_balance < credits_needed:
+                messages.error(request, f'Nu ai suficiente credite. Ai nevoie de {credits_needed} credite pentru promovare.')
+                return redirect('marketplace:credits_dashboard')
             
-            # TODO: Add auto-repost functionality later
-            messages.success(request, f'Anunțul "{listing.title}" a fost promovat! Acum apare primul în categoria "{category_name}".')
-            
-            return redirect('marketplace:listing_detail', listing_id=listing.id)
+            # Use atomic transaction to ensure data consistency
+            try:
+                with transaction.atomic():
+                    # Lock user profile to prevent race conditions
+                    user_profile = UserProfile.objects.select_for_update().get(user=request.user)
+                    
+                    # Double-check credits after locking
+                    if user_profile.credits_balance < credits_needed:
+                        messages.error(request, 'Nu ai suficiente credite. Încearcă din nou.')
+                        return redirect('marketplace:credits_dashboard')
+                    
+                    # Deduct credits safely
+                    user_profile.deduct_credits(credits_needed)
+                    
+                    # Calculate expiration time
+                    expires_at = timezone.now() + timedelta(days=duration_days)
+                    
+                    # Create ListingBoost record
+                    boost = ListingBoost.objects.create(
+                        listing=listing,
+                        boost_type='featured',
+                        credits_cost=int(credits_needed * 2),  # Store as integer (0.5 credits = 1)
+                        duration_days=duration_days,
+                        starts_at=timezone.now(),
+                        expires_at=expires_at,
+                        is_active=True
+                    )
+                    
+                    # Mark listing as featured
+                    listing.is_featured = True
+                    listing.save()
+                    
+                    # Create transaction record
+                    CreditTransaction.objects.create(
+                        user=request.user,
+                        transaction_type='spent',
+                        amount=credits_needed,
+                        description=f"Promovare {duration_days} zile în categoria '{category_name}': {listing.title}",
+                        listing=listing
+                    )
+                    
+                    # Handle auto-repost if selected
+                    if auto_repost_interval != 'none':
+                        # TODO: Implement auto-repost scheduler (could use Celery or Django-Q)
+                        messages.info(request, f'Repromovarea automată la fiecare {auto_repost_interval} minute va fi activată când sistemul va fi disponibil.')
+                    
+                    messages.success(
+                        request, 
+                        f'Anunțul "{listing.title}" a fost promovat pentru {duration_days} zile! '
+                        f'Acum apare primul în categoria "{category_name}" până pe {expires_at.strftime("%d.%m.%Y")}.'
+                    )
+                    
+                    return redirect('marketplace:listing_detail', listing_id=listing.id)
+                    
+            except Exception as e:
+                messages.error(request, 'A apărut o eroare la procesarea promovării. Te rugăm să încerci din nou.')
+                logger.error(f"Promote listing error for user {request.user.id}, listing {listing_id}: {str(e)}")
+                return redirect('marketplace:promote_listing', listing_id=listing_id)
         else:
-            messages.error(request, 'Nu ai suficiente credite. Ai nevoie de 0.5 credite pentru promovare.')
-            return redirect('marketplace:credits_dashboard')
+            messages.error(request, 'Formularul conține erori. Te rugăm să verifici datele introduse.')
+    else:
+        # GET request - show form
+        form = PromoteListingForm(initial={'listing_id': listing_id})
     
     context = {
+        'form': form,
         'listing': listing,
         'target_category': category_name,
         'promotion_cost': Decimal('0.5'),
-        'user_credits': request.user.profile.credits_balance
+        'user_credits': request.user.profile.credits_balance,
+        'existing_boosts': listing.boosts.filter(is_active=True)
     }
     
     return render(request, 'marketplace/promote_listing.html', context)
