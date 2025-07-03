@@ -13,9 +13,22 @@ import asyncio
 import httpx
 from datetime import datetime
 
-from .models import Category, Favorite, Listing, Message, UserProfile, ListingReport, Location
+from .models import Category, Favorite, Listing, Message, UserProfile, ListingReport, Location, ListingImage
 from .models_chat import ChatConversation, ChatMessage
 from .admin_location import location_admin
+
+
+class ListingImageInline(admin.TabularInline):
+    model = ListingImage
+    extra = 1
+    fields = ('image', 'thumbnail_preview', 'is_main', 'order')
+    readonly_fields = ('thumbnail_preview',)
+
+    def thumbnail_preview(self, obj):
+        if obj.thumbnail:
+            return format_html('<img src="{}" style="max-height: 100px;"/>', obj.thumbnail.url)
+        return "-"
+    thumbnail_preview.short_description = 'Thumbnail Preview'
 
 
 @admin.register(Category)
@@ -40,12 +53,14 @@ class ListingAdmin(admin.ModelAdmin):
         "category",
         "status",
         "created_at",
-        "has_coordinates"
+        "has_coordinates",
+        "main_image_preview"
     )
     list_filter = ("status", "is_premium", "is_verified", "category", "location_verified")
     search_fields = ("title", "description", "location", "city")
     date_hierarchy = "created_at"
     actions = ['populate_coordinates']
+    inlines = [ListingImageInline]
     
     fieldsets = (
         (None, {
@@ -69,6 +84,13 @@ class ListingAdmin(admin.ModelAdmin):
             )
         return format_html('<span style="color: red;">✗ Missing</span>')
     has_coordinates.short_description = 'Coordinates'
+    
+    def main_image_preview(self, obj):
+        img = obj.main_image
+        if img and img.thumbnail:
+            return format_html('<img src="{}" style="max-height: 50px;"/>', img.thumbnail.url)
+        return "-"
+    main_image_preview.short_description = 'Main Image'
     
     def populate_coordinates(self, request, queryset):
         from .services.location_service import location_service
