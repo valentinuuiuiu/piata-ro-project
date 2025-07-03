@@ -16,8 +16,23 @@ if not settings.configured:
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'piata_ro.settings')
     django.setup()
 
-# Direct HTTP client for DeepSeek API
-import httpx
+# Connection-pooled HTTP client configuration
+class HTTPClient:
+    _instance = None
+    _client = None
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._client = httpx.AsyncClient(
+                timeout=30.0,
+                limits=httpx.Limits(
+                    max_connections=100,
+                    max_keepalive_connections=20
+                ),
+                transport=httpx.AsyncHTTPTransport(retries=3)
+            )
+        return cls._instance
 
 # Set up LangSmith tracing from Django settings
 os.environ["LANGCHAIN_TRACING_V2"] = str(getattr(settings, 'LANGCHAIN_TRACING_V2', True))

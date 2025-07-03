@@ -26,7 +26,11 @@ class ListingImageInline(admin.TabularInline):
 
     def thumbnail_preview(self, obj):
         if obj.thumbnail:
-            return format_html('<img src="{}" style="max-height: 100px;"/>', obj.thumbnail.url)
+            return format_html(
+                '<img src="{}" style="max-height: 100px;" alt="Thumbnail for listing {}"/>',
+                obj.thumbnail.url,
+                obj.listing.title
+            )
         return "-"
     thumbnail_preview.short_description = 'Thumbnail Preview'
 
@@ -88,7 +92,11 @@ class ListingAdmin(admin.ModelAdmin):
     def main_image_preview(self, obj):
         img = obj.main_image
         if img and img.thumbnail:
-            return format_html('<img src="{}" style="max-height: 50px;"/>', img.thumbnail.url)
+            return format_html(
+                '<img src="{}" style="max-height: 50px;" alt="Main image for listing {}"/>',
+                img.thumbnail.url,
+                obj.title
+            )
         return "-"
     main_image_preview.short_description = 'Main Image'
     
