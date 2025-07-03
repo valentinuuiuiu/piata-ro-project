@@ -25,27 +25,49 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+# Production Security Configuration
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true' and os.getenv('ENVIRONMENT') == 'development'
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("SECRET_KEY", 'django-insecure-dev-key-only-for-development-change-in-production-with-at-least-50-characters-12345')
-# Only validate SECRET_KEY in production
-if not DEBUG and 'django-insecure' in SECRET_KEY:
-    raise ValueError("Production requires a proper SECRET_KEY without 'django-insecure' prefix.")
+if not SECRET_KEY or SECRET_KEY == 'django-insecure-dev-key-only-for-development-change-in-production-with-at-least-50-characters-12345':
+    raise ValueError("SECRET_KEY must be properly configured in production")
+
+# Additional security validations
+if DEBUG and os.getenv('ENVIRONMENT') == 'production':
+    raise RuntimeError("DEBUG mode cannot be enabled in production")
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,piata.ro,www.piata.ro').split(',')
 
 # Security Settings for Production
 if not DEBUG:
+    # HTTPS/SSL Configuration
     SECURE_SSL_REDIRECT = True
-    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+    
+    # Cookie Security
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_AGE = 1209600  # 2 weeks
+    SESSION_SAVE_EVERY_REQUEST = True
+    
+    # Headers
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    
+    # Content Security Policy
+    CSP_DEFAULT_SRC = ("'self'",)
+    CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'")
+    CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
+    CSP_IMG_SRC = ("'self'", "data:")
+    
+    # Rate Limiting
+    RATELIMIT_ENABLE = True
+    RATELIMIT_VIEW = 'piata_ro.views.rate_limit_exceeded'
+    
+    # Admin Hardening
+    ADMIN_URL = os.getenv('ADMIN_URL', 'admin/')  # Change default admin URL
 
 # PraisonAI Configuration
 PRAISONAI_CONFIG = {
@@ -195,6 +217,13 @@ STATICFILES_DIRS = [
 # Media files (user uploads)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Image processing settings
+IMAGE_MAX_SIZE = (1920, 1080)  # Max dimensions in pixels
+IMAGE_QUALITY = 85  # JPEG quality (1-100)
+THUMBNAIL_SIZE = (400, 400)  # Thumbnail dimensions
+ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+MAX_IMAGES_PER_LISTING = 10  # Maximum images per listing
 
 # Authentication settings
 LOGIN_URL = '/accounts/login/'

@@ -105,10 +105,33 @@ class Listing(models.Model):
 
     @property
     def main_image(self):
-        image = self.images.filter(is_main=True).first()  # 'images' is the related_name in ListingImage
-        if not image:
-            image = self.images.first()
+        """Get the main image or first image if none marked as main"""
+        return self.images.filter(is_main=True).first() or self.images.first()
+
+    def add_image(self, image_file, is_main=False):
+        """Add new image to listing"""
+        from .image_utils import process_uploaded_image
+        
+        # Process image and create thumbnail
+        processed = process_uploaded_image(image_file)
+        
+        # Create image record
+        image = self.images.create(
+            image=processed['original'],
+            thumbnail=processed['thumbnail'],
+            is_main=is_main,
+            order=self.images.count()
+        )
+        
+        # If this is main image, unset others
+        if is_main:
+            self.images.exclude(pk=image.pk).update(is_main=False)
+            
         return image
+
+    def get_images_ordered(self):
+        """Get all images in correct order"""
+        return self.images.all().order_by('order')
     
     @property
     def has_coordinates(self):
@@ -297,6 +320,24 @@ class CreditPackage(models.Model):
     
     def __str__(self):
         return f"{self.name} - {self.credits} credits - €{self.price_eur} / {self.price_ron} RON"
+
+
+class ListingImage(models.Model):
+    """Model for storing multiple images per listing"""
+    listing = models.ForeignKey('Listing', on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='listings/')
+    thumbnail = models.ImageField(upload_to='thumbnails/', blank=True)
+    is_main = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'created_at']
+        verbose_name = 'Listing Image'
+        verbose_name_plural = 'Listing Images'
+
+    def __str__(self):
+        return f"Image for {self.listing.title}"
 
 
 class PremiumPlan(models.Model):
