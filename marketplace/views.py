@@ -1196,8 +1196,24 @@ def promote_listing_view(request, listing_id):
                     
                     # Handle auto-repost if selected
                     if auto_repost_interval != 'none':
-                        # TODO: Implement auto-repost scheduler (could use Celery or Django-Q)
-                        messages.info(request, f'Repromovarea automată la fiecare {auto_repost_interval} minute va fi activată când sistemul va fi disponibil.')
+                        from .tasks import auto_repost_listing
+                        from celery.task.control import add_periodic_task
+                        
+                        # Convert minutes to seconds for Celery
+                        interval_seconds = int(auto_repost_interval) * 60
+                        
+                        # Schedule the periodic task
+                        add_periodic_task(
+                            interval_seconds,
+                            auto_repost_listing.s(listing.id, auto_repost_interval),
+                            name=f'auto-repost-{listing.id}'
+                        )
+                        
+                        # Update boost record with auto-repost flag
+                        boost.auto_repost = True
+                        boost.save(update_fields=['auto_repost'])
+                        
+                        messages.success(request, f'Repromovarea automată a fost activată - anunțul va fi repostat la fiecare {auto_repost_interval} minute.')
                     
                     messages.success(
                         request, 

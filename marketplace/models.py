@@ -404,6 +404,8 @@ class ListingBoost(models.Model):
     starts_at = models.DateTimeField(default=timezone.now)
     expires_at = models.DateTimeField()
     is_active = models.BooleanField(default=True)
+    auto_repost = models.BooleanField(default=False)
+    auto_repost_interval = models.PositiveIntegerField(null=True, blank=True)
     payment = models.ForeignKey(Payment, on_delete=models.SET_NULL, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
