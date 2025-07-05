@@ -20,13 +20,13 @@ def register_view(request):
                 PasswordValidator.validate(form.cleaned_data['password1'])
                 user = form.save()
                 login(request, user)
-                return redirect('dashboard')
+                return redirect('marketplace:home')  # Changed to use marketplace namespace
             except ValidationError as e:
                 form.add_error('password1', e)
     else:
         form = UserCreationForm()
     
-    return render(request, 'register.html', {'form': form})
+    return render(request, 'registration/register.html', {'form': form})
 
 
 @ratelimit(key='ip', rate='5/m', block=True)
@@ -38,7 +38,7 @@ def login_view(request):
         try:
             PasswordValidator.validate(password)
         except ValidationError as e:
-            return render(request, 'login.html', {'error': str(e)})
+            return render(request, 'registration/login.html', {'error': str(e)})
 
         user = authenticate(request, username=username, password=password)
         
@@ -49,9 +49,9 @@ def login_view(request):
                 return render(request, 'mfa_verify.html')
                 
             login(request, user)
-            return redirect('dashboard')
+            return redirect('marketplace:home')  # Changed to use marketplace namespace
             
-    return render(request, 'login.html')
+    return render(request, 'registration/login.html')
 
 def verify_mfa(request):
     if 'mfa_user' not in request.session:

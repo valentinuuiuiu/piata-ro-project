@@ -11,7 +11,7 @@
             <h2>Bine ai venit înapoi!</h2>
             <p>
                 Sau 
-                <a href="{% url 'account_signup' %}" class="auth-link">
+                <a href="{% url 'register' %}" class="auth-link">
                     creează un cont nou
                 </a>
             </p>
@@ -101,7 +101,7 @@
                     </label>
                 </div>
                 
-                <a href="{% url 'account_reset_password' %}" class="forgot-password">
+                <a href="/accounts/password/reset/" class="forgot-password">
                     Ai uitat parola?
                 </a>
             </div>

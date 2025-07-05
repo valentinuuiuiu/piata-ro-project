@@ -12,7 +12,6 @@ from .api import (
     UserProfileViewSet
 )
 
-
 from .core import *
 
 from .listing_add import *
@@ -21,16 +20,16 @@ from .profile import *
 
 from .messaging import *
 
-
 from .favorites import *
-
-
 
 from .reporting import *
 from .legal import *
 
 from .credits import *
 from .contact import *
+
+# Explicitly export register_view for main URLs
+from .auth import register_view
 
 
 

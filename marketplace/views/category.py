@@ -8,8 +8,8 @@ from ..models import Category, Listing
 @cache_page(60 * 60)  # Cache for 1 hour
 def category_list(request):
     """All categories view"""
-    categories = Category.objects.filter(parent__isnull=True).prefetch_related('children')
-    return render(request, 'marketplace/category_list.html', {'categories': categories})
+    categories = Category.objects.filter(parent__isnull=True).prefetch_related('subcategories')
+    return render(request, 'marketplace/categories.html', {'categories': categories})
 
 def category_detail(request, slug):
     """Category detail with listings"""
