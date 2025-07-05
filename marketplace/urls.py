@@ -1,6 +1,6 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from django.contrib.auth.views import LogoutView
+from django.contrib.auth.views import LogoutView, PasswordResetView, PasswordResetDoneView, PasswordResetConfirmView, PasswordResetCompleteView
 
 from . import views
 from .deepseek_chat_refactored import deepseek_chat_view
@@ -31,6 +31,12 @@ urlpatterns = [
     path('login/', login_view, name='login'),
     path('login/mfa/', verify_mfa, name='verify_mfa'),
     path('logout/', LogoutView.as_view(), name='logout'),
+    
+    # Password Reset
+    path('password_reset/', PasswordResetView.as_view(template_name='registration/password_reset_form.html'), name='password_reset'),
+    path('password_reset/done/', PasswordResetDoneView.as_view(template_name='registration/password_reset_done.html'), name='password_reset_done'),
+    path('reset/<uidb64>/<token>/', PasswordResetConfirmView.as_view(template_name='registration/password_reset_confirm.html'), name='password_reset_confirm'),
+    path('reset/done/', PasswordResetCompleteView.as_view(template_name='registration/password_reset_complete.html'), name='password_reset_complete'),
 
     # Frontend pages
     path('', views.home_view, name='home'),
