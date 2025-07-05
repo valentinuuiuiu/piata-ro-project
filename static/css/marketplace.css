@@ -1,0 +1,40 @@
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Cyberpunk Neon Theme */
+.bg-primary {
+  @apply bg-[#0f0f1a] hover:bg-[#1a1a2e];
+}
+.text-accent {
+  @apply text-[#00f0ff] hover:text-[#ff00f0];
+}
+.btn-action {
+  @apply px-6 py-3 rounded-full bg-gradient-to-r from-[#ff00f0] to-[#00f0ff] text-white font-bold tracking-wider transition-all hover:scale-105 shadow-neon;
+}
+
+/* Floating animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.hover-float {
+  @apply hover:animate-float;
+}
+
+/* Glass morphism effect */
+.glass-card {
+  @apply backdrop-blur-lg bg-white/10 border border-white/20 rounded-xl;
+}
+
+/* Pulse animation for live items */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.live-pulse {
+  @apply animate-pulse text-red-500;
+}
+

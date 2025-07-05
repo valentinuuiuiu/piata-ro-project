@@ -1,0 +1,59 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en" data-theme="cyberpunk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Neon Marketplace{% endblock %}</title>
+  <link href="/static/css/marketplace.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-primary text-white min-h-screen">
+  <!-- Glowing Navbar -->
+  <nav class="glass-card p-4 mb-8 shadow-lg shadow-[#00f0ff]/20">
+    <div class="container mx-auto flex justify-between items-center">
+      <a href="/" class="text-accent text-3xl font-bold hover-float">
+        <span class="text-[#ff00f0]">NEON</span>
+        <span class="text-[#00f0ff]">MARKET</span>
+      </a>
+      <div class="flex space-x-6">
+        <a href="/mcp" class="btn-action px-8">
+          <span class="drop-shadow-[0_0_8px_rgba(0,240,255,0.8)]">ADMIN PANEL</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Animated Background -->
+  <div class="fixed inset-0 -z-10 opacity-20">
+    <div class="absolute inset-0 bg-[url('/static/images/grid-pattern.svg')]"></div>
+  </div>
+
+  <!-- Content Slot -->
+  <main class="container mx-auto px-4 relative">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Live Status Footer -->
+  <footer class="glass-card mt-12 p-6 text-center border-t border-[#00f0ff]/30">
+    <div class="live-pulse text-xl mb-2">LIVE MARKET ACTIVITY</div>
+    <div class="flex justify-center space-x-12">
+      <span class="text-accent">USERS: 1,429</span>
+      <span class="text-accent">TRADES: 328</span>
+      <span class="text-accent">VOLUME: 42.5 ETH</span>
+    </div>
+  </footer>
+
+  <!-- Theme Toggle Script -->
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      html.dataset.theme = html.dataset.theme === 'cyberpunk' ? 'dark' : 'cyberpunk';
+    }
+  </script>
+</body>
+</html>
+
+

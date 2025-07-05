@@ -1,17 +1,10 @@
-httpx>=0.28.0
-python-dotenv==1.0.1
-pillow==11.0.0
 
-django>=4.2,<5
-djangorestframework>=3.14
-stripe>=7.0.0
-django-allauth>=0.57.0
-PyJWT>=2.8.0
-cryptography>=41.0.0
 
-# LangChain and LangSmith for AI orchestration
-langchain>=0.3.25
-langchain-openai>=0.3.21
-langsmith>=0.3.45
+fastapi>=0.95.0
+uvicorn>=0.22.0
+sqlalchemy>=2.0.0
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+pytest>=7.0.0
+httpx>=0.24.0
 
-ratelimit==2.2.1
