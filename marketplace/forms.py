@@ -262,6 +262,9 @@ class UserProfileForm(forms.ModelForm):
             'location': 'Localitatea în care te afli'
         }
 
+# Alias for backward compatibility
+ProfileForm = UserProfileForm
+
 
 class UserUpdateForm(forms.ModelForm):
     """Form for updating basic user information."""
@@ -349,7 +352,31 @@ class PromoteListingForm(forms.Form):
         return duration * 0.5
 
 
+
+
+class ReportForm(forms.ModelForm):
+    """Form for reporting inappropriate listings"""
+    class Meta:
+        from marketplace.models import Report
+        model = Report
+        fields = ['reason', 'description']
+        widgets = {
+            'reason': forms.Select(attrs={
+                'class': 'mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm',
+                'rows': 4,
+                'placeholder': 'Descrieți problema întâlnită...'
+            })
+        }
+        labels = {
+            'reason': 'Motivul raportului',
+            'description': 'Descriere detaliată'
+        }
+
 class StripePaymentForm(forms.Form):
+
     """Form to handle Stripe payment for credits."""
     credits_to_buy = forms.IntegerField(
         widget=forms.HiddenInput(),

@@ -296,37 +296,33 @@ def categories_view(request):
     return render(request, "marketplace/categories.html", context)
 
 
+@cache_page(60 * 15)  # Cache for 15 minutes
 def category_detail_view(request, category_slug):
-    """Category detail page with listings."""
+    """Optimized category detail page with listings."""
     from django.shortcuts import get_object_or_404
-    
-    category = get_object_or_404(Category, slug=category_slug)
-    
-    # Get subcategories
-    subcategories = Category.objects.filter(parent=category)
-    
-    # Get listings in this category and subcategories
-    category_ids = [category.id] + list(subcategories.values_list('id', flat=True))
-    
-    # If this is a parent category, group by subcategory with featured first in each
-    if subcategories.exists():
-        # Show subcategory listings with featured first within each subcategory
-        listings = Listing.objects.filter(
-            category_id__in=category_ids,
-            status="active"
-        ).order_by("category_id", "-is_featured", "-created_at")
-    else:
-        # This is a subcategory - featured first within this specific subcategory
-        listings = Listing.objects.filter(
-            category_id=category.id,
-            status="active"
-        ).order_by("-is_featured", "-created_at")
-    
-    # Handle pagination
     from django.core.paginator import Paginator
+    
+    category = get_object_or_404(
+        Category.objects.select_related('parent'),
+        slug=category_slug
+    )
+    
+    # Get cached subcategories
+    subcategories = Category.objects.filter(parent=category).only('id', 'name', 'slug')
+    
+    # Get optimized listings
+    listings = Listing.objects.filter(
+        category_id__in=[category.id] + list(subcategories.values_list('id', flat=True)),
+        status="active"
+    ).select_related('category', 'user').order_by(
+        "category_id" if subcategories.exists() else "",
+        "-is_featured", 
+        "-created_at"
+    )
+    
+    # Paginate with optimized query
     paginator = Paginator(listings, 20)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = paginator.get_page(request.GET.get('page'))
     
     context = {
         "category": category,

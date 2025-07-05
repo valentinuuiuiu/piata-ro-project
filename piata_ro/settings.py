@@ -1,5 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
+from dotenv import load_dotenv
+load_dotenv()
 """
 Django settings for piata_ro project.
 
@@ -28,8 +30,14 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 # Production Security Configuration
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true' and os.getenv('ENVIRONMENT') == 'development'
 
-if not SECRET_KEY or SECRET_KEY == 'django-insecure-dev-key-only-for-development-change-in-production-with-at-least-50-characters-12345':
-    raise ValueError("SECRET_KEY must be properly configured in production")
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY must be set in environment variables and properly configured in production")
 
 # Additional security validations
 if DEBUG and os.getenv('ENVIRONMENT') == 'production':
