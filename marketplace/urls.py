@@ -5,6 +5,7 @@ from django.contrib.auth.views import LogoutView
 from . import views
 from .deepseek_chat_refactored import deepseek_chat_view
 from .views.auth import login_view, verify_mfa
+from .recommendations import urls as recommendation_urls
 
 app_name = 'marketplace'
 
@@ -17,6 +18,15 @@ router.register(r"favorites", views.FavoriteViewSet, basename='favorite')
 router.register(r"users", views.UserProfileViewSet, basename='userprofile')
 
 urlpatterns = [
+    # Recommendation endpoints
+    path('recommendations/', include(recommendation_urls)),
+    
+    # Verification endpoints
+    path('verification/', include('marketplace.verification.urls')),
+    
+    # Payment endpoints  
+    path('payments/', include('marketplace.payments.urls')),
+    
     # Authentication
     path('login/', login_view, name='login'),
     path('login/mfa/', verify_mfa, name='verify_mfa'),
