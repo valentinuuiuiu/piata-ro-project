@@ -271,6 +271,15 @@ class UserProfile(models.Model):
     # Credits system - 1 credit = 1 Euro = 5 RON, 0.5 credits = promote listing
     credits_balance = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
     total_credits_purchased = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+
+    # MFA and Security Fields
+    mfa_enabled = models.BooleanField(default=False)
+    mfa_secret = models.CharField(max_length=32, blank=True, null=True)
+    mfa_backup_codes = models.JSONField(default=list, blank=True)
+    last_mfa_used = models.DateTimeField(blank=True, null=True)
+    last_password_change = models.DateTimeField(auto_now_add=True)
+    failed_login_attempts = models.PositiveIntegerField(default=0)
+    account_locked_until = models.DateTimeField(blank=True, null=True)
     
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -305,21 +314,45 @@ class UserProfile(models.Model):
 
 
 class CreditPackage(models.Model):
-    """Predefined credit packages for purchase"""
+    """Enhanced credit packages with bonuses and referral rewards"""
+    TIER_CHOICES = (
+        ('basic', 'Basic'),
+        ('standard', 'Standard'),
+        ('premium', 'Premium'),
+    )
+    
     name = models.CharField(max_length=100)
-    credits = models.DecimalField(max_digits=10, decimal_places=1)  # Allow 0.5 credits
-    price_eur = models.DecimalField(max_digits=10, decimal_places=2)  # Price in EUR
-    price_ron = models.DecimalField(max_digits=10, decimal_places=2)  # Price in RON
+    tier = models.CharField(max_length=20, choices=TIER_CHOICES, default='basic')
+    base_credits = models.DecimalField(max_digits=10, decimal_places=1)
+    bonus_credits = models.DecimalField(max_digits=10, decimal_places=1, default=0)
+    price_eur = models.DecimalField(max_digits=10, decimal_places=2)
+    price_ron = models.DecimalField(max_digits=10, decimal_places=2)
     is_active = models.BooleanField(default=True)
     description = models.TextField(blank=True)
     stripe_price_id = models.CharField(max_length=100, blank=True, null=True)
+    referral_bonus = models.DecimalField(max_digits=10, decimal_places=1, default=0,
+                                       help_text="Bonus credits for both referrer and referee")
+    expires_days = models.PositiveIntegerField(default=365,
+                                             help_text="Days before purchased credits expire")
     created_at = models.DateTimeField(auto_now_add=True)
-    
+    modified_at = models.DateTimeField(auto_now=True)
+
     class Meta:
-        ordering = ['credits']
+        ordering = ['base_credits']
+        verbose_name = 'Credit Package'
+        verbose_name_plural = 'Credit Packages'
     
     def __str__(self):
-        return f"{self.name} - {self.credits} credits - €{self.price_eur} / {self.price_ron} RON"
+        return f"{self.tier.title()} - {self.total_credits} credits - €{self.price_eur}"
+
+    @property
+    def total_credits(self):
+        return self.base_credits + self.bonus_credits
+
+    def get_effective_price(self, currency='EUR'):
+        """Calculate price per credit"""
+        price = self.price_eur if currency == 'EUR' else self.price_ron
+        return price / self.total_credits
 
 
 class ListingImage(models.Model):
