@@ -43,7 +43,7 @@ if not SECRET_KEY:
 if DEBUG and os.getenv('ENVIRONMENT') == 'production':
     raise RuntimeError("DEBUG mode cannot be enabled in production")
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,piata.ro,www.piata.ro').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0,piata.ro,www.piata.ro').split(',')
 
 # Security Settings for Production
 if not DEBUG:

@@ -42,6 +42,18 @@
         }
     </script>
     
+    <!-- Crypto.randomUUID polyfill for older browsers -->
+    <script>
+        if (!crypto.randomUUID) {
+            crypto.randomUUID = function() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+        }
+    </script>
+    
     <!-- Alpine.js for interactivity -->
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     
@@ -105,7 +117,7 @@
                             <a href="{% url 'marketplace:login' %}" class="text-gray-700 hover:text-primary">
                                 <i class="fas fa-sign-in-alt mr-1"></i>Intră în cont
                             </a>
-                            <a href="{% url 'marketplace:register' %}" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark transition-colors">
+                            <a href="{% url 'register' %}" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark transition-colors">
                                 <i class="fas fa-user-plus mr-1"></i>Înregistrează-te
                             </a>
                         </div>

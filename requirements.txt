@@ -1,5 +1,3 @@
-
-
 fastapi>=0.95.0
 uvicorn>=0.22.0
 sqlalchemy>=2.0.0
@@ -7,4 +5,57 @@ pydantic>=2.0.0
 python-dotenv>=1.0.0
 pytest>=7.0.0
 httpx>=0.24.0
+
+# Added for Django project
+Django>=4.2.22
+djangorestframework>=3.14.0
+
+# YAML support
+PyYAML>=6.0
+
+# Rate limiting support
+django-ratelimit>=3.0.1
+ratelimit>=2.2.1
+
+# Django authentication and forms
+django-allauth>=0.57.0
+
+# Cross-Origin Resource Sharing
+django-cors-headers>=4.3.1
+
+# Image processing
+Pillow>=10.1.0
+
+# HTTP requests
+requests>=2.31.0
+
+# Redis for caching/sessions
+redis>=5.0.1
+
+# Task queue
+celery>=5.3.4
+
+# Production server
+gunicorn>=21.2.0
+
+# Static files serving
+whitenoise>=6.6.0
+
+# Payment processing
+stripe>=7.8.0
+
+# Async HTTP client
+aiohttp>=3.9.1
+
+# Markdown support
+Markdown>=3.5.1
+
+# Django extensions
+django-extensions>=3.2.3
+
+# Debug toolbar
+django-debug-toolbar>=4.2.0
+
+# Numpy for data processing
+numpy>=1.24.0
 

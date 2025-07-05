@@ -3,20 +3,32 @@
 
 from django.shortcuts import render
 from django.views.decorators.cache import cache_page
+from django.http import HttpResponse
 from ..models import Listing, Category
+import logging
+
+logger = logging.getLogger(__name__)
 
 @cache_page(60 * 15)  # Cache for 15 minutes
 def home_view(request):
     """Homepage view showing featured listings"""
-    featured = Listing.objects.filter(
-        status='active',
-        is_featured=True
-    ).select_related('category', 'user')[:12]
-    categories = Category.objects.filter(parent__isnull=True)[:8]
-    return render(request, 'marketplace/home.html', {
-        'featured_listings': featured,
-        'categories': categories
-    })
+    try:
+        logger.info("Home view accessed")
+        featured = Listing.objects.filter(
+            status='active',
+            is_featured=True
+        ).select_related('category', 'user')[:12]
+        categories = Category.objects.filter(parent__isnull=True)[:8]
+        
+        logger.info(f"Found {featured.count()} featured listings and {categories.count()} categories")
+        
+        return render(request, 'marketplace/index.html', {
+            'featured_listings': featured,
+            'categories': categories
+        })
+    except Exception as e:
+        logger.error(f"Error in home_view: {e}")
+        return HttpResponse(f"Error: {e}", status=500)
 
 def categories_view(request):
     """All categories listing"""

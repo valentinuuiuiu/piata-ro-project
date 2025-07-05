@@ -33,6 +33,7 @@ class JumioVerification:
             json=payload,
             headers=self.headers,
             auth=(self.api_token, self.api_secret)
+        )
         
         if response.status_code == 201:
             data = response.json()

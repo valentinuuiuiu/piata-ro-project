@@ -21,6 +21,8 @@ from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import HttpResponse
+from django.views.generic import RedirectView
 
 from piata_ro.views import (
     process_mcp_query, test_endpoint, home, interact_with_mcp_agents, 
@@ -34,6 +36,9 @@ urlpatterns = [
     path('ai/', include(('ai_assistant.urls', 'ai_assistant'), namespace='ai_assistant')),  # Add AI assistant URLs
     path('ai-assistant/', include(('ai_assistant.urls', 'ai_assistant'), namespace='ai_assistant_alt')),  # Alternative path
     path('admin/', admin_site.urls),
+    
+    # Favicon
+    path('favicon.ico', RedirectView.as_view(url='/static/favicon.ico', permanent=True)),
     
     # Allauth URLs (includes social auth)
     path('accounts/', include('allauth.urls')),
