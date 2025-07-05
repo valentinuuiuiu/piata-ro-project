@@ -14,6 +14,7 @@ from decimal import Decimal
 from dataclasses import dataclass
 from math import radians, cos, sin, asin, sqrt
 import time
+from requests_cache import CachedSession
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +64,11 @@ class LocationService:
     
     def __init__(self):
         self._last_request_time = 0
+        self.session = CachedSession(
+            'geocoding_cache',
+            backend='redis' if hasattr(settings, 'REDIS_URL') else 'memory',
+            expire_after=86400  # 24 hours
+        )
     
     def _ensure_rate_limit(self):
         """Ensure we don't exceed Nominatim rate limits"""
@@ -83,7 +89,7 @@ class LocationService:
             self._ensure_rate_limit()
             
             headers = {'User-Agent': self.USER_AGENT}
-            response = requests.get(f"{self.BASE_URL}/{endpoint}", params=params, headers=headers, timeout=10)
+            response = self.session.get(f"{self.BASE_URL}/{endpoint}", params=params, headers=headers, timeout=10)
             
             if response.status_code == 429:  # Rate limited
                 logger.warning("Rate limit hit, backing off")
