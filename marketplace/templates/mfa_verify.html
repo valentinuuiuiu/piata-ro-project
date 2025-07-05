@@ -1,0 +1,23 @@
+
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-container">
+  <h2>Multi-Factor Authentication</h2>
+  <p>Please enter the 6-digit code from your authenticator app</p>
+  {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="token">Verification Code</label>
+      <input type="text" id="token" name="token" pattern="\d{6}" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Verify</button>
+  </form>
+  <div class="mfa-help">
+    <a href="#" id="show-backup-codes">Use backup code instead</a>
+  </div>
+</div>
+{% endblock %}
+

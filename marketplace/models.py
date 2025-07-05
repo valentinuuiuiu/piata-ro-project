@@ -98,6 +98,10 @@ class Listing(models.Model):
             models.Index(fields=["status", "created_at"]),
             models.Index(fields=["category", "status"]),
             models.Index(fields=["user", "status"]),
+            models.Index(fields=["is_featured", "created_at"]),
+            models.Index(fields=["price", "status"]),
+            models.Index(fields=["city", "status"]),
+            models.Index(fields=["latitude", "longitude"]),  # For geospatial queries
         ]
 
     def __str__(self):
@@ -199,6 +203,42 @@ class Listing(models.Model):
         
         return queryset
 
+
+class Report(models.Model):
+    REASON_CHOICES = (
+        ('spam', 'Spam or misleading'),
+        ('fraud', 'Fraud or scam'),
+        ('prohibited', 'Prohibited item'),
+        ('wrong_category', 'Wrong category'),
+        ('duplicate', 'Duplicate listing'),
+        ('other', 'Other reason'),
+    )
+    
+    reporter = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE,
+        related_name='reports_made'
+    )
+    listing = models.ForeignKey(
+        Listing,
+        on_delete=models.CASCADE,
+        related_name='reports'
+    )
+    reason = models.CharField(
+        max_length=20,
+        choices=REASON_CHOICES
+    )
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_resolved = models.BooleanField(default=False)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Listing Report'
+        verbose_name_plural = 'Listing Reports'
+    
+    def __str__(self):
+        return f"Report on {self.listing.title} by {self.reporter.username}"
 
 class ListingImage(models.Model):
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='images')
@@ -617,7 +657,7 @@ class ListingReport(models.Model):
         ('dismissed', 'Respins'),
     )
     
-    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='reports')
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='listing_reports')
     reporter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='submitted_reports')
     reason = models.CharField(max_length=20, choices=REASON_CHOICES)
     comment = models.TextField(blank=True, null=True)

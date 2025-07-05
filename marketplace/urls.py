@@ -1,26 +1,33 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+from django.contrib.auth.views import LogoutView
 
 from . import views
 from .deepseek_chat_refactored import deepseek_chat_view
+from .views.auth import login_view, verify_mfa
 
 app_name = 'marketplace'
 
 # API Router for REST endpoints
 router = DefaultRouter()
-router.register(r"categories", views.CategoryViewSet)
-router.register(r"listings", views.ListingViewSet)
-router.register(r"messages", views.MessageViewSet)
-router.register(r"favorites", views.FavoriteViewSet)
-router.register(r"users", views.UserProfileViewSet)
+router.register(r"categories", views.CategoryViewSet, basename='category')
+router.register(r"listings", views.ListingViewSet, basename='listing')
+router.register(r"messages", views.MessageViewSet, basename='message')
+router.register(r"favorites", views.FavoriteViewSet, basename='favorite')
+router.register(r"users", views.UserProfileViewSet, basename='userprofile')
 
 urlpatterns = [
+    # Authentication
+    path('login/', login_view, name='login'),
+    path('login/mfa/', verify_mfa, name='verify_mfa'),
+    path('logout/', LogoutView.as_view(), name='logout'),
+
     # Frontend pages
     path('', views.home_view, name='home'),
-    path('categorii/', views.categories_view, name='categories'),
-    path('categorii/<slug:category_slug>/', views.category_detail_view, name='category_detail'),
-    path('anunturi/', views.listings_view, name='listings'),
-    path('anunt/<int:listing_id>/', views.listing_detail_view, name='listing_detail'),
+    path('categorii/', views.category_list, name='categories'),
+    path('categorii/<slug:category_slug>/', views.category_detail, name='category_detail'),
+    path('anunturi/', views.listing_list, name='listings'),
+    path('anunt/<slug:slug>/', views.listing_detail, name='listing_detail'),
     path('adauga-anunt/', views.add_listing_view, name='add_listing'),
     path('profil/', views.profile_view, name='profile'),
     path('profil/editare/', views.profile_edit_view, name='profile_edit'),
