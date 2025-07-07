@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Authentication Error</title>
+    {% comment %} Minimal styling, or extend a base template if one exists that doesn't require auth {% endcomment %}
+    <style>
+        body { font-family: sans-serif; padding: 20px; text-align: center; }
+        h1 { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <h1>Authentication Error</h1>
+    <p>{{ error_message|default:"An error occurred during authentication. Please try again." }}</p>
+    <p><a href="/">Go to Homepage</a></p>
+    {% if RASA_API_URL %}
+        <p><a href="{{ RASA_API_URL }}/login">Login Again</a></p>
+    {% else %}
+         <p><a href="{% url 'marketplace:clerk_login' %}">Login Again</a></p>
+    {% endif %}
+</body>
+</html>
