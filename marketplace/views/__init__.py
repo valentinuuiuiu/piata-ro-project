@@ -28,8 +28,8 @@ from .legal import *
 from .credits import *
 from .contact import *
 
-# Explicitly export register_view for main URLs
-from .auth import register_view
+# Authentication is now handled via Clerk
+# Removed register_view import since it's no longer used
 
 
 
