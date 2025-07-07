@@ -299,6 +299,7 @@ class Favorite(models.Model):
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    clerk_user_id = models.CharField(max_length=255, unique=True, blank=True, null=True, help_text="Clerk User ID")
     avatar = models.CharField(max_length=255, blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)

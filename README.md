@@ -60,7 +60,7 @@
 - **📱 Mobile-First Design** - Optimized responsive experience
 
 ### 👥 **User Management**
-- **🔐 Secure Authentication** - Registration, login with Django's security
+- **🔐 Secure Authentication** - User registration, login, and session management handled by Clerk (see [AUTH_CLERK.md](AUTH_CLERK.md) for details).
 - **👤 User Profiles** - Detailed seller profiles with contact information
 - **💬 Messaging System** - Direct communication between buyers and sellers
 - **⭐ Rating & Reviews** - Trust building through user feedback
@@ -282,6 +282,10 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 
 # Database (optional - SQLite is default)
 DATABASE_URL=sqlite:///db.sqlite3
+
+# Clerk Authentication (see AUTH_CLERK.md for more details)
+CLERK_PUBLISHABLE_KEY=pk_test_your_clerk_publishable_key
+CLERK_SECRET_KEY=sk_test_your_clerk_secret_key
 
 # Stripe (for payments)
 STRIPE_PUBLISHABLE_KEY=pk_test_...

@@ -38,6 +38,7 @@ load_dotenv()
 SECRET_KEY = os.getenv('SECRET_KEY')
 if not SECRET_KEY:
     raise ValueError("SECRET_KEY must be set in environment variables and properly configured in production")
+# SECRET_KEY = "dummy_secret_key_for_migrations_only_12345" # Temporary for migrations
 
 # Additional security validations
 if DEBUG and os.getenv('ENVIRONMENT') == 'production':
@@ -102,6 +103,12 @@ LANGCHAIN_ENDPOINT = "https://api.smith.langchain.com"
 LANGCHAIN_API_KEY = "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"
 LANGCHAIN_PROJECT = "piata-ro-mcp-orchestrator"
 
+# Clerk Authentication
+CLERK_PUBLISHABLE_KEY = os.getenv('CLERK_PUBLISHABLE_KEY')
+CLERK_SECRET_KEY = os.getenv('CLERK_SECRET_KEY')
+# Optional: Specify a specific JWT verification key if not using the one from Clerk Dashboard
+# CLERK_JWT_KEY = os.getenv('CLERK_JWT_KEY')
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -115,10 +122,10 @@ INSTALLED_APPS = [
     
     # Third-party apps
     'rest_framework',
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
+    # 'allauth', # Removed
+    # 'allauth.account', # Removed
+    # 'allauth.socialaccount', # Removed
+    # 'allauth.socialaccount.providers.google', # Removed
     
     # Local apps
     'api',
@@ -134,7 +141,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware',
+    # 'allauth.account.middleware.AccountMiddleware', # Removed
 ]
 
 # Site ID for django.contrib.sites
@@ -142,8 +149,9 @@ SITE_ID = 1
 
 # Authentication backends
 AUTHENTICATION_BACKENDS = [
+    'marketplace.clerk_auth_backend.ClerkAuthBackend', # New Clerk backend
     'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
+    # 'allauth.account.auth_backends.AuthenticationBackend', # Removed
 ]
 
 ROOT_URLCONF = 'piata_ro.urls'
@@ -247,40 +255,40 @@ EMAIL_HOST_USER = ''
 EMAIL_HOST_PASSWORD = ''
 DEFAULT_FROM_EMAIL = 'noreply@piata.ro'
 
-# Django Allauth settings
-ACCOUNT_LOGIN_METHODS = {'email'}
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
-ACCOUNT_EMAIL_VERIFICATION = 'none'  # Disable email verification for now
-ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
-ACCOUNT_LOGOUT_ON_GET = True
-ACCOUNT_RATE_LIMITS = {
-    'login_failed': '5/5m',
-}
+# Django Allauth settings # REMOVED
+# ACCOUNT_LOGIN_METHODS = {'email'}
+# ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+# ACCOUNT_EMAIL_VERIFICATION = 'none'  # Disable email verification for now
+# ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
+# ACCOUNT_LOGOUT_ON_GET = True
+# ACCOUNT_RATE_LIMITS = {
+#     'login_failed': '5/5m',
+# }
 
-# Social account settings
-SOCIALACCOUNT_AUTO_SIGNUP = True
-SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
-SOCIALACCOUNT_LOGIN_ON_GET = True
+# Social account settings # REMOVED
+# SOCIALACCOUNT_AUTO_SIGNUP = True
+# SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
+# SOCIALACCOUNT_LOGIN_ON_GET = True
 
-# Google OAuth2 settings
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'SCOPE': [
-            'profile',
-            'email',
-        ],
-        'AUTH_PARAMS': {
-            'access_type': 'online',
-        },
-        'OAUTH_PKCE_ENABLED': True,
-    }
-}
+# Google OAuth2 settings # REMOVED (These were for Allauth Google provider)
+# SOCIALACCOUNT_PROVIDERS = {
+#     'google': {
+#         'SCOPE': [
+#             'profile',
+#             'email',
+#         ],
+#         'AUTH_PARAMS': {
+#             'access_type': 'online',
+#         },
+#         'OAUTH_PKCE_ENABLED': True,
+#     }
+# }
 
-# Google OAuth credentials from environment variables
-GOOGLE_CLIENT_ID = os.getenv('GOOGLE_OAUTH2_CLIENT_ID')
-GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_OAUTH2_CLIENT_SECRET')
+# Google OAuth credentials from environment variables # REMOVED (These were for Allauth Google provider)
+# GOOGLE_CLIENT_ID = os.getenv('GOOGLE_OAUTH2_CLIENT_ID')
+# GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_OAUTH2_CLIENT_SECRET')
 
-# Note: Social applications are configured via Django admin, not here
+# Note: Social applications are configured via Django admin, not here # REMOVED
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

@@ -1,7 +1,7 @@
-fastapi>=0.95.0
+fastapi~=0.95.0
 uvicorn>=0.22.0
 sqlalchemy>=2.0.0
-pydantic>=2.0.0
+pydantic~=1.10.0
 python-dotenv>=1.0.0
 pytest>=7.0.0
 httpx>=0.24.0
@@ -18,7 +18,9 @@ django-ratelimit>=3.0.1
 ratelimit>=2.2.1
 
 # Django authentication and forms
-django-allauth>=0.57.0
+# django-allauth>=0.57.0 # Removed
+clerk-sdk-python
+pyotp
 
 # Cross-Origin Resource Sharing
 django-cors-headers>=4.3.1

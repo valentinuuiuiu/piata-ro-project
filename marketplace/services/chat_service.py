@@ -37,7 +37,9 @@ class DeepSeekChatService:
     def __init__(self):
         self.api_key = getattr(settings, 'DEEPSEEK_API_KEY', os.getenv('DEEPSEEK_API_KEY'))
         if not self.api_key:
-            raise ValueError("DeepSeek API key not configured")
+            # Allow initialization without API key for scenarios like migrations
+            logger.warning("DeepSeek API key not configured. Chat service will not function.")
+            # raise ValueError("DeepSeek API key not configured") # Original line
     
     async def chat_completion_async(
         self, 
