@@ -28,7 +28,6 @@ from piata_ro.views import (
     process_mcp_query, test_endpoint, home, interact_with_mcp_agents, 
     natural_language_query, openai_models_endpoint, openai_chat_completions
 )
-from marketplace.views import register_view
 from marketplace.admin import admin_site
 
 urlpatterns = [
