@@ -18,7 +18,7 @@ django-ratelimit>=3.0.1
 ratelimit>=2.2.1
 
 # Django authentication and forms
-django-allauth>=0.57.0
+# django-allauth>=0.57.0 # Removed
 clerk-sdk-python
 pyotp
 
