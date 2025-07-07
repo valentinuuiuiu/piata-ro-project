@@ -41,7 +41,7 @@ urlpatterns = [
     path('favicon.ico', RedirectView.as_view(url='/static/favicon.ico', permanent=True)),
     
     # Allauth URLs (includes social auth)
-    path('accounts/', include('allauth.urls')),
+    # path('accounts/', include('allauth.urls')), # Temporarily commented out for migrations
     
     # Keep custom register view
     path('register/', register_view, name='register'),

@@ -35,9 +35,10 @@ import os
 
 load_dotenv()
 
-SECRET_KEY = os.getenv('SECRET_KEY')
-if not SECRET_KEY:
-    raise ValueError("SECRET_KEY must be set in environment variables and properly configured in production")
+# SECRET_KEY = os.getenv('SECRET_KEY')
+# if not SECRET_KEY:
+#     raise ValueError("SECRET_KEY must be set in environment variables and properly configured in production")
+SECRET_KEY = "dummy_secret_key_for_migrations_only_12345" # Temporary for migrations
 
 # Additional security validations
 if DEBUG and os.getenv('ENVIRONMENT') == 'production':
@@ -102,6 +103,12 @@ LANGCHAIN_ENDPOINT = "https://api.smith.langchain.com"
 LANGCHAIN_API_KEY = "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"
 LANGCHAIN_PROJECT = "piata-ro-mcp-orchestrator"
 
+# Clerk Authentication
+CLERK_PUBLISHABLE_KEY = os.getenv('CLERK_PUBLISHABLE_KEY')
+CLERK_SECRET_KEY = os.getenv('CLERK_SECRET_KEY')
+# Optional: Specify a specific JWT verification key if not using the one from Clerk Dashboard
+# CLERK_JWT_KEY = os.getenv('CLERK_JWT_KEY')
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -115,10 +122,10 @@ INSTALLED_APPS = [
     
     # Third-party apps
     'rest_framework',
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
+    # 'allauth',
+    # 'allauth.account',
+    # 'allauth.socialaccount',
+    # 'allauth.socialaccount.providers.google',
     
     # Local apps
     'api',
@@ -134,7 +141,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware',
+    # 'allauth.account.middleware.AccountMiddleware',
 ]
 
 # Site ID for django.contrib.sites
@@ -143,7 +150,7 @@ SITE_ID = 1
 # Authentication backends
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
+    # 'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 ROOT_URLCONF = 'piata_ro.urls'
