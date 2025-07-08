@@ -122,17 +122,10 @@ INSTALLED_APPS = [
     
     # Third-party apps
     'rest_framework',
-<<<<<<< HEAD
-    # 'allauth',
-    # 'allauth.account',
-    # 'allauth.socialaccount',
-    # 'allauth.socialaccount.providers.google',
-=======
     # 'allauth', # Removed
     # 'allauth.account', # Removed
     # 'allauth.socialaccount', # Removed
     # 'allauth.socialaccount.providers.google', # Removed
->>>>>>> origin/feature/clerk-auth-setup
     
     # Local apps
     'api',
@@ -148,11 +141,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-<<<<<<< HEAD
-    # 'allauth.account.middleware.AccountMiddleware',
-=======
     # 'allauth.account.middleware.AccountMiddleware', # Removed
->>>>>>> origin/feature/clerk-auth-setup
 ]
 
 # Site ID for django.contrib.sites
@@ -162,11 +151,7 @@ SITE_ID = 1
 AUTHENTICATION_BACKENDS = [
     'marketplace.clerk_auth_backend.ClerkAuthBackend', # New Clerk backend
     'django.contrib.auth.backends.ModelBackend',
-<<<<<<< HEAD
-    # 'allauth.account.auth_backends.AuthenticationBackend',
-=======
     # 'allauth.account.auth_backends.AuthenticationBackend', # Removed
->>>>>>> origin/feature/clerk-auth-setup
 ]
 
 ROOT_URLCONF = 'piata_ro.urls'

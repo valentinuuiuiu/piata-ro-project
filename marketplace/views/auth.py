@@ -112,3 +112,8 @@ def clerk_callback_view(request):
 #   <p><a href="/">Go to homepage</a></p>
 # </body>
 # </html>
+
+
+def register_view(request):
+    from django.shortcuts import render
+    return render(request, 'registration/register.html')

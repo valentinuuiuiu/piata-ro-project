@@ -240,7 +240,6 @@ class Report(models.Model):
     def __str__(self):
         return f"Report on {self.listing.title} by {self.reporter.username}"
 
-class ListingImage(models.Model):
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(upload_to=listing_image_path)
     is_main = models.BooleanField(default=False)
@@ -396,7 +395,6 @@ class CreditPackage(models.Model):
         return price / self.total_credits
 
 
-class ListingImage(models.Model):
     """Model for storing multiple images per listing"""
     listing = models.ForeignKey('Listing', on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(upload_to='listings/')

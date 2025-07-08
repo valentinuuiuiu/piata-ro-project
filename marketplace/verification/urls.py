@@ -2,7 +2,7 @@
 
 
 from django.urls import path
-from . import views
+from .views import *
 
 urlpatterns = [
     path('start/', views.start_verification, name='start-verification'),

@@ -13,8 +13,7 @@ import asyncio
 import httpx
 from datetime import datetime
 
-from .models.listings import ListingImage
-from .models import Category, Favorite, Listing, Message, UserProfile, ListingReport, Location
+from .models import Category, Favorite, Listing, Message, UserProfile, ListingReport, Location, ListingImage
 from .models_chat import ChatConversation, ChatMessage
 from .admin_location import location_admin
 

@@ -4,8 +4,7 @@ from django.contrib.auth.views import LogoutView, PasswordResetView, PasswordRes
 
 from . import views
 from .deepseek_chat_refactored import deepseek_chat_view
-# from .views.auth import login_view, verify_mfa # Old auth views
-from marketplace.views import auth as marketplace_auth_views # New auth views
+from marketplace.views import auth as marketplace_auth_views
 from .recommendations import urls as recommendation_urls
 
 app_name = 'marketplace'
@@ -18,7 +17,9 @@ router.register(r"messages", views.MessageViewSet, basename='message')
 router.register(r"favorites", views.FavoriteViewSet, basename='favorite')
 router.register(r"users", views.UserProfileViewSet, basename='userprofile')
 
+from marketplace.views.auth import register_view
 urlpatterns = [
+    path('register/', register_view, name='register'),
     # Recommendation endpoints
     path('recommendations/', include(recommendation_urls)),
     
