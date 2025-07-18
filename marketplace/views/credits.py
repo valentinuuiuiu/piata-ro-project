@@ -28,7 +28,7 @@ def purchase_credits(request, package_id):
     
     package = get_object_or_404(CreditPackage, id=package_id)
     # Actual purchase logic would be handled by Stripe webhook
-    return redirect('buy_credits')
+    return redirect('marketplace:buy_credits')
 
 
 
@@ -64,7 +64,7 @@ def process_payment_view(request):
                 'error': str(e)
             })
     
-    return redirect('buy_credits')
+    return redirect('marketplace:buy_credits')
 
 
 
@@ -98,7 +98,7 @@ def promote_listing_view(request, listing_id):
     
     if not request.user.profile.can_promote_listing():
         messages.error(request, "You don't have enough credits to promote this listing")
-        return redirect('listing_detail', listing_id=listing_id)
+        return redirect('marketplace:listing_detail', slug=listing.slug)
     
     # Deduct credits and promote listing
     if request.user.profile.deduct_credits(Decimal('0.5')):

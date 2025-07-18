@@ -269,5 +269,6 @@ class AdminAssistantModel(models.Model):
         managed = False  # Don't create DB table
         default_permissions = ()
 
-# Register the dummy model with our custom admin (default admin site only)
+# Register the dummy model with our custom admin site
 admin.site.register(AdminAssistantModel, AdminAssistantAdmin)
+admin_site.register(AdminAssistantModel, AdminAssistantAdmin)

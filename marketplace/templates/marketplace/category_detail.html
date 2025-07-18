@@ -48,7 +48,7 @@
                     <p class="text-gray-600 mb-4">{{ category.description }}</p>
                     {% endif %}
                     <p class="text-gray-500">
-                        <i class="fas fa-list mr-2"></i>{{ category.get_listings_count }} anunțuri în această categorie
+                        <i class="fas fa-list mr-2"></i>0 anunțuri în această categorie
                     </p>
                 </div>
             </div>
@@ -69,7 +69,7 @@
                class="block bg-gray-100 p-4 rounded-lg hover:bg-gray-200 transition-colors text-center">
                 <i class="{{ subcat.icon|default:'fas fa-folder-open' }} text-2xl text-primary mb-2"></i>
                 <h3 class="text-md font-semibold text-gray-800">{{ subcat.name }}</h3>
-                <p class="text-sm text-gray-500">{{ subcat.get_listings_count }} anunțuri</p>
+                <p class="text-sm text-gray-500">0 anunțuri</p>
             </a>
             {% endfor %}
         </div>
@@ -137,96 +137,63 @@
 
     <!-- Listings Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for listing in listings %}
-        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
-            <a href="{% url 'marketplace:listing_detail' listing.id %}" class="block">
-                <!-- Image -->
-                <div class="h-48 bg-gray-200 relative">
-                    {% if listing.image %}
-                    <img src="{{ listing.image.url }}" alt="{{ listing.title }}" 
-                         class="w-full h-full object-cover">
-                    {% else %}
-                    <div class="w-full h-full flex items-center justify-center text-gray-400">
-                        <i class="fas fa-image text-4xl"></i>
-                    </div>
-                    {% endif %}
-                    
-                    <!-- Price Badge -->
-                    <div class="absolute top-3 right-3 bg-black bg-opacity-75 text-white px-3 py-1 rounded-lg">
-                        <span class="font-semibold">{{ listing.price }} RON</span>
-                    </div>
-                </div>
-                
-                <!-- Content -->
-                <div class="p-4">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2 line-clamp-2">{{ listing.title }}</h3>
-                    <p class="text-gray-600 text-sm mb-3 line-clamp-2">{{ listing.description }}</p>
-                    
-                    <!-- Meta Info -->
-                    <div class="flex items-center justify-between text-sm text-gray-500">
-                        <div class="flex items-center">
-                            <i class="fas fa-map-marker-alt mr-1"></i>
-                            <span>{{ listing.location }}</span>
+        {% if listings %}
+            {% for listing in listings %}
+            <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+                <a href="{% url 'marketplace:listing_detail' listing.slug %}" class="block">
+                    <!-- Image -->
+                    <div class="h-48 bg-gray-200 relative">
+                        <div class="w-full h-full flex items-center justify-center text-gray-400">
+                            <i class="fas fa-image text-4xl"></i>
                         </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-clock mr-1"></i>
-                            <span>{{ listing.created_at|timesince }}</span>
+                        
+                        <!-- Price Badge -->
+                        <div class="absolute top-3 right-3 bg-black bg-opacity-75 text-white px-3 py-1 rounded-lg">
+                            <span class="font-semibold">0 RON</span>
                         </div>
                     </div>
                     
-                    <!-- User -->
-                    <div class="flex items-center mt-3 pt-3 border-t border-gray-100">
-                        <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mr-3">
-                            <i class="fas fa-user text-sm text-gray-600"></i>
+                    <!-- Content -->
+                    <div class="p-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2 line-clamp-2">{{ listing.title }}</h3>
+                        <p class="text-gray-600 text-sm mb-3 line-clamp-2">{{ listing.description }}</p>
+                        
+                        <!-- Meta Info -->
+                        <div class="flex items-center justify-between text-sm text-gray-500">
+                            <div class="flex items-center">
+                                <i class="fas fa-map-marker-alt mr-1"></i>
+                                <span>{{ listing.location }}</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-clock mr-1"></i>
+                                <span>{{ listing.created_at|timesince }}</span>
+                            </div>
                         </div>
-                        <span class="text-sm text-gray-600">{{ listing.user.username }}</span>
+                        
+                        <!-- User -->
+                        <div class="flex items-center mt-3 pt-3 border-t border-gray-100">
+                            <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-user text-sm text-gray-600"></i>
+                            </div>
+                            <span class="text-sm text-gray-600">{{ listing.user.username }}</span>
+                        </div>
                     </div>
-                </div>
-            </a>
-        </div>
-        {% empty %}
-        <div class="col-span-full">
-            <div class="bg-white rounded-lg shadow-md p-12 text-center">
-                <i class="fas fa-search text-6xl text-gray-300 mb-4"></i>
-                <h3 class="text-xl font-semibold text-gray-600 mb-2">Nu am găsit anunțuri</h3>
-                <p class="text-gray-500 mb-6">Nu există anunțuri în această categorie cu criteriile selectate.</p>
-                <a href="{% url 'marketplace:add_listing' %}?category={{ category.id }}" 
-                   class="inline-block bg-accent text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors">
-                    <i class="fas fa-plus mr-2"></i>Fii primul care adaugă un anunț
                 </a>
             </div>
-        </div>
-        {% endfor %}
-    </div>
-
-    <!-- Pagination -->
-    {% if listings.has_other_pages %}
-    <div class="flex justify-center mt-12">
-        <nav class="flex items-center space-x-2">
-            {% if listings.has_previous %}
-                <a href="?page={{ listings.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}{% if request.GET.location %}&location={{ request.GET.location }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" 
-                   class="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                    <i class="fas fa-chevron-left"></i>
-                </a>
-            {% endif %}
-            
-            {% for num in listings.paginator.page_range %}
-                {% if num == listings.number %}
-                    <span class="px-3 py-2 bg-primary text-white rounded-lg">{{ num }}</span>
-                {% else %}
-                    <a href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}{% if request.GET.location %}&location={{ request.GET.location }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" 
-                       class="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">{{ num }}</a>
-                {% endif %}
             {% endfor %}
-            
-            {% if listings.has_next %}
-                <a href="?page={{ listings.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}{% if request.GET.location %}&location={{ request.GET.location }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}" 
-                   class="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                    <i class="fas fa-chevron-right"></i>
-                </a>
-            {% endif %}
-        </nav>
+        {% else %}
+            <div class="col-span-full">
+                <div class="bg-white rounded-lg shadow-md p-12 text-center">
+                    <i class="fas fa-search text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">Nu am găsit anunțuri</h3>
+                    <p class="text-gray-500 mb-6">Nu există anunțuri în această categorie cu criteriile selectate.</p>
+                    <a href="{% url 'marketplace:add_listing' %}?category={{ category.id }}" 
+                       class="inline-block bg-accent text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Fii primul care adaugă un anunț
+                    </a>
+                </div>
+            </div>
+        {% endif %}
     </div>
-    {% endif %}
 </div>
 {% endblock %}

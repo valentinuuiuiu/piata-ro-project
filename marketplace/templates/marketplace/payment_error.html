@@ -1,0 +1,35 @@
+{% extends 'marketplace/base.html' %}
+
+{% block title %}Eroare la plată - Piața.ro{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-12">
+    <div class="max-w-lg mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+        <!-- Header -->
+        <div class="bg-red-600 text-white p-6 text-center">
+            <i class="fas fa-exclamation-circle text-5xl mb-3"></i>
+            <h2 class="text-2xl font-bold">Eroare la procesarea plății</h2>
+        </div>
+        
+        <!-- Content -->
+        <div class="p-6">
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+                <p class="font-medium">{{ error }}</p>
+            </div>
+            
+            <p class="text-gray-600 mb-6">
+                Ne pare rău, a apărut o eroare în timpul procesării plății. Vă rugăm să încercați din nou sau să contactați echipa de suport dacă problema persistă.
+            </p>
+            
+            <div class="flex justify-center space-x-4">
+                <a href="{% url 'marketplace:buy_credits' %}" class="px-6 py-3 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>Înapoi la credite
+                </a>
+                <a href="{% url 'marketplace:contact' %}" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-envelope mr-2"></i>Contactează suportul
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

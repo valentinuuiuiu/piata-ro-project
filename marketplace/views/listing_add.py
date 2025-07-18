@@ -1,6 +1,6 @@
 
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect
+from django.shortcuts import render, redirect
 from ..forms import ListingForm
 
 @login_required
@@ -12,7 +12,7 @@ def add_listing_view(request):
             listing = form.save(commit=False)
             listing.user = request.user
             listing.save()
-            return redirect('listing_detail', slug=listing.slug)
+            return redirect('marketplace:listing_detail', slug=listing.slug)
     else:
         form = ListingForm()
     

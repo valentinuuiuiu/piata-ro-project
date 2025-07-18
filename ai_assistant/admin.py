@@ -6,7 +6,10 @@ from django.http import JsonResponse
 from .models import AdminQueryLog
 import json
 
+from marketplace.admin import admin_site
+
 @admin.register(AdminQueryLog)
+@admin.register(AdminQueryLog, site=admin_site)
 class PiataAIAssistantAdmin(admin.ModelAdmin):
     list_display = ('user', 'sql_text', 'timestamp', 'duration')
     list_filter = ('user', 'timestamp')

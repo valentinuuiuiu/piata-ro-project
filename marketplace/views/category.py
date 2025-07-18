@@ -42,14 +42,14 @@ def category_list(request):
         logger.error(f"Traceback: {traceback.format_exc()}")
         return render(request, 'marketplace/error.html', {'error': str(e)})
 
-def category_detail(request, slug):
+def category_detail(request, category_slug):
     """Category detail with listings"""
     import logging
     logger = logging.getLogger(__name__)
     
     try:
-        logger.info(f"Category detail view accessed for slug: {slug}")
-        category = get_object_or_404(Category, slug=slug)
+        logger.info(f"Category detail view accessed for slug: {category_slug}")
+        category = get_object_or_404(Category, slug=category_slug)
         logger.info(f"Found category: {category.name}")
         
         # Get subcategories if this is a parent category
@@ -62,7 +62,7 @@ def category_detail(request, slug):
             logger.error(f"Error getting subcategories for {category.name}: {e}")
         
         try:
-            listings = category.listings.filter(status='active').select_related('user')
+            listings = Listing.objects.filter(category=category, status='active').select_related('user')
             listings_count = listings.count()
             logger.info(f"Found {listings_count} active listings for category {category.name}")
             

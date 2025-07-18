@@ -38,9 +38,7 @@
                     <li>
                         <a href="{% url 'marketplace:category_detail' subcategory.slug %}" class="text-primary hover:underline text-sm">
                             {{ subcategory.name }}
-                            <span class="text-gray-500 text-xs">
-                                ({{ subcategory.get_listings_count }})
-                            </span>
+                            <span class="text-gray-500 text-xs">(0)</span>
                         </a>
                     </li>
                     {% endfor %}
@@ -49,7 +47,7 @@
             {% else %}
             <div class="ml-16 mt-2">
                  <a href="{% url 'marketplace:category_detail' category.slug %}" class="text-sm text-primary hover:underline">
-                    Vezi {{ category.get_listings_count }} anunțuri în {{ category.name }}
+                    Vezi anunțuri în {{ category.name }}
                 </a>
             </div>
             {% endif %}
@@ -80,7 +78,7 @@
                         <h3 class="text-xl font-semibold">{{ category.name }}</h3>
                         <i class="{{ category.icon|default:'fas fa-folder' }} text-2xl opacity-80"></i>
                     </div>
-                    <p class="text-blue-100 mb-3">{{ category.listings.count }} anunțuri active</p>
+                    <p class="text-blue-100 mb-3">0 anunțuri active</p>
                     <div class="flex items-center text-blue-100">
                         <span class="text-sm">Vezi toate anunțurile</span>
                         <i class="fas fa-arrow-right ml-2"></i>
