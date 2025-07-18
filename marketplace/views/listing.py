@@ -7,12 +7,27 @@ from ..models import Listing, Category
 @cache_page(60 * 15)  # Cache for 15 minutes
 def listing_detail(request, slug):
     """Listing detail view with caching"""
-    listing = get_object_or_404(
-        Listing.objects.select_related('user', 'category'),
-        slug=slug,
-        status='active'
-    )
-    return render(request, 'marketplace/listing_detail.html', {'listing': listing})
+    try:
+        # Try to get by slug first
+        try:
+            listing = get_object_or_404(
+                Listing.objects.select_related('user', 'category'),
+                slug=slug,
+                status='active'
+            )
+        except:
+            # If slug fails, try by ID (for backward compatibility)
+            listing = get_object_or_404(
+                Listing.objects.select_related('user', 'category'),
+                id=slug,
+                status='active'
+            )
+        
+        return render(request, 'marketplace/listing_detail.html', {'listing': listing})
+    except Exception as e:
+        from django.contrib import messages
+        messages.error(request, f"Error loading listing: {str(e)}")
+        return redirect('marketplace:listings')
 
 def listing_list(request):
     """Paginated listing list view"""

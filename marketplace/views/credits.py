@@ -8,16 +8,27 @@ from ..models import CreditPackage, CreditTransaction
 @login_required
 def credits_dashboard(request):
     """View for credit purchase dashboard"""
-    packages = CreditPackage.objects.filter(is_active=True)
-    transactions = CreditTransaction.objects.filter(
-        user=request.user
-    ).order_by('-created_at')[:10]
-    
-    return render(request, 'marketplace/credits_dashboard.html', {
-        'packages': packages,
-        'transactions': transactions,
-        'balance': request.user.profile.credits_balance
-    })
+    try:
+        # Ensure user has a profile
+        profile, created = UserProfile.objects.get_or_create(user=request.user)
+        
+        # Get active credit packages
+        packages = CreditPackage.objects.filter(is_active=True)
+        
+        # Get recent transactions
+        transactions = CreditTransaction.objects.filter(
+            user=request.user
+        ).order_by('-created_at')[:10]
+        
+        return render(request, 'marketplace/credits_dashboard.html', {
+            'packages': packages,
+            'transactions': transactions,
+            'balance': profile.credits_balance
+        })
+    except Exception as e:
+        from django.contrib import messages
+        messages.error(request, f"Error loading credits dashboard: {str(e)}")
+        return redirect('marketplace:profile')
 
 @login_required
 def purchase_credits(request, package_id):
