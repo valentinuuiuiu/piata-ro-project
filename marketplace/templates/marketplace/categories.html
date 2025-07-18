@@ -38,7 +38,9 @@
                     <li>
                         <a href="{% url 'marketplace:category_detail' subcategory.slug %}" class="text-primary hover:underline text-sm">
                             {{ subcategory.name }}
-                            <span class="text-gray-500 text-xs">({{ subcategory.listings.count }})</span>
+                            <span class="text-gray-500 text-xs">
+                                ({{ subcategory.get_listings_count }})
+                            </span>
                         </a>
                     </li>
                     {% endfor %}
@@ -47,7 +49,7 @@
             {% else %}
             <div class="ml-16 mt-2">
                  <a href="{% url 'marketplace:category_detail' category.slug %}" class="text-sm text-primary hover:underline">
-                    Vezi {{ category.listings.count }} anunțuri în {{ category.name }}
+                    Vezi {{ category.get_listings_count }} anunțuri în {{ category.name }}
                 </a>
             </div>
             {% endif %}

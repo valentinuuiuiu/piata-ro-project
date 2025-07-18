@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ title }}</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ title }}</h1>
+    <form id="query-form">
+        <textarea name="query" rows="4" cols="50"></textarea>
+        <button type="submit">Execute</button>
+    </form>
+    <div id="result-container"></div>
+
+    <script>
+        document.getElementById('query-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const query = this.elements.query.value;
+            fetch(window.location.pathname, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ query: query })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('result-container');
+                if (data.error) {
+                    container.innerHTML = `<p style="color: red;">${data.error}</p>`;
+                } else if (data.rows) {
+                    let table = '<table><thead><tr>';
+                    data.columns.forEach(col => table += `<th>${col}</th>`);
+                    table += '</tr></thead><tbody>';
+                    data.rows.forEach(row => {
+                        table += '<tr>';
+                        row.forEach(cell => table += `<td>${cell}</td>`);
+                        table += '</tr>';
+                    });
+                    table += '</tbody></table>';
+                    container.innerHTML = table;
+                } else {
+                    container.innerHTML = `<p>${data.message}</p>`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+

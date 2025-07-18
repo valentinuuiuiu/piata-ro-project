@@ -1,114 +1,73 @@
-from django.contrib.auth import login as django_login, logout as django_logout
-from django.shortcuts import redirect, render
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.conf import settings
-from django.urls import reverse
-from django.http import HttpResponseBadRequest, HttpResponseRedirect
-# Import the User model and UserProfile, and potentially the ClerkAuthBackend if direct interaction is needed here
-from django.contrib.auth import get_user_model, authenticate
+import pyotp
 
-User = get_user_model()
+from ..models import UserProfile
 
-# It's generally better if CLERK_FRONTEND_API_URL is defined in settings if it's constant
-# For dynamic parts like redirect URLs, they should be constructed carefully.
-# CLERK_SIGN_IN_URL = f"{settings.CLERK_FRONTEND_API_URL}/sign-in" # Example
-# CLERK_SIGN_UP_URL = f"{settings.CLERK_FRONTEND_API_URL}/sign-up" # Example
-# These might not be needed if ClerkJS handles the UI entirely.
-
-def clerk_login_redirect_view(request):
+def login_view(request):
     """
-    Redirects to Clerk's hosted sign-in page or the page where ClerkJS is initialized.
-    This view might not be strictly necessary if your frontend directly links to Clerk sign-in.
+    Custom login view that handles both standard login and redirects to MFA if needed
     """
-    # This URL should be your Clerk Frontend API URL's sign-in path,
-    # or simply the path in your app that hosts the Clerk <SignIn /> component.
-    # For Clerk hosted pages:
-    # login_url = f"https://{settings.CLERK_FRONTEND_API_URL}/sign-in" # This is an example, get from Clerk Dashboard
-    # A common pattern is to redirect to a page in your app that has the Clerk <SignIn/> component
-    # e.g., return redirect(reverse('my_app_login_page_with_clerk_component'))
-    # For now, let's assume there's a setting for the sign-in URL.
-    if hasattr(settings, 'CLERK_SIGN_IN_REDIRECT_URL'):
-        return redirect(settings.CLERK_SIGN_IN_REDIRECT_URL)
-    # Fallback or error if not configured
-    return HttpResponseBadRequest("Clerk sign-in URL not configured.")
-
-def clerk_signup_redirect_view(request):
-    """
-    Redirects to Clerk's hosted sign-up page or the page where ClerkJS is initialized.
-    """
-    if hasattr(settings, 'CLERK_SIGN_UP_REDIRECT_URL'):
-        return redirect(settings.CLERK_SIGN_UP_REDIRECT_URL)
-    return HttpResponseBadRequest("Clerk sign-up URL not configured.")
-
-
-def clerk_logout_view(request):
-    """
-    Logs the user out of the Django session.
-    The actual Clerk session logout is typically handled by ClerkJS on the frontend.
-    This view ensures the Django session is cleared.
-    """
-    django_logout(request)
-    # Redirect to a page that tells the user they've been logged out,
-    # or to the Clerk-defined post_logout_redirect_url if applicable.
-    # For ClerkJS, it handles its own session termination.
-    # This backend logout ensures Django's session is also terminated.
-    return redirect(getattr(settings, 'LOGOUT_REDIRECT_URL', '/'))
-
-
-def clerk_callback_view(request):
-    """
-    Handles the callback from Clerk after successful authentication.
-    This view will receive a token from Clerk (typically via ClerkJS setting a cookie
-    or providing it to the frontend, which then sends it to this backend endpoint).
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            # Check if MFA is enabled for this user
+            try:
+                profile = UserProfile.objects.get(user=user)
+                if profile.mfa_enabled and profile.mfa_secret:
+                    # Store user ID in session for MFA verification
+                    request.session['mfa_user_id'] = user.id
+                    return redirect('marketplace:verify_mfa')
+                else:
+                    # No MFA, proceed with login
+                    login(request, user)
+                    return redirect('marketplace:home')
+            except UserProfile.DoesNotExist:
+                # No profile, proceed with login
+                login(request, user)
+                return redirect('marketplace:home')
+        else:
+            messages.error(request, 'Invalid username or password')
     
-    The exact mechanism depends on how Clerk is configured (e.g., if using ClerkJS
-    with `navigate` for SPA or backend-driven flow with redirects).
+    return render(request, 'registration/login.html')
 
-    This view needs to:
-    1. Get the token (e.g., from request body, headers, or a cookie ClerkJS might set if configured for backend).
-    2. Use the ClerkAuthBackend to authenticate this token.
-    3. If authentication is successful, log the user into the Django session.
-    4. Redirect to the appropriate page (e.g., dashboard or original destination).
+def verify_mfa(request):
     """
-    # How the token is passed to this callback is crucial.
-    # If ClerkJS handles sign-in and then navigates, the frontend might make an API call
-    # to this backend with the token in the Authorization header.
-    # If Clerk redirects here directly from its hosted pages, the token mechanism needs checking.
-    # For now, let's assume the token is passed in a way that our backend can access it.
-
-    # This is a placeholder. The real token would come from the request,
-    # e.g., request.COOKIES.get('__session') or request.headers.get('Authorization').split(' ')[1]
-    clerk_token = request.COOKIES.get('__session') # Example: if Clerk sets a __session cookie
-
-    if not clerk_token:
-        # Or, if expecting it in Authorization header for an API-style callback
-        auth_header = request.headers.get('Authorization')
-        if auth_header and auth_header.startswith('Bearer '):
-            clerk_token = auth_header.split(' ')[1]
-        else: # Handle other ways token might be passed or error
-            return HttpResponseBadRequest("Clerk token not found in request.")
-
-    # Authenticate using the backend
-    # The backend's authenticate method needs to be robust.
-    user = authenticate(request, token=clerk_token)
-
-    if user:
-        django_login(request, user)
-        # Redirect to LOGIN_REDIRECT_URL or a more specific destination
-        return redirect(settings.LOGIN_REDIRECT_URL)
-    else:
-        # Authentication failed
-        # Render an error page or redirect to login with an error message
-        # For security, don't give too much detail about why it failed.
-        return render(request, 'marketplace/auth_error.html', {'error_message': 'Authentication failed.'})
-
-# A simple template for auth errors, create this file if it doesn't exist:
-# marketplace/templates/marketplace/auth_error.html
-# <!DOCTYPE html>
-# <html>
-# <head><title>Authentication Error</title></head>
-# <body>
-#   <h1>Authentication Error</h1>
-#   <p>{{ error_message }}</p>
-#   <p><a href="/">Go to homepage</a></p>
-# </body>
-# </html>
+    Verify MFA token for users with MFA enabled
+    """
+    user_id = request.session.get('mfa_user_id')
+    
+    if not user_id:
+        return redirect('marketplace:login')
+    
+    if request.method == 'POST':
+        token = request.POST.get('token')
+        
+        try:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            user = User.objects.get(id=user_id)
+            profile = UserProfile.objects.get(user=user)
+            
+            # Verify token
+            totp = pyotp.TOTP(profile.mfa_secret)
+            if totp.verify(token):
+                # Token is valid, log in the user
+                login(request, user)
+                # Clean up session
+                del request.session['mfa_user_id']
+                return redirect('marketplace:home')
+            else:
+                messages.error(request, 'Invalid MFA token')
+        except (User.DoesNotExist, UserProfile.DoesNotExist):
+            messages.error(request, 'User not found')
+            return redirect('marketplace:login')
+    
+    return render(request, 'mfa_verify.html')

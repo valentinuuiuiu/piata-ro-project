@@ -19,7 +19,7 @@
 
         <div class="mt-8 space-y-6 text-center">
             <p>
-                <a href="{% url 'marketplace:clerk_signup' %}"
+                <a href="{% url 'account_signup' %}"
                    class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-accent hover:bg-accent-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent"
                    style="text-decoration: none;">
                     <span class="absolute left-0 inset-y-0 flex items-center pl-3">
@@ -30,7 +30,7 @@
             </p>
             <p class="mt-4 text-sm">
                 Ai deja cont?
-                <a href="{% url 'marketplace:clerk_login' %}" class="font-medium text-primary hover:text-primary-dark">
+                <a href="{% url 'account_login' %}" class="font-medium text-primary hover:text-primary-dark">
                     Intră în contul existent
                 </a>
             </p>
@@ -40,7 +40,7 @@
 
 <script>
     // Optional: If you want to redirect immediately
-    // window.location.href = "{% url 'marketplace:clerk_signup' %}";
+    // window.location.href = "{% url 'account_signup' %}";
     // Or, if you have a specific page that initializes ClerkJS <SignUp /> component:
     // window.location.href = "/path-to-clerk-signup-page/";
 </script>

@@ -39,11 +39,8 @@ urlpatterns = [
     # Favicon
     path('favicon.ico', RedirectView.as_view(url='/static/favicon.ico', permanent=True)),
     
-    # Allauth URLs (includes social auth) # REMOVED
-    # path('accounts/', include('allauth.urls')),
-    
-    # Custom register view # REMOVED
-    # path('register/', register_view, name='register'),
+    # Allauth URLs (includes social auth)
+    path('accounts/', include('allauth.urls')),
     
     # OpenAI API compatibility endpoints
     path('v1/models', openai_models_endpoint, name='openai_models'),

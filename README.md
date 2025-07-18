@@ -60,7 +60,7 @@
 - **📱 Mobile-First Design** - Optimized responsive experience
 
 ### 👥 **User Management**
-- **🔐 Secure Authentication** - User registration, login, and session management handled by Clerk (see [AUTH_CLERK.md](AUTH_CLERK.md) for details).
+- **🔐 Secure Authentication** - User registration, login, and session management handled by Django AllAuth (see [AUTH_ALLAUTH.md](AUTH_ALLAUTH.md) for details).
 - **👤 User Profiles** - Detailed seller profiles with contact information
 - **💬 Messaging System** - Direct communication between buyers and sellers
 - **⭐ Rating & Reviews** - Trust building through user feedback

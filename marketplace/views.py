@@ -5,6 +5,8 @@ from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.contrib.auth.forms import UserCreationForm
+from django.views.decorators.cache import cache_page
+from .utils.cache_utils import ListingCache, SearchCache
 from django.shortcuts import redirect
 from django.contrib.auth import login
 from django.contrib import messages
@@ -26,7 +28,8 @@ except ImportError:
 
 from .models import Category, Favorite, Listing, Message, UserProfile, ListingImage, CreditPackage, Payment, CreditTransaction, ListingBoost, ListingReport
 from .serializers import (
-    CategorySerializer,
+CategorySerializer,
+    ListingSerializer,
     FavoriteCreateSerializer,
     FavoriteSerializer,
     ListingCreateSerializer,
@@ -121,7 +124,24 @@ class ListingViewSet(viewsets.ModelViewSet):
         if location:
             queryset = queryset.filter(location__icontains=location)
 
-        return queryset
+# Attempt to use cached search results
+        filters = {
+            "category_id": category_id,
+            "min_price": min_price,
+            "max_price": max_price,
+            "location": location,
+        }
+        cached_results = SearchCache.get_search_results(status, filters)
+        if cached_results:
+            return cached_results
+
+        # No cache, proceed with query
+        result_queryset = list(queryset)
+
+        # Cache the result
+        SearchCache.set_search_results(status, filters, result_queryset)
+
+        return result_queryset
 
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:

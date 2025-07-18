@@ -24,7 +24,7 @@ def ai_assistant_view(request):
     if conversation_id:
         try:
             active_conversation = Conversation.objects.get(id=conversation_id, user=request.user)
-            messages = active_conversation.messages.all()
+            messages = Message.objects.filter(conversation=active_conversation)
         except Conversation.DoesNotExist:
             pass
     
@@ -81,10 +81,10 @@ def ai_chat_api(request):
         
         # Get conversation history
         history = []
-        for msg in conversation.messages.filter(timestamp__lt=user_message.timestamp):
+        for msg in Message.objects.filter(conversation=conversation, timestamp__lt=user_message.timestamp):
             history.append({
-                'role': msg.role,
-                'content': msg.content
+                'role': 'user' if msg.is_user else 'assistant',
+                'content': msg.text,
             })
         
         # Process with MCP Orchestrator
@@ -111,8 +111,8 @@ def ai_chat_api(request):
         return JsonResponse({
             'success': True,
             'response': result['response'],
-            'conversation_id': conversation.id,
-            'message_id': assistant_message.id,
+            'conversation_id': getattr(conversation, 'id', getattr(conversation, 'pk', None)),
+            'message_id': assistant_message.pk,
             'tools_used': result.get('tools_used', [])
         })
     
@@ -126,7 +126,7 @@ def new_conversation(request):
         user=request.user,
         title="New Conversation"
     )
-    return redirect(f'/ai-assistant/?conversation={conversation.id}')
+    return redirect(f'/ai-assistant/?conversation={conversation.pk}')
 
 @staff_member_required 
 def delete_conversation(request, conversation_id):

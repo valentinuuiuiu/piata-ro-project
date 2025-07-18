@@ -1,0 +1,43 @@
+{% extends 'marketplace/base.html' %}
+{% load i18n %}
+
+{% block title %}Confirmare email - Piața.ro{% endblock %}
+
+{% block content %}
+<div class="auth-container email-confirmation">
+    <div class="auth-card">
+        <div class="auth-header">
+            <i class="fas fa-envelope icon"></i>
+            <h2>Confirmare email</h2>
+            <p>Verifică adresa de email</p>
+        </div>
+
+        <div class="p-6 text-center">
+            <p class="text-gray-700">
+                {% blocktrans %}
+                Un email de confirmare a fost trimis la <strong>{{ email }}</strong>.
+                {% endblocktrans %}
+            </p>
+            
+            <p class="mt-4 text-gray-700">
+                {% blocktrans %}
+                Urmează link-ul din email pentru a finaliza procesul de înregistrare.
+                Dacă nu ai primit email-ul în câteva minute, verifică și folderul de spam.
+                {% endblocktrans %}
+            </p>
+            
+            <div class="mt-6">
+                <a href="{% url 'account_email' %}" class="submit-btn">
+                    {% trans "Manage Email Addresses" %}
+                </a>
+            </div>
+            
+            <p class="mt-4 text-sm">
+                <a href="{% url 'marketplace:home' %}" class="auth-link">
+                    Înapoi la pagina principală
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends 'marketplace/base.html' %}
+{% load i18n %}
+{% load account socialaccount %}
+
+{% block title %}Înregistrare - Piața.ro{% endblock %}
+
+{% block content %}
+<div class="auth-container signup">
+    <div class="auth-card">
+        <div class="auth-header">
+            <i class="fas fa-user-plus icon"></i>
+            <h2>Înregistrare</h2>
+            <p>Creează un cont nou pe Piața.ro</p>
+        </div>
+
+        <div class="p-6">
+            <form class="signup" id="signup_form" method="post" action="{% url 'account_signup' %}">
+                {% csrf_token %}
+                
+                {% if form.errors %}
+                <div class="alert alert-danger">
+                    <p>{% trans "Please fix the following errors:" %}</p>
+                    {% for field in form %}
+                        {% if field.errors %}
+                        <p>{{ field.label }}: {{ field.errors|striptags }}</p>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if form.non_field_errors %}
+                    <p>{{ form.non_field_errors|striptags }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <div class="form-group">
+                    <label for="id_email">Email:</label>
+                    <input type="email" name="email" placeholder="Email" autocomplete="email" required id="id_email" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label for="id_username">Nume utilizator:</label>
+                    <input type="text" name="username" placeholder="Nume utilizator" autocomplete="username" required id="id_username" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label for="id_password1">Parolă:</label>
+                    <input type="password" name="password1" placeholder="Parolă" autocomplete="new-password" required id="id_password1" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label for="id_password2">Confirmă parola:</label>
+                    <input type="password" name="password2" placeholder="Confirmă parola" autocomplete="new-password" required id="id_password2" class="form-control">
+                </div>
+                
+                <div class="form-group form-check">
+                    <input type="checkbox" name="terms" id="id_terms" class="form-check-input" required>
+                    <label for="id_terms" class="form-check-label">
+                        Am citit și sunt de acord cu <a href="{% url 'marketplace:terms' %}" target="_blank">Termenii și Condițiile</a> și <a href="{% url 'marketplace:privacy' %}" target="_blank">Politica de Confidențialitate</a>
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <button class="submit-btn" type="submit">{% trans "Sign Up" %}</button>
+                </div>
+            </form>
+            
+            <div class="social-login mt-4">
+                <p class="text-center">Sau înregistrează-te cu:</p>
+                <div class="social-buttons">
+                    {% get_providers as socialaccount_providers %}
+                    {% for provider in socialaccount_providers %}
+                    <a title="{{provider.name}}" class="socialaccount_provider {{provider.id}}" 
+                       href="{% provider_login_url provider.id process=process scope=scope auth_params=auth_params %}">
+                        <i class="fab fa-{{ provider.id }}"></i> {{ provider.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <p class="mt-4 text-center text-sm">
+                Ai deja un cont?
+                <a href="{% url 'account_login' %}" class="auth-link">
+                    Autentifică-te
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

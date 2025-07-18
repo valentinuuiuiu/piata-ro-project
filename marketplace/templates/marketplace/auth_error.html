@@ -16,7 +16,7 @@
     {% if RASA_API_URL %}
         <p><a href="{{ RASA_API_URL }}/login">Login Again</a></p>
     {% else %}
-         <p><a href="{% url 'marketplace:clerk_login' %}">Login Again</a></p>
+         <p><a href="{% url 'account_login' %}">Login Again</a></p>
     {% endif %}
 </body>
 </html>

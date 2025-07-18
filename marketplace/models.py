@@ -5,6 +5,11 @@ from django.utils import timezone
 from decimal import Decimal
 import uuid
 from math import radians, cos, sin, asin, sqrt
+import logging
+from .utils.cache_utils import ListingCache, invalidate_listing_cache
+
+# Set up logger
+logger = logging.getLogger(__name__)
 
 # Import chat models
 from .models_chat import ChatConversation, ChatMessage
@@ -34,6 +39,19 @@ class Category(models.Model):
         if not self.slug:
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
+        # Invalidate cache after saving
+        from .utils.cache_utils import CategoryCache
+        CategoryCache.invalidate_categories()
+        
+    def get_listings_count(self):
+        """Safely get the count of listings for this category"""
+        try:
+            return self.listings.count()
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error getting listings count for category {self.name}: {e}")
+            return 0
 
 
 def listing_image_path(instance, filename):
@@ -299,7 +317,6 @@ class Favorite(models.Model):
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
-    clerk_user_id = models.CharField(max_length=255, unique=True, blank=True, null=True, help_text="Clerk User ID")
     avatar = models.CharField(max_length=255, blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
@@ -336,17 +353,22 @@ class UserProfile(models.Model):
         return timezone.now() < self.premium_until
     
     def can_promote_listing(self):
+        """Determine if the user can promote a listing based on credits balance"""
+        logger.info(f"Checking promotion ability for user {self.user.username} with balance {self.credits_balance}")
         """Check if user has enough credits to promote a listing (0.5 credits)"""
         return self.credits_balance >= 0.50
     
     def deduct_credits(self, amount):
+        """Process of deducting credits from user account"""
+        logger.info(f"Attempting to deduct {amount} credits for user {self.user.username}")
         """Safely deduct credits from user balance"""
         if self.credits_balance >= amount:
             self.credits_balance -= amount
             self.save()
+            logger.info(f"Deducted {amount} credits from {self.user.username}, new balance {self.credits_balance}")
             return True
+        logger.warning(f"Insufficient credits for user {self.user.username}: {self.credits_balance} available")
         return False
-    
     def add_credits(self, amount):
         """Add credits to user balance"""
         self.credits_balance += amount
@@ -395,23 +417,6 @@ class CreditPackage(models.Model):
         price = self.price_eur if currency == 'EUR' else self.price_ron
         return price / self.total_credits
 
-
-class ListingImage(models.Model):
-    """Model for storing multiple images per listing"""
-    listing = models.ForeignKey('Listing', on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='listings/')
-    thumbnail = models.ImageField(upload_to='thumbnails/', blank=True)
-    is_main = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    order = models.PositiveIntegerField(default=0)
-
-    class Meta:
-        ordering = ['order', 'created_at']
-        verbose_name = 'Listing Image'
-        verbose_name_plural = 'Listing Images'
-
-    def __str__(self):
-        return f"Image for {self.listing.title}"
 
 
 class PremiumPlan(models.Model):
