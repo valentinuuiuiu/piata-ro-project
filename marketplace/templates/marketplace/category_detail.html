@@ -48,7 +48,7 @@
                     <p class="text-gray-600 mb-4">{{ category.description }}</p>
                     {% endif %}
                     <p class="text-gray-500">
-                        <i class="fas fa-list mr-2"></i>{{ listings.count }} anunțuri în această categorie
+                        <i class="fas fa-list mr-2"></i>{{ category.get_listings_count }} anunțuri în această categorie
                     </p>
                 </div>
             </div>
@@ -69,7 +69,7 @@
                class="block bg-gray-100 p-4 rounded-lg hover:bg-gray-200 transition-colors text-center">
                 <i class="{{ subcat.icon|default:'fas fa-folder-open' }} text-2xl text-primary mb-2"></i>
                 <h3 class="text-md font-semibold text-gray-800">{{ subcat.name }}</h3>
-                <p class="text-sm text-gray-500">{{ subcat.listings.count }} anunțuri</p>
+                <p class="text-sm text-gray-500">{{ subcat.get_listings_count }} anunțuri</p>
             </a>
             {% endfor %}
         </div>

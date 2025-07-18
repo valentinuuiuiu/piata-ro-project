@@ -1,25 +1,30 @@
 {% extends 'marketplace/base.html' %}
 {% load i18n %}
 {% load account socialaccount %}
+{% load static %}
 
 {% block title %}Înregistrare - Piața.ro{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/auth-modern.css' %}">
+{% endblock %}
+
 {% block content %}
-<div class="auth-container signup">
+<div class="auth-container">
     <div class="auth-card">
         <div class="auth-header">
             <i class="fas fa-user-plus icon"></i>
-            <h2>Înregistrare</h2>
-            <p>Creează un cont nou pe Piața.ro</p>
+            <h2>Creează cont nou</h2>
+            <p>Alătură-te comunității Piața.ro</p>
         </div>
 
-        <div class="p-6">
+        <div class="auth-form">
             <form class="signup" id="signup_form" method="post" action="{% url 'account_signup' %}">
                 {% csrf_token %}
                 
                 {% if form.errors %}
                 <div class="alert alert-danger">
-                    <p>{% trans "Please fix the following errors:" %}</p>
+                    <p>{% trans "Te rugăm să corectezi următoarele erori:" %}</p>
                     {% for field in form %}
                         {% if field.errors %}
                         <p>{{ field.label }}: {{ field.errors|striptags }}</p>
@@ -34,17 +39,17 @@
                 
                 <div class="form-group">
                     <label for="id_email">Email:</label>
-                    <input type="email" name="email" placeholder="Email" autocomplete="email" required id="id_email" class="form-control">
+                    <input type="email" name="email" placeholder="Adresa ta de email" autocomplete="email" required id="id_email" class="form-control">
                 </div>
                 
                 <div class="form-group">
                     <label for="id_username">Nume utilizator:</label>
-                    <input type="text" name="username" placeholder="Nume utilizator" autocomplete="username" required id="id_username" class="form-control">
+                    <input type="text" name="username" placeholder="Alege un nume de utilizator" autocomplete="username" required id="id_username" class="form-control">
                 </div>
                 
                 <div class="form-group">
                     <label for="id_password1">Parolă:</label>
-                    <input type="password" name="password1" placeholder="Parolă" autocomplete="new-password" required id="id_password1" class="form-control">
+                    <input type="password" name="password1" placeholder="Creează o parolă sigură" autocomplete="new-password" required id="id_password1" class="form-control">
                 </div>
                 
                 <div class="form-group">
@@ -55,29 +60,31 @@
                 <div class="form-group form-check">
                     <input type="checkbox" name="terms" id="id_terms" class="form-check-input" required>
                     <label for="id_terms" class="form-check-label">
-                        Am citit și sunt de acord cu <a href="{% url 'marketplace:terms' %}" target="_blank">Termenii și Condițiile</a> și <a href="{% url 'marketplace:privacy' %}" target="_blank">Politica de Confidențialitate</a>
+                        Am citit și sunt de acord cu <a href="{% url 'marketplace:terms' %}" target="_blank" class="auth-link">Termenii și Condițiile</a> și <a href="{% url 'marketplace:privacy' %}" target="_blank" class="auth-link">Politica de Confidențialitate</a>
                     </label>
                 </div>
                 
                 <div class="form-group">
-                    <button class="submit-btn" type="submit">{% trans "Sign Up" %}</button>
+                    <button class="submit-btn" type="submit">
+                        <i class="fas fa-user-check mr-2"></i> Creează cont
+                    </button>
                 </div>
             </form>
             
-            <div class="social-login mt-4">
-                <p class="text-center">Sau înregistrează-te cu:</p>
+            <div class="social-login">
+                <p>Sau înregistrează-te cu</p>
                 <div class="social-buttons">
                     {% get_providers as socialaccount_providers %}
                     {% for provider in socialaccount_providers %}
                     <a title="{{provider.name}}" class="socialaccount_provider {{provider.id}}" 
                        href="{% provider_login_url provider.id process=process scope=scope auth_params=auth_params %}">
-                        <i class="fab fa-{{ provider.id }}"></i> {{ provider.name }}
+                        <i class="fab fa-{{ provider.id }}"></i>
                     </a>
                     {% endfor %}
                 </div>
             </div>
             
-            <p class="mt-4 text-center text-sm">
+            <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: #6c757d;">
                 Ai deja un cont?
                 <a href="{% url 'account_login' %}" class="auth-link">
                     Autentifică-te

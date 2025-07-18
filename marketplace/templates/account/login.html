@@ -1,25 +1,30 @@
 {% extends 'marketplace/base.html' %}
 {% load i18n %}
 {% load account socialaccount %}
+{% load static %}
 
 {% block title %}Autentificare - Piața.ro{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/auth-modern.css' %}">
+{% endblock %}
+
 {% block content %}
-<div class="auth-container login">
+<div class="auth-container">
     <div class="auth-card">
         <div class="auth-header">
-            <i class="fas fa-store icon"></i>
-            <h2>Autentificare</h2>
+            <i class="fas fa-lock icon"></i>
+            <h2>Bine ai revenit!</h2>
             <p>Intră în contul tău Piața.ro</p>
         </div>
 
-        <div class="p-6">
-            <form class="login" method="POST" action="{% url 'marketplace:login' %}">
+        <div class="auth-form">
+            <form class="login" method="POST" action="{% url 'account_login' %}">
                 {% csrf_token %}
                 
                 {% if form.errors %}
                 <div class="alert alert-danger">
-                    <p>{% trans "Please fix the following errors:" %}</p>
+                    <p>{% trans "Te rugăm să corectezi următoarele erori:" %}</p>
                     {% for field in form %}
                         {% if field.errors %}
                         <p>{{ field.label }}: {{ field.errors|striptags }}</p>
@@ -34,12 +39,12 @@
                 
                 <div class="form-group">
                     <label for="id_login">Email:</label>
-                    <input type="email" name="login" placeholder="Email" autocomplete="email" required id="id_login" class="form-control">
+                    <input type="email" name="login" placeholder="Introdu adresa de email" autocomplete="email" required id="id_login" class="form-control">
                 </div>
                 
                 <div class="form-group">
                     <label for="id_password">Parolă:</label>
-                    <input type="password" name="password" placeholder="Parolă" autocomplete="current-password" required id="id_password" class="form-control">
+                    <input type="password" name="password" placeholder="Introdu parola" autocomplete="current-password" required id="id_password" class="form-control">
                 </div>
                 
                 <div class="form-group form-check">
@@ -48,30 +53,32 @@
                 </div>
                 
                 <div class="form-group">
-                    <button class="submit-btn" type="submit">{% trans "Sign In" %}</button>
+                    <button class="submit-btn" type="submit">
+                        <i class="fas fa-sign-in-alt mr-2"></i> Autentificare
+                    </button>
                 </div>
                 
-                <div class="mt-4 text-center">
-                    <p>
-                        <a class="auth-link" href="{% url 'account_reset_password' %}">{% trans "Forgot Password?" %}</a>
-                    </p>
+                <div class="text-center" style="margin-top: 1rem;">
+                    <a class="auth-link" href="{% url 'account_reset_password' %}">
+                        <i class="fas fa-key mr-1"></i> {% trans "Ai uitat parola?" %}
+                    </a>
                 </div>
             </form>
             
-            <div class="social-login mt-4">
-                <p class="text-center">Sau conectează-te cu:</p>
+            <div class="social-login">
+                <p>Sau conectează-te cu</p>
                 <div class="social-buttons">
                     {% get_providers as socialaccount_providers %}
                     {% for provider in socialaccount_providers %}
                     <a title="{{provider.name}}" class="socialaccount_provider {{provider.id}}" 
                        href="{% provider_login_url provider.id process=process scope=scope auth_params=auth_params %}">
-                        <i class="fab fa-{{ provider.id }}"></i> {{ provider.name }}
+                        <i class="fab fa-{{ provider.id }}"></i>
                     </a>
                     {% endfor %}
                 </div>
             </div>
             
-            <p class="mt-4 text-center text-sm">
+            <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: #6c757d;">
                 Nu ai cont?
                 <a href="{% url 'account_signup' %}" class="auth-link">
                     Creează un cont nou

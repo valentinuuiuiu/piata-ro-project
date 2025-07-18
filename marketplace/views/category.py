@@ -52,6 +52,15 @@ def category_detail(request, slug):
         category = get_object_or_404(Category, slug=slug)
         logger.info(f"Found category: {category.name}")
         
+        # Get subcategories if this is a parent category
+        subcategories = []
+        try:
+            if category.parent is None:  # This is a parent category
+                subcategories = Category.objects.filter(parent=category)
+                logger.info(f"Found {subcategories.count()} subcategories for {category.name}")
+        except Exception as e:
+            logger.error(f"Error getting subcategories for {category.name}: {e}")
+        
         try:
             listings = category.listings.filter(status='active').select_related('user')
             listings_count = listings.count()
@@ -63,11 +72,17 @@ def category_detail(request, slug):
             
             return render(request, 'marketplace/category_detail.html', {
                 'category': category,
-                'listings': page_obj
+                'listings': page_obj,
+                'subcategories': subcategories
             })
         except Exception as e:
             logger.error(f"Error getting listings for category {category.name}: {e}")
-            raise
+            # Return a page with just the category and subcategories, but no listings
+            return render(request, 'marketplace/category_detail.html', {
+                'category': category,
+                'subcategories': subcategories,
+                'listings': []
+            })
     except Exception as e:
         import traceback
         logger.error(f"Error in category_detail view: {e}")
