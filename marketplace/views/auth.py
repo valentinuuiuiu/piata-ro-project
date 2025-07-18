@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.conf import settings
+from django.contrib.auth.models import User
 import pyotp
 
 from ..models import UserProfile
@@ -36,7 +37,7 @@ def login_view(request):
         else:
             messages.error(request, 'Invalid username or password')
     
-    return render(request, 'registration/login.html')
+    return render(request, 'account/login.html')
 
 def verify_mfa(request):
     """
@@ -71,3 +72,44 @@ def verify_mfa(request):
             return redirect('marketplace:login')
     
     return render(request, 'mfa_verify.html')
+
+
+def signup_view(request):
+    """
+    Custom signup view
+    """
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password1 = request.POST.get('password1')
+        password2 = request.POST.get('password2')
+        
+        # Validate form data
+        if not (username and email and password1 and password2):
+            messages.error(request, 'Toate câmpurile sunt obligatorii')
+            return render(request, 'account/signup.html')
+        
+        if password1 != password2:
+            messages.error(request, 'Parolele nu coincid')
+            return render(request, 'account/signup.html')
+        
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Acest nume de utilizator este deja folosit')
+            return render(request, 'account/signup.html')
+        
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Această adresă de email este deja folosită')
+            return render(request, 'account/signup.html')
+        
+        # Create user
+        try:
+            user = User.objects.create_user(username=username, email=email, password=password1)
+            # Create user profile
+            UserProfile.objects.create(user=user)
+            # Log in user
+            login(request, user)
+            return redirect('marketplace:home')
+        except Exception as e:
+            messages.error(request, f'Eroare la crearea contului: {str(e)}')
+    
+    return render(request, 'account/signup.html')

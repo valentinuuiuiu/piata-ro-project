@@ -4,7 +4,7 @@ from django.contrib.auth.views import LogoutView, PasswordResetView, PasswordRes
 
 from . import views
 from .deepseek_chat_refactored import deepseek_chat_view
-from .views.auth import login_view, verify_mfa # Auth views
+from .views.auth import login_view, verify_mfa, signup_view # Auth views
 from .recommendations import urls as recommendation_urls
 
 app_name = 'marketplace'
@@ -27,16 +27,17 @@ urlpatterns = [
     # Payment endpoints  
     path('payments/', include('marketplace.payments.urls')),
     
-    # Authentication with Django AllAuth (main URLs are in accounts/ namespace)
-    path('login/', views.login_view, name='login'),
-    path('login/mfa/', views.verify_mfa, name='verify_mfa'),
-    path('logout/', LogoutView.as_view(), name='logout'),
+    # Authentication URLs
+    path('auth/clerk/login/', views.login_view, name='login'),
+    path('auth/clerk/signup/', views.signup_view, name='signup'),
+    path('auth/clerk/mfa/', views.verify_mfa, name='verify_mfa'),
+    path('auth/clerk/logout/', LogoutView.as_view(), name='logout'),
     
     # Password Reset
-    path('password_reset/', PasswordResetView.as_view(template_name='registration/password_reset_form.html'), name='password_reset'),
-    path('password_reset/done/', PasswordResetDoneView.as_view(template_name='registration/password_reset_done.html'), name='password_reset_done'),
-    path('reset/<uidb64>/<token>/', PasswordResetConfirmView.as_view(template_name='registration/password_reset_confirm.html'), name='password_reset_confirm'),
-    path('reset/done/', PasswordResetCompleteView.as_view(template_name='registration/password_reset_complete.html'), name='password_reset_complete'),
+    path('auth/clerk/password_reset/', PasswordResetView.as_view(template_name='account/password_reset.html'), name='password_reset'),
+    path('auth/clerk/password_reset/done/', PasswordResetDoneView.as_view(template_name='registration/password_reset_done.html'), name='password_reset_done'),
+    path('auth/clerk/reset/<uidb64>/<token>/', PasswordResetConfirmView.as_view(template_name='registration/password_reset_confirm.html'), name='password_reset_confirm'),
+    path('auth/clerk/reset/done/', PasswordResetCompleteView.as_view(template_name='registration/password_reset_complete.html'), name='password_reset_complete'),
 
     # Frontend pages
     path('', views.home_view, name='home'),

@@ -246,7 +246,7 @@ ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 MAX_IMAGES_PER_LISTING = 10  # Maximum images per listing
 
 # Authentication settings
-LOGIN_URL = '/accounts/login/'
+LOGIN_URL = '/auth/clerk/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 

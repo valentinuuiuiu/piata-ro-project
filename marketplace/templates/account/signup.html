@@ -1,92 +1,104 @@
 {% extends 'marketplace/base.html' %}
 {% load i18n %}
 {% load account socialaccount %}
-{% load static %}
 
 {% block title %}Înregistrare - Piața.ro{% endblock %}
 
-{% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/auth-modern.css' %}">
-{% endblock %}
-
 {% block content %}
-<div class="auth-container">
-    <div class="auth-card">
-        <div class="auth-header">
-            <i class="fas fa-user-plus icon"></i>
-            <h2>Creează cont nou</h2>
-            <p>Alătură-te comunității Piața.ro</p>
+<div class="container mx-auto px-4 py-12">
+    <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden">
+        <!-- Header -->
+        <div class="bg-accent text-white p-6 text-center">
+            <i class="fas fa-user-plus text-4xl mb-3"></i>
+            <h2 class="text-2xl font-bold">Creează cont nou</h2>
+            <p class="text-sm opacity-80">Alătură-te comunității Piața.ro</p>
         </div>
-
-        <div class="auth-form">
-            <form class="signup" id="signup_form" method="post" action="{% url 'account_signup' %}">
+        
+        <!-- Form -->
+        <div class="p-6">
+            <form class="signup" id="signup_form" method="post" action="{% url 'marketplace:signup' %}">
                 {% csrf_token %}
                 
                 {% if form.errors %}
-                <div class="alert alert-danger">
-                    <p>{% trans "Te rugăm să corectezi următoarele erori:" %}</p>
+                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+                    <p class="font-medium">{% trans "Te rugăm să corectezi următoarele erori:" %}</p>
                     {% for field in form %}
                         {% if field.errors %}
-                        <p>{{ field.label }}: {{ field.errors|striptags }}</p>
+                        <p class="text-sm">{{ field.label }}: {{ field.errors|striptags }}</p>
                         {% endif %}
                     {% endfor %}
                     
                     {% if form.non_field_errors %}
-                    <p>{{ form.non_field_errors|striptags }}</p>
+                    <p class="text-sm">{{ form.non_field_errors|striptags }}</p>
                     {% endif %}
                 </div>
                 {% endif %}
                 
-                <div class="form-group">
-                    <label for="id_email">Email:</label>
-                    <input type="email" name="email" placeholder="Adresa ta de email" autocomplete="email" required id="id_email" class="form-control">
+                <div class="mb-4">
+                    <label for="id_email" class="block text-gray-700 text-sm font-medium mb-2">Email:</label>
+                    <input type="email" name="email" placeholder="Adresa ta de email" autocomplete="email" required id="id_email" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent">
                 </div>
                 
-                <div class="form-group">
-                    <label for="id_username">Nume utilizator:</label>
-                    <input type="text" name="username" placeholder="Alege un nume de utilizator" autocomplete="username" required id="id_username" class="form-control">
+                <div class="mb-4">
+                    <label for="id_username" class="block text-gray-700 text-sm font-medium mb-2">Nume utilizator:</label>
+                    <input type="text" name="username" placeholder="Alege un nume de utilizator" autocomplete="username" required id="id_username" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent">
                 </div>
                 
-                <div class="form-group">
-                    <label for="id_password1">Parolă:</label>
-                    <input type="password" name="password1" placeholder="Creează o parolă sigură" autocomplete="new-password" required id="id_password1" class="form-control">
+                <div class="mb-4">
+                    <label for="id_password1" class="block text-gray-700 text-sm font-medium mb-2">Parolă:</label>
+                    <input type="password" name="password1" placeholder="Creează o parolă sigură" autocomplete="new-password" required id="id_password1" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent">
                 </div>
                 
-                <div class="form-group">
-                    <label for="id_password2">Confirmă parola:</label>
-                    <input type="password" name="password2" placeholder="Confirmă parola" autocomplete="new-password" required id="id_password2" class="form-control">
+                <div class="mb-4">
+                    <label for="id_password2" class="block text-gray-700 text-sm font-medium mb-2">Confirmă parola:</label>
+                    <input type="password" name="password2" placeholder="Confirmă parola" autocomplete="new-password" required id="id_password2" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent">
                 </div>
                 
-                <div class="form-group form-check">
-                    <input type="checkbox" name="terms" id="id_terms" class="form-check-input" required>
-                    <label for="id_terms" class="form-check-label">
-                        Am citit și sunt de acord cu <a href="{% url 'marketplace:terms' %}" target="_blank" class="auth-link">Termenii și Condițiile</a> și <a href="{% url 'marketplace:privacy' %}" target="_blank" class="auth-link">Politica de Confidențialitate</a>
-                    </label>
+                <div class="flex items-start mb-4">
+                    <div class="flex items-center h-5">
+                        <input type="checkbox" name="terms" id="id_terms" required
+                               class="h-4 w-4 text-accent focus:ring-accent border-gray-300 rounded">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="id_terms" class="text-gray-700">
+                            Am citit și sunt de acord cu <a href="{% url 'marketplace:terms' %}" target="_blank" class="text-accent hover:underline">Termenii și Condițiile</a> și <a href="{% url 'marketplace:privacy' %}" target="_blank" class="text-accent hover:underline">Politica de Confidențialitate</a>
+                        </label>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <button class="submit-btn" type="submit">
+                <div class="mb-4">
+                    <button type="submit" class="w-full bg-accent text-white py-2 px-4 rounded-md hover:bg-green-600 transition duration-200">
                         <i class="fas fa-user-check mr-2"></i> Creează cont
                     </button>
                 </div>
             </form>
             
-            <div class="social-login">
-                <p>Sau înregistrează-te cu</p>
-                <div class="social-buttons">
-                    {% get_providers as socialaccount_providers %}
-                    {% for provider in socialaccount_providers %}
-                    <a title="{{provider.name}}" class="socialaccount_provider {{provider.id}}" 
-                       href="{% provider_login_url provider.id process=process scope=scope auth_params=auth_params %}">
-                        <i class="fab fa-{{ provider.id }}"></i>
-                    </a>
-                    {% endfor %}
+            <div class="relative py-4">
+                <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-gray-300"></div>
+                </div>
+                <div class="relative flex justify-center">
+                    <span class="bg-white px-4 text-sm text-gray-500">sau</span>
                 </div>
             </div>
             
-            <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: #6c757d;">
+            <div class="flex justify-center space-x-4 mb-6">
+                {% get_providers as socialaccount_providers %}
+                {% for provider in socialaccount_providers %}
+                <a title="{{provider.name}}" class="flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 hover:bg-gray-200 transition duration-200" 
+                   href="{% provider_login_url provider.id process=process scope=scope auth_params=auth_params %}">
+                    <i class="fab fa-{{ provider.id }} text-xl"></i>
+                </a>
+                {% endfor %}
+            </div>
+            
+            <p class="text-center text-gray-600 text-sm">
                 Ai deja un cont?
-                <a href="{% url 'account_login' %}" class="auth-link">
+                <a href="{% url 'marketplace:login' %}" class="text-accent hover:text-green-600 font-medium">
                     Autentifică-te
                 </a>
             </p>
