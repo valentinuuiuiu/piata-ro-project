@@ -1,0 +1,46 @@
+[
+{
+  "model": "marketplace.category",
+  "pk": 1,
+  "fields": {
+    "name": "Test Category",
+    "slug": "test-category",
+    "icon": null,
+    "color": null,
+    "parent": null
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 2,
+  "fields": {
+    "name": "Auto",
+    "slug": "auto",
+    "icon": null,
+    "color": null,
+    "parent": null
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 3,
+  "fields": {
+    "name": "Imobiliare",
+    "slug": "imobiliare",
+    "icon": null,
+    "color": null,
+    "parent": null
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 4,
+  "fields": {
+    "name": "Electronice",
+    "slug": "electronice",
+    "icon": null,
+    "color": null,
+    "parent": null
+  }
+}
+]

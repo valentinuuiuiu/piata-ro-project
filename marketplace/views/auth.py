@@ -46,7 +46,7 @@ def verify_mfa(request):
     user_id = request.session.get('mfa_user_id')
     
     if not user_id:
-        return redirect('marketplace:login')
+        return redirect('account_login')
     
     if request.method == 'POST':
         token = request.POST.get('token')
@@ -69,7 +69,7 @@ def verify_mfa(request):
                 messages.error(request, 'Invalid MFA token')
         except (User.DoesNotExist, UserProfile.DoesNotExist):
             messages.error(request, 'User not found')
-            return redirect('marketplace:login')
+            return redirect('account_login')
     
     return render(request, 'mfa_verify.html')
 

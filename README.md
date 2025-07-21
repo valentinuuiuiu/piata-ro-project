@@ -283,9 +283,10 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 # Database (optional - SQLite is default)
 DATABASE_URL=sqlite:///db.sqlite3
 
-# Clerk Authentication (see AUTH_CLERK.md for more details)
-CLERK_PUBLISHABLE_KEY=pk_test_your_clerk_publishable_key
-CLERK_SECRET_KEY=sk_test_your_clerk_secret_key
+# Django Allauth Authentication (see AUTH_ALLAUTH.md for more details)
+# Google OAuth2 settings for social login
+GOOGLE_OAUTH2_CLIENT_ID=your_google_client_id
+GOOGLE_OAUTH2_CLIENT_SECRET=your_google_client_secret
 
 # Stripe (for payments)
 STRIPE_PUBLISHABLE_KEY=pk_test_...

@@ -1,0 +1,352 @@
+{% extends 'marketplace/base.html' %}
+
+{% block title %}Selectează Locația - Piața.ro{% endblock %}
+
+{% block extra_head %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<style>
+    #map-container {
+        height: 500px;
+        width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .location-search-box {
+        position: absolute;
+        top: 10px;
+        left: 50px;
+        right: 10px;
+        z-index: 1000;
+        background: white;
+        border-radius: 4px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .location-search-input {
+        width: 100%;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+    }
+    .location-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border-radius: 0 0 4px 4px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        max-height: 300px;
+        overflow-y: auto;
+        display: none;
+    }
+    .location-result-item {
+        padding: 10px 15px;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+    }
+    .location-result-item:hover {
+        background-color: #f5f5f5;
+    }
+    .selected-location-info {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        border-left: 4px solid #0056b3;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">
+            <i class="fas fa-map-marker-alt mr-3 text-primary"></i>Selectează Locația Exactă
+        </h1>
+        <p class="text-gray-600">Folosește harta pentru a selecta locația exactă, inclusiv sate și comune.</p>
+    </div>
+
+    <!-- Map Container -->
+    <div class="relative mb-6">
+        <div id="map-container"></div>
+        
+        <!-- Search Box -->
+        <div class="location-search-box">
+            <input type="text" id="location-search-input" class="location-search-input" 
+                   placeholder="Caută localitate (oraș, comună, sat)...">
+            <div id="location-results" class="location-results"></div>
+        </div>
+    </div>
+
+    <!-- Selected Location Info -->
+    <div id="selected-location-info" class="selected-location-info hidden">
+        <h3 class="text-xl font-semibold text-gray-800 mb-3">Locație Selectată</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <p class="text-sm text-gray-500">Adresă</p>
+                <p id="selected-address" class="font-medium">-</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Localitate</p>
+                <p id="selected-city" class="font-medium">-</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Județ</p>
+                <p id="selected-county" class="font-medium">-</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Coordonate</p>
+                <p id="selected-coordinates" class="font-medium">-</p>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="mt-6 flex justify-end space-x-4">
+            <button id="reset-location" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                <i class="fas fa-undo mr-2"></i>Resetează
+            </button>
+            <button id="use-location" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <i class="fas fa-check mr-2"></i>Folosește această locație
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+    // Initialize map centered on Romania
+    const map = L.map('map-container').setView([45.9443, 25.0094], 7);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    
+    // Variables to store marker and selected location
+    let marker;
+    let selectedLocation = null;
+    
+    // DOM elements
+    const searchInput = document.getElementById('location-search-input');
+    const resultsContainer = document.getElementById('location-results');
+    const selectedLocationInfo = document.getElementById('selected-location-info');
+    const selectedAddress = document.getElementById('selected-address');
+    const selectedCity = document.getElementById('selected-city');
+    const selectedCounty = document.getElementById('selected-county');
+    const selectedCoordinates = document.getElementById('selected-coordinates');
+    const resetButton = document.getElementById('reset-location');
+    const useLocationButton = document.getElementById('use-location');
+    
+    // Search for locations
+    searchInput.addEventListener('input', debounce(function() {
+        const query = this.value.trim();
+        if (query.length < 2) {
+            resultsContainer.style.display = 'none';
+            return;
+        }
+        
+        fetch(`/api/locations/search/?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.results && data.results.length > 0) {
+                    displaySearchResults(data.results);
+                } else {
+                    resultsContainer.innerHTML = '<div class="location-result-item">Nu s-au găsit rezultate</div>';
+                    resultsContainer.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Error searching locations:', error);
+                resultsContainer.innerHTML = '<div class="location-result-item">Eroare la căutare</div>';
+                resultsContainer.style.display = 'block';
+            });
+    }, 300));
+    
+    // Display search results
+    function displaySearchResults(results) {
+        resultsContainer.innerHTML = '';
+        
+        results.forEach(result => {
+            const item = document.createElement('div');
+            item.className = 'location-result-item';
+            item.textContent = result.formatted_address || result.name;
+            
+            item.addEventListener('click', () => {
+                selectLocation(result);
+                resultsContainer.style.display = 'none';
+                searchInput.value = result.formatted_address || result.name;
+            });
+            
+            resultsContainer.appendChild(item);
+        });
+        
+        resultsContainer.style.display = 'block';
+    }
+    
+    // Select location from search results
+    function selectLocation(location) {
+        const lat = location.latitude;
+        const lng = location.longitude;
+        
+        // Update map
+        map.setView([lat, lng], 14);
+        
+        // Add or update marker
+        if (marker) {
+            marker.setLatLng([lat, lng]);
+        } else {
+            marker = L.marker([lat, lng], {draggable: true}).addTo(map);
+            
+            // Update location info when marker is dragged
+            marker.on('dragend', function() {
+                const position = marker.getLatLng();
+                reverseGeocode(position.lat, position.lng);
+            });
+        }
+        
+        // Store selected location
+        selectedLocation = location;
+        
+        // Update UI
+        updateSelectedLocationInfo(location);
+    }
+    
+    // Update selected location info panel
+    function updateSelectedLocationInfo(location) {
+        selectedAddress.textContent = location.address || location.formatted_address || '-';
+        selectedCity.textContent = location.city || '-';
+        selectedCounty.textContent = location.county || '-';
+        selectedCoordinates.textContent = `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`;
+        
+        // Show the info panel
+        selectedLocationInfo.classList.remove('hidden');
+    }
+    
+    // Reverse geocode coordinates
+    function reverseGeocode(lat, lng) {
+        fetch(`/api/locations/reverse-geocode/?lat=${lat}&lon=${lng}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data) {
+                    selectedLocation = {
+                        latitude: lat,
+                        longitude: lng,
+                        formatted_address: data.formatted_address,
+                        address: data.address,
+                        city: data.city,
+                        county: data.county
+                    };
+                    
+                    updateSelectedLocationInfo(selectedLocation);
+                }
+            })
+            .catch(error => {
+                console.error('Error reverse geocoding:', error);
+            });
+    }
+    
+    // Click on map to set location
+    map.on('click', function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+        
+        // Add or update marker
+        if (marker) {
+            marker.setLatLng([lat, lng]);
+        } else {
+            marker = L.marker([lat, lng], {draggable: true}).addTo(map);
+            
+            // Update location info when marker is dragged
+            marker.on('dragend', function() {
+                const position = marker.getLatLng();
+                reverseGeocode(position.lat, position.lng);
+            });
+        }
+        
+        // Reverse geocode to get address
+        reverseGeocode(lat, lng);
+    });
+    
+    // Reset location
+    resetButton.addEventListener('click', function() {
+        if (marker) {
+            map.removeLayer(marker);
+            marker = null;
+        }
+        
+        selectedLocation = null;
+        selectedLocationInfo.classList.add('hidden');
+        searchInput.value = '';
+    });
+    
+    // Use current location
+    document.addEventListener('DOMContentLoaded', function() {
+        // Try to get user's current location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    // Set map view to user's location
+                    map.setView([lat, lng], 14);
+                    
+                    // Add marker
+                    marker = L.marker([lat, lng], {draggable: true}).addTo(map);
+                    
+                    // Update location info when marker is dragged
+                    marker.on('dragend', function() {
+                        const position = marker.getLatLng();
+                        reverseGeocode(position.lat, position.lng);
+                    });
+                    
+                    // Reverse geocode to get address
+                    reverseGeocode(lat, lng);
+                },
+                function(error) {
+                    console.error('Error getting location:', error);
+                }
+            );
+        }
+    });
+    
+    // Use selected location
+    useLocationButton.addEventListener('click', function() {
+        if (selectedLocation) {
+            // Here you would typically save the location to a form or database
+            // For now, we'll just show an alert
+            alert(`Locație selectată: ${selectedLocation.formatted_address || selectedLocation.city}`);
+            
+            // You can also redirect to another page or close a modal
+            // window.location.href = '/your-next-page';
+        }
+    });
+    
+    // Hide search results when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target)) {
+            resultsContainer.style.display = 'none';
+        }
+    });
+    
+    // Debounce function to limit API calls
+    function debounce(func, wait) {
+        let timeout;
+        return function() {
+            const context = this;
+            const args = arguments;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                func.apply(context, args);
+            }, wait);
+        };
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,1 @@
+mkdir -p /home/shiva/Desktop/piata-ro-project/nginx/conf.d

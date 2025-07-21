@@ -294,128 +294,156 @@ class LocationService:
         results = []
         query_lower = query.lower().strip()
         
-        # Strategy 1: Exact and fuzzy matching in known Romanian cities
-        def city_match_score(city_name, query):
-            """Calculate match score for city names"""
-            city_lower = city_name.lower()
-            if city_lower == query_lower:
-                return 100  # Exact match
-            elif city_lower.startswith(query_lower):
-                return 90   # Starts with query
-            elif query_lower in city_lower:
-                return 80   # Contains query
-            else:
-                # Fuzzy matching for diacritics and common variations
-                normalized_city = LocationService.normalize_location_name(city_name).lower()
-                normalized_query = LocationService.normalize_location_name(query).lower()
+        # Strategy 1: OpenStreetMap search for detailed results including villages
+        try:
+            # Try multiple search variations for better results
+            search_queries = [
+                f"{query}, România",  # With country
+                f"{query}",           # Just the query
+                f"{LocationService.normalize_location_name(query)}, România"  # Normalized
+            ]
+            
+            for search_query in search_queries:
+                if len(results) >= limit:
+                    break
+                    
+                params = {
+                    'q': search_query,
+                    'format': 'json',
+                    'limit': limit * 2,  # Get more results to filter
+                    'countrycodes': 'ro',
+                    'addressdetails': 1,
+                    'extratags': 1,
+                    'dedupe': 1,  # Remove duplicates
+                    'bounded': 1,  # Restrict to Romania
+                    'viewbox': '20.2,48.3,29.7,43.6'  # Romania bounding box
+                }
                 
-                if normalized_city == normalized_query:
-                    return 95
-                elif normalized_city.startswith(normalized_query):
-                    return 85
-                elif normalized_query in normalized_city:
-                    return 75
-            return 0
-        
-        # Search in known cities with scoring
-        city_matches = []
-        for city, coords in LocationService.ROMANIA_CITIES.items():
-            score = city_match_score(city, query)
-            if score > 0:
-                city_matches.append((score, {
-                    'name': city,
-                    'latitude': coords[0],
-                    'longitude': coords[1],
-                    'type': 'city',
-                    'formatted_address': f"{city}, România",
-                    'city': city,
-                    'county': '',
-                    'match_score': score
-                }))
-        
-        # Sort by score and add to results
-        city_matches.sort(key=lambda x: x[0], reverse=True)
-        for score, city_result in city_matches[:min(5, limit)]:
-            results.append(city_result)
-        
-        # Strategy 2: OpenStreetMap search for more detailed results
-        if len(results) < limit:
-            try:
-                # Try multiple search variations
-                search_queries = [
-                    f"{query}, România",
-                    f"{query}",
-                    f"{LocationService.normalize_location_name(query)}, România"
-                ]
+                data = call_nominatim(params, "search")
                 
-                for search_query in search_queries:
-                    if len(results) >= limit:
-                        break
+                # Process results and avoid duplicates
+                existing_coords = {(r['latitude'], r['longitude']) for r in results}
+                
+                for item in data:
+                    lat, lon = float(item['lat']), float(item['lon'])
+                    
+                    # Skip if coordinates already exist
+                    if (lat, lon) in existing_coords:
+                        continue
                         
-                    params = {
-                        'q': search_query,
-                        'format': 'json',
-                        'limit': limit - len(results),
-                        'countrycodes': 'ro',
-                        'addressdetails': 1,
-                        'extratags': 1,
-                        'dedupe': 1  # Remove duplicates
+                    address = item.get('address', {})
+                    
+                    # Extract location name with priority for smaller localities
+                    city = (
+                        address.get('village') or
+                        address.get('town') or 
+                        address.get('city') or 
+                        address.get('municipality') or
+                        address.get('hamlet') or
+                        address.get('suburb') or
+                        ''
+                    )
+                    
+                    # Get place type with more detail
+                    place_type = item.get('type', 'location')
+                    if 'village' in address:
+                        place_type = 'village'
+                    elif 'hamlet' in address:
+                        place_type = 'hamlet'
+                    elif 'town' in address:
+                        place_type = 'town'
+                    elif 'city' in address:
+                        place_type = 'city'
+                    
+                    # Calculate importance based on type
+                    importance = float(item.get('importance', 0))
+                    
+                    # Create detailed result
+                    result = {
+                        'name': city or item.get('display_name', ''),
+                        'latitude': lat,
+                        'longitude': lon,
+                        'type': place_type,
+                        'formatted_address': item.get('display_name', ''),
+                        'city': city,
+                        'county': address.get('county', ''),
+                        'state': address.get('state', ''),
+                        'country': address.get('country', 'România'),
+                        'postal_code': address.get('postcode', ''),
+                        'importance': importance,
+                        'osm_id': item.get('osm_id', ''),
+                        'osm_type': item.get('osm_type', '')
                     }
                     
-                    data = call_nominatim(params, "search")
+                    results.append(result)
+                    existing_coords.add((lat, lon))
                     
-                    # Process results and avoid duplicates
-                    existing_coords = {(r['latitude'], r['longitude']) for r in results}
-                    
-                    for item in data:
-                        lat, lon = float(item['lat']), float(item['lon'])
+                    if len(results) >= limit * 2:
+                        break
                         
-                        # Skip if coordinates already exist
-                        if (lat, lon) in existing_coords:
-                            continue
-                            
-                        address = item.get('address', {})
-                        city = (
-                            address.get('city') or 
-                            address.get('town') or 
-                            address.get('village') or
-                            address.get('municipality', '')
-                        )
-                        
-                        importance = float(item.get('importance', 0))
-                        place_type = item.get('type', 'location')
-                        
-                        result = {
-                            'name': item.get('display_name', ''),
-                            'latitude': lat,
-                            'longitude': lon,
-                            'type': place_type,
-                            'formatted_address': item.get('display_name', ''),
-                            'city': city,
-                            'county': address.get('county', ''),
-                            'country': address.get('country', 'România'),
-                            'importance': importance,
-                            'osm_id': item.get('osm_id', ''),
-                            'osm_type': item.get('osm_type', '')
-                        }
-                        
-                        results.append(result)
-                        existing_coords.add((lat, lon))
-                        
-                        if len(results) >= limit:
-                            break
-                            
-            except Exception as e:
-                logger.error(f"OpenStreetMap search failed for '{query}': {e}")
+        except Exception as e:
+            logger.error(f"OpenStreetMap search failed for '{query}': {e}")
         
-        # Sort results by relevance (city matches first, then by importance)
+        # Strategy 2: Fallback to known cities if no results
+        if not results:
+            # Search in known cities with scoring
+            city_matches = []
+            for city, coords in LocationService.ROMANIA_CITIES.items():
+                # Calculate match score
+                city_lower = city.lower()
+                score = 0
+                
+                if city_lower == query_lower:
+                    score = 100  # Exact match
+                elif city_lower.startswith(query_lower):
+                    score = 90   # Starts with query
+                elif query_lower in city_lower:
+                    score = 80   # Contains query
+                else:
+                    # Fuzzy matching for diacritics
+                    normalized_city = LocationService.normalize_location_name(city).lower()
+                    normalized_query = LocationService.normalize_location_name(query).lower()
+                    
+                    if normalized_city == normalized_query:
+                        score = 95
+                    elif normalized_city.startswith(normalized_query):
+                        score = 85
+                    elif normalized_query in normalized_city:
+                        score = 75
+                
+                if score > 0:
+                    city_matches.append((score, {
+                        'name': city,
+                        'latitude': coords[0],
+                        'longitude': coords[1],
+                        'type': 'city',
+                        'formatted_address': f"{city}, România",
+                        'city': city,
+                        'county': '',
+                        'match_score': score
+                    }))
+            
+            # Sort by score and add to results
+            city_matches.sort(key=lambda x: x[0], reverse=True)
+            for score, city_result in city_matches[:limit]:
+                results.append(city_result)
+        
+        # Sort results by relevance
         def sort_key(result):
-            if result['type'] == 'city' and 'match_score' in result:
-                return (0, result['match_score'])  # Cities first, by match score
-            else:
-                return (1, result.get('importance', 0))  # Then by importance
+            # Prioritize villages and smaller localities
+            type_priority = {
+                'village': 1,
+                'hamlet': 2,
+                'town': 3,
+                'city': 4,
+                'administrative': 5
+            }.get(result['type'], 10)
+            
+            # Then by match score or importance
+            score = result.get('match_score', result.get('importance', 0))
+            return (type_priority, -score)  # Lower type_priority is better, higher score is better
         
-        results.sort(key=sort_key, reverse=True)
+        results.sort(key=sort_key)
         
         # Limit final results
         final_results = results[:limit]

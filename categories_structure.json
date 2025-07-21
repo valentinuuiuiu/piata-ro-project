@@ -1,0 +1,1090 @@
+[
+  {
+    "name": "Accesorii (Genți, Ceasuri, Bijuterii)",
+    "slug": "accesorii-genti-ceasuri-bijuterii",
+    "icon": "fas fa-tshirt",
+    "color": "#e91e63",
+    "parent_slug": "moda-si-frumusete",
+    "parent_name": "Modă și Frumusețe"
+  },
+  {
+    "name": "Accesorii Animale",
+    "slug": "accesorii-animale",
+    "icon": "fas fa-paw",
+    "color": "#795548",
+    "parent_slug": "animale",
+    "parent_name": "Animale"
+  },
+  {
+    "name": "Accesorii Auto",
+    "slug": "accesorii-auto",
+    "icon": "fas fa-car",
+    "color": "#ff9800",
+    "parent_slug": "auto-moto-si-ambarcatiuni",
+    "parent_name": "Auto, Moto și Ambarcațiuni"
+  },
+  {
+    "name": "Accesorii Electronice",
+    "slug": "accesorii-electronice",
+    "icon": "fas fa-laptop",
+    "color": "#9c27b0",
+    "parent_slug": "electronice-si-electrocasnice",
+    "parent_name": "Electronice și Electrocasnice"
+  },
+  {
+    "name": "Administrație",
+    "slug": "administratie",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent_slug": "locuri-de-munca",
+    "parent_name": "Locuri de muncă"
+  },
+  {
+    "name": "Agro și Industrie",
+    "slug": "agro-si-industrie",
+    "icon": "fas fa-tractor",
+    "color": "#8bc34a",
+    "parent_slug": null,
+    "parent_name": null
+  },
+  {
+    "name": "Ambarcațiuni",
+    "slug": "ambarcatiuni",
+    "icon": "fas fa-car",
+    "color": "#ff9800",
+    "parent_slug": "auto-moto-si-ambarcatiuni",
+    "parent_name": "Auto, Moto și Ambarcațiuni"
+  },
+  {
+    "name": "Animale",
+    "slug": "animale",
+    "icon": "fas fa-paw",
+    "color": "#795548",
+    "parent_slug": null,
+    "parent_name": null
+  },
+  {
+    "name": "Animale Mici",
+    "slug": "animale-mici",
+    "icon": "fas fa-paw",
+    "color": "#795548",
+    "parent_slug": "animale",
+    "parent_name": "Animale"
+  },
+  {
+    "name": "Animale de Companie",
+    "slug": "animale-de-companie",
+    "icon": "fas fa-paw",
+    "color": "#795548",
+    "parent_slug": "animale",
+    "parent_name": "Animale"
+  },
+  {
+    "name": "Animale de Fermă",
+    "slug": "animale-de-ferma",
+    "icon": "fas fa-paw",
+    "color": "#795548",
+    "parent_slug": "animale",
+    "parent_name": "Animale"
+  },
+  {
+    "name": "Anvelope și Jante",
+    "slug": "anvelope-si-jante",
+    "icon": "fas fa-car",
+    "color": "#ff9800",
+    "parent_slug": "auto-moto-si-ambarcatiuni",
+    "parent_name": "Auto, Moto și Ambarcațiuni"
+  },
+  {
+    "name": "Aparate Foto/Video",
+    "slug": "aparate-foto-video",
+    "icon": "fas fa-laptop",
+    "color": "#9c27b0",
+    "parent_slug": "electronice-si-electrocasnice",
+    "parent_name": "Electronice și Electrocasnice"
+  },
+  {
+    "name": "Aparatură medicală",
+    "slug": "aparatura-medicala",
+    "icon": "fas fa-heartbeat",
+    "color": "#f44336",
+    "parent_slug": "sanatate",
+    "parent_name": "Sănătate"
+  },
+  {
+    "name": "Apartamente de vânzare",
+    "slug": "apartamente-de-vanzare",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent_slug": "imobiliare",
+    "parent_name": "Imobiliare"
+  },
+  {
+    "name": "Apartamente de închiriat",
+    "slug": "apartamente-de-inchiriat",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent_slug": "imobiliare",
+    "parent_name": "Imobiliare"
+  },
+  {
+    "name": "Articole Sarcină",
+    "slug": "articole-sarcina",
+    "icon": "fas fa-baby",
+    "color": "#ffeb3b",
+    "parent_slug": "mama-si-copilul",
+    "parent_name": "Mama și Copilul"
+  },
+  {
+    "name": "Artă/Muzică",
+    "slug": "arta-muzica",
+    "icon": "fas fa-graduation-cap",
+    "color": "#3f51b5",
+    "parent_slug": "educatie",
+    "parent_name": "Educație"
+  },
+  {
+    "name": "Auto, Moto și Ambarcațiuni",
+    "slug": "auto-moto-si-ambarcatiuni",
+    "icon": "fas fa-car",
+    "color": "#ff9800",
+    "parent_slug": null,
+    "parent_name": null
+  },
+  {
+    "name": "Autoturisme",
+    "slug": "autoturisme",
+    "icon": "fas fa-car",
+    "color": "#ff9800",
+    "parent_slug": "auto-moto-si-ambarcatiuni",
+    "parent_name": "Auto, Moto și Ambarcațiuni"
+  },
+  {
+    "name": "Aventuri",
+    "slug": "aventuri",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent_slug": "matrimoniale",
+    "parent_name": "Matrimoniale"
+  },
+  {
+    "name": "Biciclete",
+    "slug": "biciclete",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent_slug": "sport-timp-liber-arta",
+    "parent_name": "Sport, Timp Liber, Artă"
+  },
+  {
+    "name": "Bărbați caută bărbați",
+    "slug": "barbati-cauta-barbati",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent_slug": "matrimoniale",
+    "parent_name": "Matrimoniale"
+  },
+  {
+    "name": "Bărbați caută femei",
+    "slug": "barbati-cauta-femei",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent_slug": "matrimoniale",
+    "parent_name": "Matrimoniale"
+  },
+  {
+    "name": "Calculatoare/Laptopuri",
+    "slug": "calculatoare-laptopuri",
+    "icon": "fas fa-laptop",
+    "color": "#9c27b0",
+    "parent_slug": "electronice-si-electrocasnice",
+    "parent_name": "Electronice și Electrocasnice"
+  },
+  {
+    "name": "Camioane/Utilaje",
+    "slug": "camioane-utilaje",
+    "icon": "fas fa-car",
+    "color": "#ff9800",
+    "parent_slug": "auto-moto-si-ambarcatiuni",
+    "parent_name": "Auto, Moto și Ambarcațiuni"
+  },
+  {
+    "name": "Case de vânzare",
+    "slug": "case-de-vanzare",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent_slug": "imobiliare",
+    "parent_name": "Imobiliare"
+  },
+  {
+    "name": "Case de închiriat",
+    "slug": "case-de-inchiriat",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent_slug": "imobiliare",
+    "parent_name": "Imobiliare"
+  },
+  {
+    "name": "Casă și Grădină",
+    "slug": "casa-si-gradina",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent_slug": null,
+    "parent_name": null
+  },
+  {
+    "name": "Cazare turism",
+    "slug": "cazare-turism",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent_slug": "imobiliare",
+    "parent_name": "Imobiliare"
+  },
+  {
+    "name": "Colecții",
+    "slug": "colectii",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent_slug": "sport-timp-liber-arta",
+    "parent_name": "Sport, Timp Liber, Artă"
+  },
+  {
+    "name": "Construcții",
+    "slug": "constructii",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent_slug": "locuri-de-munca",
+    "parent_name": "Locuri de muncă"
+  },
+  {
+    "name": "Consultanță",
+    "slug": "consultanta",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent_slug": "servicii-afaceri-echipamente-firme",
+    "parent_name": "Servicii, Afaceri, Echipamente Firme"
+  },
+  {
+    "name": "Cosmetice/Parfumuri",
+    "slug": "cosmetice-parfumuri",
+    "icon": "fas fa-tshirt",
+    "color": "#e91e63",
+    "parent_slug": "moda-si-frumusete",
+    "parent_name": "Modă și Frumusețe"
+  },
+  {
+    "name": "Cursuri",
+    "slug": "cursuri",
+    "icon": "fas fa-graduation-cap",
+    "color": "#3f51b5",
+    "parent_slug": "educatie",
+    "parent_name": "Educație"
+  },
+  {
+    "name": "Câini",
+    "slug": "caini",
+    "icon": "fas fa-paw",
+    "color": "#795548",
+    "parent_slug": "animale",
+    "parent_name": "Animale"
+  },
+  {
+    "name": "Cărucioare/Scaune Auto",
+    "slug": "carucioare-scaune-auto",
+    "icon": "fas fa-baby",
+    "color": "#ffeb3b",
+    "parent_slug": "mama-si-copilul",
+    "parent_name": "Mama și Copilul"
+  },
+  {
+    "name": "Cărți Copii",
+    "slug": "carti-copii",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent_slug": "sport-timp-liber-arta",
+    "parent_name": "Sport, Timp Liber, Artă"
+  },
+  {
+    "name": "Cărți/Reviste",
+    "slug": "carti-reviste",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent_slug": "sport-timp-liber-arta",
+    "parent_name": "Sport, Timp Liber, Artă"
+  },
+  {
+    "name": "Decorațiuni/Artă",
+    "slug": "decoratiuni-arta",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent_slug": "casa-si-gradina",
+    "parent_name": "Casă și Grădină"
+  },
+  {
+    "name": "Depozite",
+    "slug": "depozite",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent_slug": "imobiliare",
+    "parent_name": "Imobiliare"
+  },
+  {
+    "name": "Drumeții/Camping",
+    "slug": "drumetii-camping",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent_slug": "sport-timp-liber-arta",
+    "parent_name": "Sport, Timp Liber, Artă"
+  },
+  {
+    "name": "Echipamente Birou",
+    "slug": "echipamente-birou",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent_slug": "servicii-afaceri-echipamente-firme",
+    "parent_name": "Servicii, Afaceri, Echipamente Firme"
+  },
+  {
+    "name": "Echipamente Industriale",
+    "slug": "echipamente-industriale",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent_slug": "servicii-afaceri-echipamente-firme",
+    "parent_name": "Servicii, Afaceri, Echipamente Firme"
+  },
+  {
+    "name": "Echipamente Siguranță",
+    "slug": "echipamente-siguranta",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent_slug": "servicii-afaceri-echipamente-firme",
+    "parent_name": "Servicii, Afaceri, Echipamente Firme"
+  },
+  {
+    "name": "Echipamente Sportive",
+    "slug": "echipamente-sportive",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent_slug": "sport-timp-liber-arta",
+    "parent_name": "Sport, Timp Liber, Artă"
+  },
+  {
+    "name": "Echipamente fitness",
+    "slug": "echipamente-fitness",
+    "icon": "fas fa-heartbeat",
+    "color": "#f44336",
+    "parent_slug": "sanatate",
+    "parent_name": "Sănătate"
+  },
+  {
+    "name": "Educație",
+    "slug": "educatie",
+    "icon": "fas fa-graduation-cap",
+    "color": "#3f51b5",
+    "parent_slug": null,
+    "parent_name": null
+  },
+  {
+    "name": "Electrocasnice Mari",
+    "slug": "electrocasnice-mari",
+    "icon": "fas fa-laptop",
+    "color": "#9c27b0",
+    "parent_slug": "electronice-si-electrocasnice",
+    "parent_name": "Electronice și Electrocasnice"
+  },
+  {
+    "name": "Electrocasnice Mici",
+    "slug": "electrocasnice-mici",
+    "icon": "fas fa-laptop",
+    "color": "#9c27b0",
+    "parent_slug": "electronice-si-electrocasnice",
+    "parent_name": "Electronice și Electrocasnice"
+  },
+  {
+    "name": "Electronice și Electrocasnice",
+    "slug": "electronice-si-electrocasnice",
+    "icon": "fas fa-laptop",
+    "color": "#9c27b0",
+    "parent_slug": null,
+    "parent_name": null
+  },
+  {
+    "name": "Escorte",
+    "slug": "escorte",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent_slug": "matrimoniale",
+    "parent_name": "Matrimoniale"
+  },
+  {
+    "name": "Femei caută bărbați",
+    "slug": "femei-cauta-barbati",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent_slug": "matrimoniale",
+    "parent_name": "Matrimoniale"
+  },
+  {
+    "name": "Femei caută femei",
+    "slug": "femei-cauta-femei",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent_slug": "matrimoniale",
+    "parent_name": "Matrimoniale"
+  },
+  {
+    "name": "Fitness/Sală",
+    "slug": "fitness-sala",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent_slug": "sport-timp-liber-arta",
+    "parent_name": "Sport, Timp Liber, Artă"
+  },
+  {
+    "name": "Freelancing",
+    "slug": "freelancing",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent_slug": "locuri-de-munca",
+    "parent_name": "Locuri de muncă"
+  },
+  {
+    "name": "Garaje",
+    "slug": "garaje",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent_slug": "imobiliare",
+    "parent_name": "Imobiliare"
+  },
+  {
+    "name": "Grădină/Terasă",
+    "slug": "gradina-terasa",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent_slug": "casa-si-gradina",
+    "parent_name": "Casă și Grădină"
+  },
+  {
+    "name": "Haine Bărbați",
+    "slug": "haine-barbati",
+    "icon": "fas fa-tshirt",
+    "color": "#e91e63",
+    "parent_slug": "moda-si-frumusete",
+    "parent_name": "Modă și Frumusețe"
+  },
+  {
+    "name": "Haine Copii",
+    "slug": "haine-copii",
+    "icon": "fas fa-tshirt",
+    "color": "#e91e63",
+    "parent_slug": "moda-si-frumusete",
+    "parent_name": "Modă și Frumusețe"
+  },
+  {
+    "name": "Haine Damă",
+    "slug": "haine-dama",
+    "icon": "fas fa-tshirt",
+    "color": "#e91e63",
+    "parent_slug": "moda-si-frumusete",
+    "parent_name": "Modă și Frumusețe"
+  },
+  {
+    "name": "Haine Vintage",
+    "slug": "haine-vintage",
+    "icon": "fas fa-tshirt",
+    "color": "#e91e63",
+    "parent_slug": "moda-si-frumusete",
+    "parent_name": "Modă și Frumusețe"
+  },
+  {
+    "name": "HoReCa",
+    "slug": "horeca",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent_slug": "locuri-de-munca",
+    "parent_name": "Locuri de muncă"
+  },
+  {
+    "name": "HoReCa",
+    "slug": "horeca-1",
+    "icon": "fas fa-tractor",
+    "color": "#8bc34a",
+    "parent_slug": "agro-si-industrie",
+    "parent_name": "Agro și Industrie"
+  },
+  {
+    "name": "Hrană Animale",
+    "slug": "hrana-animale",
+    "icon": "fas fa-paw",
+    "color": "#795548",
+    "parent_slug": "animale",
+    "parent_name": "Animale"
+  },
+  {
+    "name": "Hrană Bebeluși",
+    "slug": "hrana-bebelusi",
+    "icon": "fas fa-baby",
+    "color": "#ffeb3b",
+    "parent_slug": "mama-si-copilul",
+    "parent_name": "Mama și Copilul"
+  },
+  {
+    "name": "IT & Software",
+    "slug": "it-si-software",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent_slug": "locuri-de-munca",
+    "parent_name": "Locuri de muncă"
+  },
+  {
+    "name": "IT/Software",
+    "slug": "it-software",
+    "icon": "fas fa-graduation-cap",
+    "color": "#3f51b5",
+    "parent_slug": "educatie",
+    "parent_name": "Educație"
+  },
+  {
+    "name": "Imobiliare",
+    "slug": "imobiliare",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent_slug": null,
+    "parent_name": null
+  },
+  {
+    "name": "Instalații",
+    "slug": "instalatii",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent_slug": "casa-si-gradina",
+    "parent_name": "Casă și Grădină"
+  },
+  {
+    "name": "Internship",
+    "slug": "internship",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent_slug": "locuri-de-munca",
+    "parent_name": "Locuri de muncă"
+  },
+  {
+    "name": "Jocuri/Console",
+    "slug": "jocuri-console",
+    "icon": "fas fa-laptop",
+    "color": "#9c27b0",
+    "parent_slug": "electronice-si-electrocasnice",
+    "parent_name": "Electronice și Electrocasnice"
+  },
+  {
+    "name": "Jocuri/Jucării",
+    "slug": "jocuri-jucarii",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent_slug": "sport-timp-liber-arta",
+    "parent_name": "Sport, Timp Liber, Artă"
+  },
+  {
+    "name": "Jucării",
+    "slug": "jucarii",
+    "icon": "fas fa-baby",
+    "color": "#ffeb3b",
+    "parent_slug": "mama-si-copilul",
+    "parent_name": "Mama și Copilul"
+  },
+  {
+    "name": "Limbi străine",
+    "slug": "limbi-straine",
+    "icon": "fas fa-graduation-cap",
+    "color": "#3f51b5",
+    "parent_slug": "educatie",
+    "parent_name": "Educație"
+  },
+  {
+    "name": "Locuri de muncă",
+    "slug": "locuri-de-munca",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent_slug": null,
+    "parent_name": null
+  },
+  {
+    "name": "Lucru de acasă",
+    "slug": "lucru-de-acasa",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent_slug": "locuri-de-munca",
+    "parent_name": "Locuri de muncă"
+  },
+  {
+    "name": "Mama și Copilul",
+    "slug": "mama-si-copilul",
+    "icon": "fas fa-baby",
+    "color": "#ffeb3b",
+    "parent_slug": null,
+    "parent_name": null
+  },
+  {
+    "name": "Masaj erotic",
+    "slug": "masaj-erotic",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent_slug": "matrimoniale",
+    "parent_name": "Matrimoniale"
+  },
+  {
+    "name": "Materiale de Construcție",
+    "slug": "materiale-de-constructie",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent_slug": "casa-si-gradina",
+    "parent_name": "Casă și Grădină"
+  },
+  {
+    "name": "Matrimoniale",
+    "slug": "matrimoniale",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent_slug": null,
+    "parent_name": null
+  },
+  {
+    "name": "Matrimoniale mature",
+    "slug": "matrimoniale-mature",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent_slug": "matrimoniale",
+    "parent_name": "Matrimoniale"
+  },
+  {
+    "name": "Matrimoniale străine",
+    "slug": "matrimoniale-straine",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent_slug": "matrimoniale",
+    "parent_name": "Matrimoniale"
+  },
+  {
+    "name": "Matrimoniale tinere",
+    "slug": "matrimoniale-tinere",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent_slug": "matrimoniale",
+    "parent_name": "Matrimoniale"
+  },
+  {
+    "name": "Meditații",
+    "slug": "meditatii",
+    "icon": "fas fa-graduation-cap",
+    "color": "#3f51b5",
+    "parent_slug": "educatie",
+    "parent_name": "Educație"
+  },
+  {
+    "name": "Mobilier",
+    "slug": "mobilier",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent_slug": "casa-si-gradina",
+    "parent_name": "Casă și Grădină"
+  },
+  {
+    "name": "Mobilier Copii",
+    "slug": "mobilier-copii",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent_slug": "casa-si-gradina",
+    "parent_name": "Casă și Grădină"
+  },
+  {
+    "name": "Modă și Frumusețe",
+    "slug": "moda-si-frumusete",
+    "icon": "fas fa-tshirt",
+    "color": "#e91e63",
+    "parent_slug": null,
+    "parent_name": null
+  },
+  {
+    "name": "Motociclete/Scutere/ATV",
+    "slug": "motociclete-scutere-atv",
+    "icon": "fas fa-car",
+    "color": "#ff9800",
+    "parent_slug": "auto-moto-si-ambarcatiuni",
+    "parent_name": "Auto, Moto și Ambarcațiuni"
+  },
+  {
+    "name": "Muzică/Instrumente",
+    "slug": "muzica-instrumente",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent_slug": "sport-timp-liber-arta",
+    "parent_name": "Sport, Timp Liber, Artă"
+  },
+  {
+    "name": "Ochelari",
+    "slug": "ochelari",
+    "icon": "fas fa-tshirt",
+    "color": "#e91e63",
+    "parent_slug": "moda-si-frumusete",
+    "parent_name": "Modă și Frumusețe"
+  },
+  {
+    "name": "Part-time",
+    "slug": "part-time",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent_slug": "locuri-de-munca",
+    "parent_name": "Locuri de muncă"
+  },
+  {
+    "name": "Pești",
+    "slug": "pesti",
+    "icon": "fas fa-paw",
+    "color": "#795548",
+    "parent_slug": "animale",
+    "parent_name": "Animale"
+  },
+  {
+    "name": "Piese Auto",
+    "slug": "piese-auto",
+    "icon": "fas fa-car",
+    "color": "#ff9800",
+    "parent_slug": "auto-moto-si-ambarcatiuni",
+    "parent_name": "Auto, Moto și Ambarcațiuni"
+  },
+  {
+    "name": "Pisici",
+    "slug": "pisici",
+    "icon": "fas fa-paw",
+    "color": "#795548",
+    "parent_slug": "animale",
+    "parent_name": "Animale"
+  },
+  {
+    "name": "Prietenie",
+    "slug": "prietenie",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent_slug": "matrimoniale",
+    "parent_name": "Matrimoniale"
+  },
+  {
+    "name": "Producție",
+    "slug": "productie",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent_slug": "locuri-de-munca",
+    "parent_name": "Locuri de muncă"
+  },
+  {
+    "name": "Produse Chimice",
+    "slug": "produse-chimice",
+    "icon": "fas fa-tractor",
+    "color": "#8bc34a",
+    "parent_slug": "agro-si-industrie",
+    "parent_name": "Agro și Industrie"
+  },
+  {
+    "name": "Publicitate",
+    "slug": "publicitate",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent_slug": "servicii-afaceri-echipamente-firme",
+    "parent_name": "Servicii, Afaceri, Echipamente Firme"
+  },
+  {
+    "name": "Păsări",
+    "slug": "pasari",
+    "icon": "fas fa-paw",
+    "color": "#795548",
+    "parent_slug": "animale",
+    "parent_name": "Animale"
+  },
+  {
+    "name": "Relații serioase",
+    "slug": "relatii-serioase",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent_slug": "matrimoniale",
+    "parent_name": "Matrimoniale"
+  },
+  {
+    "name": "Rulote/Autorulote",
+    "slug": "rulote-autorulote",
+    "icon": "fas fa-car",
+    "color": "#ff9800",
+    "parent_slug": "auto-moto-si-ambarcatiuni",
+    "parent_name": "Auto, Moto și Ambarcațiuni"
+  },
+  {
+    "name": "Scule și Unelte",
+    "slug": "scule-si-unelte",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent_slug": "casa-si-gradina",
+    "parent_name": "Casă și Grădină"
+  },
+  {
+    "name": "Semințe/Plante",
+    "slug": "seminte-plante",
+    "icon": "fas fa-tractor",
+    "color": "#8bc34a",
+    "parent_slug": "agro-si-industrie",
+    "parent_name": "Agro și Industrie"
+  },
+  {
+    "name": "Servicii",
+    "slug": "servicii",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent_slug": "locuri-de-munca",
+    "parent_name": "Locuri de muncă"
+  },
+  {
+    "name": "Servicii Auto",
+    "slug": "servicii-auto",
+    "icon": "fas fa-car",
+    "color": "#ff9800",
+    "parent_slug": "auto-moto-si-ambarcatiuni",
+    "parent_name": "Auto, Moto și Ambarcațiuni"
+  },
+  {
+    "name": "Servicii Curățenie",
+    "slug": "servicii-curatenie",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent_slug": "servicii-afaceri-echipamente-firme",
+    "parent_name": "Servicii, Afaceri, Echipamente Firme"
+  },
+  {
+    "name": "Servicii Financiare",
+    "slug": "servicii-financiare",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent_slug": "servicii-afaceri-echipamente-firme",
+    "parent_name": "Servicii, Afaceri, Echipamente Firme"
+  },
+  {
+    "name": "Servicii IT",
+    "slug": "servicii-it",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent_slug": "servicii-afaceri-echipamente-firme",
+    "parent_name": "Servicii, Afaceri, Echipamente Firme"
+  },
+  {
+    "name": "Servicii Juridice",
+    "slug": "servicii-juridice",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent_slug": "servicii-afaceri-echipamente-firme",
+    "parent_name": "Servicii, Afaceri, Echipamente Firme"
+  },
+  {
+    "name": "Servicii Medicale",
+    "slug": "servicii-medicale",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent_slug": "servicii-afaceri-echipamente-firme",
+    "parent_name": "Servicii, Afaceri, Echipamente Firme"
+  },
+  {
+    "name": "Servicii Transport",
+    "slug": "servicii-transport",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent_slug": "servicii-afaceri-echipamente-firme",
+    "parent_name": "Servicii, Afaceri, Echipamente Firme"
+  },
+  {
+    "name": "Servicii Veterinare",
+    "slug": "servicii-veterinare",
+    "icon": "fas fa-paw",
+    "color": "#795548",
+    "parent_slug": "animale",
+    "parent_name": "Animale"
+  },
+  {
+    "name": "Servicii medicale",
+    "slug": "servicii-medicale-1",
+    "icon": "fas fa-heartbeat",
+    "color": "#f44336",
+    "parent_slug": "sanatate",
+    "parent_name": "Sănătate"
+  },
+  {
+    "name": "Servicii, Afaceri, Echipamente Firme",
+    "slug": "servicii-afaceri-echipamente-firme",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent_slug": null,
+    "parent_name": null
+  },
+  {
+    "name": "Smart Home",
+    "slug": "smart-home",
+    "icon": "fas fa-laptop",
+    "color": "#9c27b0",
+    "parent_slug": "electronice-si-electrocasnice",
+    "parent_name": "Electronice și Electrocasnice"
+  },
+  {
+    "name": "Spații comerciale/Birouri",
+    "slug": "spatii-comerciale-birouri",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent_slug": "imobiliare",
+    "parent_name": "Imobiliare"
+  },
+  {
+    "name": "Sport, Timp Liber, Artă",
+    "slug": "sport-timp-liber-arta",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent_slug": null,
+    "parent_name": null
+  },
+  {
+    "name": "Sporturi de Apă",
+    "slug": "sporturi-de-apa",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent_slug": "sport-timp-liber-arta",
+    "parent_name": "Sport, Timp Liber, Artă"
+  },
+  {
+    "name": "Suplimente",
+    "slug": "suplimente",
+    "icon": "fas fa-heartbeat",
+    "color": "#f44336",
+    "parent_slug": "sanatate",
+    "parent_name": "Sănătate"
+  },
+  {
+    "name": "Sănătate",
+    "slug": "sanatate",
+    "icon": "fas fa-heartbeat",
+    "color": "#f44336",
+    "parent_slug": null,
+    "parent_name": null
+  },
+  {
+    "name": "TV/Audio/Video",
+    "slug": "tv-audio-video",
+    "icon": "fas fa-laptop",
+    "color": "#9c27b0",
+    "parent_slug": "electronice-si-electrocasnice",
+    "parent_name": "Electronice și Electrocasnice"
+  },
+  {
+    "name": "Tablete",
+    "slug": "tablete",
+    "icon": "fas fa-laptop",
+    "color": "#9c27b0",
+    "parent_slug": "electronice-si-electrocasnice",
+    "parent_name": "Electronice și Electrocasnice"
+  },
+  {
+    "name": "Telefoane",
+    "slug": "telefoane",
+    "icon": "fas fa-laptop",
+    "color": "#9c27b0",
+    "parent_slug": "electronice-si-electrocasnice",
+    "parent_name": "Electronice și Electrocasnice"
+  },
+  {
+    "name": "Terenuri",
+    "slug": "terenuri",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent_slug": "imobiliare",
+    "parent_name": "Imobiliare"
+  },
+  {
+    "name": "Test Category",
+    "slug": "test-category",
+    "icon": null,
+    "color": null,
+    "parent_slug": null,
+    "parent_name": null
+  },
+  {
+    "name": "Textile Casă",
+    "slug": "textile-casa",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent_slug": "casa-si-gradina",
+    "parent_name": "Casă și Grădină"
+  },
+  {
+    "name": "Traduceri",
+    "slug": "traduceri",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent_slug": "servicii-afaceri-echipamente-firme",
+    "parent_name": "Servicii, Afaceri, Echipamente Firme"
+  },
+  {
+    "name": "Transport & Logistică",
+    "slug": "transport-si-logistica",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent_slug": "locuri-de-munca",
+    "parent_name": "Locuri de muncă"
+  },
+  {
+    "name": "Utilaje Agricole",
+    "slug": "utilaje-agricole",
+    "icon": "fas fa-tractor",
+    "color": "#8bc34a",
+    "parent_slug": "agro-si-industrie",
+    "parent_name": "Agro și Industrie"
+  },
+  {
+    "name": "Utilaje Construcții",
+    "slug": "utilaje-constructii",
+    "icon": "fas fa-tractor",
+    "color": "#8bc34a",
+    "parent_slug": "agro-si-industrie",
+    "parent_name": "Agro și Industrie"
+  },
+  {
+    "name": "Vase și Tacâmuri",
+    "slug": "vase-si-tacamuri",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent_slug": "casa-si-gradina",
+    "parent_name": "Casă și Grădină"
+  },
+  {
+    "name": "Vânzări & Marketing",
+    "slug": "vanzari-si-marketing",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent_slug": "locuri-de-munca",
+    "parent_name": "Locuri de muncă"
+  },
+  {
+    "name": "Vânătoare/Pescuit",
+    "slug": "vanatoare-pescuit",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent_slug": "sport-timp-liber-arta",
+    "parent_name": "Sport, Timp Liber, Artă"
+  },
+  {
+    "name": "Îmbrăcăminte Copii",
+    "slug": "imbracaminte-copii",
+    "icon": "fas fa-baby",
+    "color": "#ffeb3b",
+    "parent_slug": "mama-si-copilul",
+    "parent_name": "Mama și Copilul"
+  },
+  {
+    "name": "Încălțăminte",
+    "slug": "incaltaminte",
+    "icon": "fas fa-tshirt",
+    "color": "#e91e63",
+    "parent_slug": "moda-si-frumusete",
+    "parent_name": "Modă și Frumusețe"
+  }
+]

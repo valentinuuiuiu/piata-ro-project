@@ -464,18 +464,99 @@
 function showPhone() {
     const phoneBtn = document.getElementById('show-phone-btn');
     const phoneDisplay = document.getElementById('phone-display');
+    const phoneNumber = document.getElementById('phone-number');
+    const phoneText = document.getElementById('phone-text');
     
-    // Show the phone display
-    phoneDisplay.classList.remove('hidden');
+    // Show loading state
+    phoneText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Se încarcă...';  
     
-    // Hide the button
-    phoneBtn.classList.add('hidden');
+    // Get the listing ID
+    const listingId = {{ listing.id }};
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Call the API to get the phone number
+    fetch(`/telefon/${listingId}/`, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show the phone display
+            phoneDisplay.classList.remove('hidden');
+            
+            // Hide the button
+            phoneBtn.classList.add('hidden');
+            
+            // Update the phone number
+            phoneNumber.textContent = data.phone;
+        } else {
+            showNotification('Nu s-a putut afișa numărul de telefon.', 'error');
+            phoneText.textContent = 'Afișează telefon';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('A apărut o eroare. Încercați din nou.', 'error');
+        phoneText.textContent = 'Afișează telefon';
+    });
 }
 
 // Profile viewing functionality
 function viewProfile(username) {
     // Redirect to user's public profile page
     window.location.href = `/utilizator/${username}/`;
+}
+
+// Toggle favorite functionality
+function toggleFavorite() {
+    const favoriteBtn = document.getElementById('favoriteBtn');
+    const favoriteIcon = document.getElementById('favoriteIcon');
+    const favoriteText = document.getElementById('favoriteText');
+    
+    // Disable button during request
+    favoriteBtn.disabled = true;
+    
+    // Get the listing ID
+    const listingId = {{ listing.id }};
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Call the API to toggle favorite status
+    fetch(`/favorite/toggle/${listingId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the button text and icon based on the new state
+            if (data.is_favorited) {
+                favoriteIcon.classList.add('text-red-500');
+                favoriteText.textContent = 'Elimină din favorite';
+                showNotification('Anunț adăugat la favorite!', 'success');
+            } else {
+                favoriteIcon.classList.remove('text-red-500');
+                favoriteText.textContent = 'Adaugă la favorite';
+                showNotification('Anunț eliminat din favorite!', 'success');
+            }
+        } else {
+            showNotification('Nu s-a putut actualiza statusul de favorit.', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('A apărut o eroare. Încercați din nou.', 'error');
+    })
+    .finally(() => {
+        // Re-enable button
+        favoriteBtn.disabled = false;
+    });
 }
 
 // Share listing functionality
@@ -773,6 +854,13 @@ document.addEventListener('DOMContentLoaded', function() {
         initializeMap();
     }
     loadNearbyListings();
+    
+    // Initialize favorite button state
+    const isFavorited = {{ user in listing.favorited_by.all|yesno:"true,false" }};
+    const favoriteIcon = document.getElementById('favoriteIcon');
+    if (isFavorited && favoriteIcon) {
+        favoriteIcon.classList.add('text-red-500');
+    }
 });
 
 // Cleanup map when page is unloaded

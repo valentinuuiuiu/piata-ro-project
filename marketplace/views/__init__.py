@@ -21,6 +21,7 @@ from .profile import *
 from .messaging import *
 
 from .favorites import *
+from .favorites_view import *
 
 from .reporting import *
 from .legal import *

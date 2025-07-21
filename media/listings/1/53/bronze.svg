@@ -1,6 +1,4 @@
-<svg width="200" height="200">
-  <rect width="200" height="200" fill="#cd7f32"/>
-  <text x="100" y="120" font-size="24" text-anchor="middle" fill="white">
-    Bronze Tier
-  </text>
+<svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="300" height="200" fill="#cd7f32"/>
+  <text x="150" y="100" font-family="Arial" font-size="20" text-anchor="middle" fill="white">Bronze Badge</text>
 </svg>

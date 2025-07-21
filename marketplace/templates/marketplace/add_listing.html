@@ -435,155 +435,82 @@
 </div>
 
 {% block extra_js %}
+{% include 'marketplace/location_picker_modal.html' %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Location service functionality
-    const useCurrentLocationCheckbox = document.getElementById('{{ form.use_current_location.id_for_label }}');
+    // Location picker functionality
     const cityInput = document.getElementById('{{ form.city.id_for_label }}');
     const countyInput = document.getElementById('{{ form.county.id_for_label }}');
     const addressInput = document.getElementById('{{ form.address.id_for_label }}');
     const locationInput = document.getElementById('{{ form.location.id_for_label }}');
     const latitudeInput = document.getElementById('{{ form.latitude.id_for_label }}');
     const longitudeInput = document.getElementById('{{ form.longitude.id_for_label }}');
-    const locationStatus = document.getElementById('location-status');
-    const locationError = document.getElementById('location-error');
+    const openLocationPickerBtn = document.getElementById('open-location-picker');
+    const changeLocationBtn = document.getElementById('change-location');
+    const selectedLocationInfo = document.getElementById('selected-location-info');
+    const selectedLocationText = document.getElementById('selected-location-text');
+    const selectedCoordinatesText = document.getElementById('selected-coordinates-text');
     
-    // Get current location
-    useCurrentLocationCheckbox.addEventListener('change', function() {
-        if (this.checked) {
-            getCurrentLocation();
+    // Open location picker modal
+    if (openLocationPickerBtn) {
+        openLocationPickerBtn.addEventListener('click', function() {
+            openLocationPicker(handleSelectedLocation);
+        });
+    }
+    
+    // Change location button
+    if (changeLocationBtn) {
+        changeLocationBtn.addEventListener('click', function() {
+            openLocationPicker(handleSelectedLocation);
+        });
+    }
+    
+    // Handle selected location from modal
+    function handleSelectedLocation(location) {
+        // Update form fields
+        if (location) {
+            latitudeInput.value = location.latitude;
+            longitudeInput.value = location.longitude;
+            
+            if (location.city) cityInput.value = location.city;
+            if (location.county) countyInput.value = location.county;
+            if (location.address) addressInput.value = location.address;
+            
+            // Update location display
+            updateLocationDisplay(location);
+            
+            // Show selected location info
+            selectedLocationInfo.classList.remove('hidden');
+            selectedLocationText.textContent = location.formatted_address || `${location.city}, ${location.county}`;
+            selectedCoordinatesText.textContent = `Coordonate: ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`;
+            
+            // Update preview
+            const previewLocation = document.getElementById('preview-location');
+            if (previewLocation) {
+                previewLocation.textContent = location.city || location.formatted_address || 'Locație';
+            }
         }
-    });
-    
-    function getCurrentLocation() {
-        if ('geolocation' in navigator) {
-            navigator.geolocation.getCurrentPosition(
-                function(position) {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    
-                    latitudeInput.value = lat;
-                    longitudeInput.value = lng;
-                    
-                    // Reverse geocode to get address
-                    reverseGeocode(lat, lng);
-                },
-                function(error) {
-                    console.error('Geolocation error:', error);
-                    showLocationError('Nu s-a putut accesa locația curentă. Te rog să introduci manual adresa.');
-                    useCurrentLocationCheckbox.checked = false;
-                }
-            );
-        } else {
-            showLocationError('Browserul nu suportă geolocația. Te rog să introduci manual adresa.');
-            useCurrentLocationCheckbox.checked = false;
-        }
     }
     
-    function reverseGeocode(lat, lng) {
-        fetch(`/api/location/reverse-geocode/?lat=${lat}&lng=${lng}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    if (data.city) cityInput.value = data.city;
-                    if (data.county) countyInput.value = data.county;
-                    if (data.address) addressInput.value = data.address;
-                    updateLocationDisplay();
-                    showLocationStatus();
-                } else {
-                    showLocationError('Nu s-a putut identifica adresa pentru locația curentă.');
-                }
-            })
-            .catch(error => {
-                console.error('Reverse geocoding error:', error);
-                showLocationError('Eroare la identificarea adresei.');
-            });
-    }
-    
-    // Geocode when city or address changes
-    let geocodeTimeout;
-    function debounceGeocode() {
-        clearTimeout(geocodeTimeout);
-        geocodeTimeout = setTimeout(geocodeAddress, 1000);
-    }
-    
-    cityInput.addEventListener('input', debounceGeocode);
-    addressInput.addEventListener('input', debounceGeocode);
-    
-    function geocodeAddress() {
-        const city = cityInput.value.trim();
-        const address = addressInput.value.trim();
-        
-        if (!city && !address) return;
-        
-        const query = address ? `${address}, ${city}` : city;
-        
-        fetch(`/api/location/geocode/?q=${encodeURIComponent(query)}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.results.length > 0) {
-                    const result = data.results[0];
-                    latitudeInput.value = result.latitude;
-                    longitudeInput.value = result.longitude;
-                    
-                    // Fill in missing data
-                    if (!cityInput.value && result.city) {
-                        cityInput.value = result.city;
-                    }
-                    if (!countyInput.value && result.county) {
-                        countyInput.value = result.county;
-                    }
-                    
-                    updateLocationDisplay();
-                    showLocationStatus();
-                } else {
-                    hideLocationStatus();
-                }
-            })
-            .catch(error => {
-                console.error('Geocoding error:', error);
-                hideLocationStatus();
-            });
-    }
-    
-    function updateLocationDisplay() {
-        const city = cityInput.value.trim();
-        const county = countyInput.value.trim();
+    // Update location display
+    function updateLocationDisplay(location) {
+        const city = location?.city || cityInput.value.trim();
+        const county = location?.county || countyInput.value.trim();
         const parts = [];
         
         if (city) parts.push(city);
         if (county) parts.push(county);
         
         locationInput.value = parts.join(', ');
-        
-        // Update preview
-        const previewLocation = document.getElementById('preview-location');
-        if (previewLocation) {
-            previewLocation.textContent = locationInput.value || 'Locație';
-        }
     }
     
-    function showLocationStatus() {
-        locationStatus.classList.remove('hidden');
-        locationError.classList.add('hidden');
+    // Check if we have coordinates on page load
+    if (latitudeInput.value && longitudeInput.value) {
+        // Show selected location info
+        selectedLocationInfo.classList.remove('hidden');
+        selectedLocationText.textContent = locationInput.value || `${cityInput.value}, ${countyInput.value}`;
+        selectedCoordinatesText.textContent = `Coordonate: ${parseFloat(latitudeInput.value).toFixed(6)}, ${parseFloat(longitudeInput.value).toFixed(6)}`;
     }
-    
-    function showLocationError(message) {
-        if (message) {
-            locationError.querySelector('span').textContent = message;
-        }
-        locationError.classList.remove('hidden');
-        locationStatus.classList.add('hidden');
-    }
-    
-    function hideLocationStatus() {
-        locationStatus.classList.add('hidden');
-        locationError.classList.add('hidden');
-    }
-    
-    // Update location display when city or county changes
-    cityInput.addEventListener('input', updateLocationDisplay);
-    countyInput.addEventListener('input', updateLocationDisplay);
     
     // Romanian counties for auto-completion
     const romanianCounties = [

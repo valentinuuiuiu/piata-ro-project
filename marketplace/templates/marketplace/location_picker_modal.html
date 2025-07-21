@@ -1,0 +1,338 @@
+<!-- Location Picker Modal -->
+<div id="location-picker-modal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Background overlay -->
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+        
+        <!-- Modal panel -->
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+            <!-- Modal header -->
+            <div class="bg-primary px-4 py-3 sm:px-6 flex justify-between items-center">
+                <h3 class="text-lg leading-6 font-medium text-white" id="modal-title">
+                    <i class="fas fa-map-marker-alt mr-2"></i>Selectează Locația Exactă
+                </h3>
+                <button type="button" class="text-white hover:text-gray-200 focus:outline-none" onclick="closeLocationModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Modal content -->
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <!-- Map Container -->
+                <div class="relative mb-6">
+                    <div id="modal-map-container" style="height: 400px; width: 100%; border-radius: 8px;"></div>
+                    
+                    <!-- Search Box -->
+                    <div class="absolute top-2 left-10 right-10 z-10 bg-white rounded-lg shadow-md">
+                        <div class="relative">
+                            <input type="text" id="modal-location-search" 
+                                   class="w-full px-4 py-2 pr-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                   placeholder="Caută localitate (oraș, comună, sat)...">
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </div>
+                        </div>
+                        <div id="modal-location-results" class="absolute w-full bg-white rounded-b-lg shadow-lg max-h-60 overflow-y-auto z-20 hidden"></div>
+                    </div>
+                </div>
+                
+                <!-- Selected Location Info -->
+                <div id="modal-selected-location-info" class="p-4 bg-gray-50 rounded-lg border-l-4 border-primary hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm text-gray-500">Adresă</p>
+                            <p id="modal-selected-address" class="font-medium">-</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Localitate</p>
+                            <p id="modal-selected-city" class="font-medium">-</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Județ</p>
+                            <p id="modal-selected-county" class="font-medium">-</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Coordonate</p>
+                            <p id="modal-selected-coordinates" class="font-medium">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal footer -->
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" id="modal-use-location" 
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:ml-3 sm:w-auto sm:text-sm"
+                        onclick="useSelectedLocation()">
+                    <i class="fas fa-check mr-2"></i>Folosește această locație
+                </button>
+                <button type="button" 
+                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                        onclick="closeLocationModal()">
+                    Anulează
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<script>
+    // Global variables
+    window.modalMap = window.modalMap || null;
+    window.modalMarker = window.modalMarker || null;
+    window.modalSelectedLocation = window.modalSelectedLocation || null;
+    window.locationCallback = window.locationCallback || null;
+    
+    // Initialize modal map when needed
+    function initModalMap() {
+        if (!window.modalMap) {
+            window.modalMap = L.map('modal-map-container').setView([45.9443, 25.0094], 7);
+            
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(window.modalMap);
+            
+            // Click on map to set location
+            window.modalMap.on('click', function(e) {
+                const lat = e.latlng.lat;
+                const lng = e.latlng.lng;
+                
+                // Add or update marker
+                if (window.modalMarker) {
+                    window.modalMarker.setLatLng([lat, lng]);
+                } else {
+                    window.modalMarker = L.marker([lat, lng], {draggable: true}).addTo(window.modalMap);
+                    
+                    // Update location info when marker is dragged
+                    window.modalMarker.on('dragend', function() {
+                        const position = window.modalMarker.getLatLng();
+                        modalReverseGeocode(position.lat, position.lng);
+                    });
+                }
+                
+                // Reverse geocode to get address
+                modalReverseGeocode(lat, lng);
+            });
+            
+            // Set up search functionality
+            const searchInput = document.getElementById('modal-location-search');
+            const resultsContainer = document.getElementById('modal-location-results');
+            
+            searchInput.addEventListener('input', debounce(function() {
+                const query = this.value.trim();
+                if (query.length < 2) {
+                    resultsContainer.style.display = 'none';
+                    return;
+                }
+                
+                fetch(`/api/locations/search/?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.results && data.results.length > 0) {
+                            displayModalSearchResults(data.results);
+                        } else {
+                            resultsContainer.innerHTML = '<div class="p-3 text-gray-500">Nu s-au găsit rezultate</div>';
+                            resultsContainer.style.display = 'block';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error searching locations:', error);
+                        resultsContainer.innerHTML = '<div class="p-3 text-red-500">Eroare la căutare</div>';
+                        resultsContainer.style.display = 'block';
+                    });
+            }, 300));
+            
+            // Hide search results when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target)) {
+                    resultsContainer.style.display = 'none';
+                }
+            });
+        }
+        
+        // Refresh map size when modal is opened
+        setTimeout(() => {
+            window.modalMap.invalidateSize();
+        }, 100);
+    }
+    
+    // Display search results in modal
+    function displayModalSearchResults(results) {
+        const resultsContainer = document.getElementById('modal-location-results');
+        resultsContainer.innerHTML = '';
+        
+        results.forEach(result => {
+            const item = document.createElement('div');
+            item.className = 'p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100';
+            
+            // Create content with location name and type
+            let content = `<div class="font-medium">${result.formatted_address || result.name}</div>`;
+            if (result.type) {
+                const typeLabels = {
+                    'village': 'Sat',
+                    'hamlet': 'Cătun',
+                    'town': 'Oraș',
+                    'city': 'Municipiu',
+                    'administrative': 'Zonă administrativă'
+                };
+                const typeLabel = typeLabels[result.type] || result.type;
+                content += `<div class="text-xs text-gray-500">${typeLabel}${result.county ? `, ${result.county}` : ''}</div>`;
+            }
+            
+            item.innerHTML = content;
+            
+            item.addEventListener('click', () => {
+                modalSelectLocation(result);
+                resultsContainer.style.display = 'none';
+                document.getElementById('modal-location-search').value = result.formatted_address || result.name;
+            });
+            
+            resultsContainer.appendChild(item);
+        });
+        
+        resultsContainer.style.display = 'block';
+    }
+    
+    // Select location in modal
+    function modalSelectLocation(location) {
+        const lat = location.latitude;
+        const lng = location.longitude;
+        
+        // Update map
+        window.modalMap.setView([lat, lng], 14);
+        
+        // Add or update marker
+        if (window.modalMarker) {
+            window.modalMarker.setLatLng([lat, lng]);
+        } else {
+            window.modalMarker = L.marker([lat, lng], {draggable: true}).addTo(window.modalMap);
+            
+            // Update location info when marker is dragged
+            window.modalMarker.on('dragend', function() {
+                const position = window.modalMarker.getLatLng();
+                modalReverseGeocode(position.lat, position.lng);
+            });
+        }
+        
+        // Store selected location
+        window.modalSelectedLocation = location;
+        
+        // Update UI
+        updateModalLocationInfo(location);
+    }
+    
+    // Update selected location info in modal
+    function updateModalLocationInfo(location) {
+        document.getElementById('modal-selected-address').textContent = location.address || location.formatted_address || '-';
+        document.getElementById('modal-selected-city').textContent = location.city || '-';
+        document.getElementById('modal-selected-county').textContent = location.county || '-';
+        document.getElementById('modal-selected-coordinates').textContent = `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`;
+        
+        // Show the info panel
+        document.getElementById('modal-selected-location-info').classList.remove('hidden');
+    }
+    
+    // Reverse geocode coordinates in modal
+    function modalReverseGeocode(lat, lng) {
+        fetch(`/api/locations/reverse-geocode/?lat=${lat}&lon=${lng}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data) {
+                    window.modalSelectedLocation = {
+                        latitude: lat,
+                        longitude: lng,
+                        formatted_address: data.formatted_address,
+                        address: data.address,
+                        city: data.city,
+                        county: data.county
+                    };
+                    
+                    updateModalLocationInfo(modalSelectedLocation);
+                }
+            })
+            .catch(error => {
+                console.error('Error reverse geocoding:', error);
+            });
+    }
+    
+    // Open location picker modal
+    function openLocationPicker(callback) {
+        // Store callback function
+        window.locationCallback = callback;
+        
+        // Show modal
+        document.getElementById('location-picker-modal').classList.remove('hidden');
+        
+        // Initialize map
+        initModalMap();
+        
+        // Try to get user's current location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    // Set map view to user's location
+                    window.modalMap.setView([lat, lng], 14);
+                    
+                    // Add marker
+                    if (window.modalMarker) {
+                        window.modalMarker.setLatLng([lat, lng]);
+                    } else {
+                        window.modalMarker = L.marker([lat, lng], {draggable: true}).addTo(window.modalMap);
+                        
+                        // Update location info when marker is dragged
+                        window.modalMarker.on('dragend', function() {
+                            const position = window.modalMarker.getLatLng();
+                            modalReverseGeocode(position.lat, position.lng);
+                        });
+                    }
+                    
+                    // Reverse geocode to get address
+                    modalReverseGeocode(lat, lng);
+                },
+                function(error) {
+                    console.error('Error getting location:', error);
+                }
+            );
+        }
+    }
+    
+    // Close location picker modal
+    function closeLocationModal() {
+        document.getElementById('location-picker-modal').classList.add('hidden');
+    }
+    
+    // Use selected location
+    function useSelectedLocation() {
+        if (window.modalSelectedLocation && window.locationCallback) {
+            // Call the callback function with the selected location
+            window.locationCallback(window.modalSelectedLocation);
+            
+            // Close modal
+            closeLocationModal();
+        }
+    }
+    
+    // Debounce function to limit API calls
+    function debounce(func, wait) {
+        let timeout;
+        return function() {
+            const context = this;
+            const args = arguments;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                func.apply(context, args);
+            }, wait);
+        };
+    }
+</script>

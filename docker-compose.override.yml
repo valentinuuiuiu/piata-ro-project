@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    volumes:
+      - .:/app
+    ports:
+      - "${WEB_PORT:-8000}:8000"
+    depends_on:
+      - db
+      - redis
+      - mcp_server
+    environment:
+      - DEBUG=True
+      - ENVIRONMENT=development
+    command: python manage.py runserver 0.0.0.0:8000
+
+  db:
+    ports:
+      - "${DB_PORT:-5432}:5432"
+
+  redis:
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+
+  mcp_server:
+    ports:
+      - "${MCP_PORT:-8080}:8080"

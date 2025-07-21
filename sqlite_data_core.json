@@ -1,0 +1,2230 @@
+[
+{
+  "model": "marketplace.category",
+  "pk": 395,
+  "fields": {
+    "name": "Matrimoniale",
+    "slug": "matrimoniale",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent": null
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 396,
+  "fields": {
+    "name": "Femei caută bărbați",
+    "slug": "femei-cauta-barbati",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent": 395
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 397,
+  "fields": {
+    "name": "Bărbați caută femei",
+    "slug": "barbati-cauta-femei",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent": 395
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 398,
+  "fields": {
+    "name": "Femei caută femei",
+    "slug": "femei-cauta-femei",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent": 395
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 399,
+  "fields": {
+    "name": "Bărbați caută bărbați",
+    "slug": "barbati-cauta-barbati",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent": 395
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 400,
+  "fields": {
+    "name": "Escorte",
+    "slug": "escorte",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent": 395
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 401,
+  "fields": {
+    "name": "Masaj erotic",
+    "slug": "masaj-erotic",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent": 395
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 402,
+  "fields": {
+    "name": "Matrimoniale străine",
+    "slug": "matrimoniale-straine",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent": 395
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 403,
+  "fields": {
+    "name": "Matrimoniale mature",
+    "slug": "matrimoniale-mature",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent": 395
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 404,
+  "fields": {
+    "name": "Matrimoniale tinere",
+    "slug": "matrimoniale-tinere",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent": 395
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 405,
+  "fields": {
+    "name": "Relații serioase",
+    "slug": "relatii-serioase",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent": 395
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 406,
+  "fields": {
+    "name": "Aventuri",
+    "slug": "aventuri",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent": 395
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 407,
+  "fields": {
+    "name": "Prietenie",
+    "slug": "prietenie",
+    "icon": "fas fa-heart",
+    "color": "#e91e63",
+    "parent": 395
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 408,
+  "fields": {
+    "name": "Locuri de muncă",
+    "slug": "locuri-de-munca",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent": null
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 409,
+  "fields": {
+    "name": "IT & Software",
+    "slug": "it-si-software",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent": 408
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 410,
+  "fields": {
+    "name": "Vânzări & Marketing",
+    "slug": "vanzari-si-marketing",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent": 408
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 411,
+  "fields": {
+    "name": "Administrație",
+    "slug": "administratie",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent": 408
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 412,
+  "fields": {
+    "name": "Construcții",
+    "slug": "constructii",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent": 408
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 413,
+  "fields": {
+    "name": "HoReCa",
+    "slug": "horeca",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent": 408
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 414,
+  "fields": {
+    "name": "Transport & Logistică",
+    "slug": "transport-si-logistica",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent": 408
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 415,
+  "fields": {
+    "name": "Producție",
+    "slug": "productie",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent": 408
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 416,
+  "fields": {
+    "name": "Servicii",
+    "slug": "servicii",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent": 408
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 417,
+  "fields": {
+    "name": "Freelancing",
+    "slug": "freelancing",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent": 408
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 418,
+  "fields": {
+    "name": "Lucru de acasă",
+    "slug": "lucru-de-acasa",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent": 408
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 419,
+  "fields": {
+    "name": "Part-time",
+    "slug": "part-time",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent": 408
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 420,
+  "fields": {
+    "name": "Internship",
+    "slug": "internship",
+    "icon": "fas fa-briefcase",
+    "color": "#2196f3",
+    "parent": 408
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 421,
+  "fields": {
+    "name": "Imobiliare",
+    "slug": "imobiliare",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent": null
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 422,
+  "fields": {
+    "name": "Apartamente de vânzare",
+    "slug": "apartamente-de-vanzare",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent": 421
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 423,
+  "fields": {
+    "name": "Case de vânzare",
+    "slug": "case-de-vanzare",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent": 421
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 424,
+  "fields": {
+    "name": "Terenuri",
+    "slug": "terenuri",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent": 421
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 425,
+  "fields": {
+    "name": "Apartamente de închiriat",
+    "slug": "apartamente-de-inchiriat",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent": 421
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 426,
+  "fields": {
+    "name": "Case de închiriat",
+    "slug": "case-de-inchiriat",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent": 421
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 427,
+  "fields": {
+    "name": "Spații comerciale/Birouri",
+    "slug": "spatii-comerciale-birouri",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent": 421
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 428,
+  "fields": {
+    "name": "Garaje",
+    "slug": "garaje",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent": 421
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 429,
+  "fields": {
+    "name": "Depozite",
+    "slug": "depozite",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent": 421
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 430,
+  "fields": {
+    "name": "Cazare turism",
+    "slug": "cazare-turism",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent": 421
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 431,
+  "fields": {
+    "name": "Auto, Moto și Ambarcațiuni",
+    "slug": "auto-moto-si-ambarcatiuni",
+    "icon": "fas fa-car",
+    "color": "#ff9800",
+    "parent": null
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 432,
+  "fields": {
+    "name": "Autoturisme",
+    "slug": "autoturisme",
+    "icon": "fas fa-car",
+    "color": "#ff9800",
+    "parent": 431
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 433,
+  "fields": {
+    "name": "Motociclete/Scutere/ATV",
+    "slug": "motociclete-scutere-atv",
+    "icon": "fas fa-car",
+    "color": "#ff9800",
+    "parent": 431
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 434,
+  "fields": {
+    "name": "Camioane/Utilaje",
+    "slug": "camioane-utilaje",
+    "icon": "fas fa-car",
+    "color": "#ff9800",
+    "parent": 431
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 435,
+  "fields": {
+    "name": "Ambarcațiuni",
+    "slug": "ambarcatiuni",
+    "icon": "fas fa-car",
+    "color": "#ff9800",
+    "parent": 431
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 436,
+  "fields": {
+    "name": "Rulote/Autorulote",
+    "slug": "rulote-autorulote",
+    "icon": "fas fa-car",
+    "color": "#ff9800",
+    "parent": 431
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 437,
+  "fields": {
+    "name": "Piese Auto",
+    "slug": "piese-auto",
+    "icon": "fas fa-car",
+    "color": "#ff9800",
+    "parent": 431
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 438,
+  "fields": {
+    "name": "Anvelope și Jante",
+    "slug": "anvelope-si-jante",
+    "icon": "fas fa-car",
+    "color": "#ff9800",
+    "parent": 431
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 439,
+  "fields": {
+    "name": "Accesorii Auto",
+    "slug": "accesorii-auto",
+    "icon": "fas fa-car",
+    "color": "#ff9800",
+    "parent": 431
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 440,
+  "fields": {
+    "name": "Servicii Auto",
+    "slug": "servicii-auto",
+    "icon": "fas fa-car",
+    "color": "#ff9800",
+    "parent": 431
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 441,
+  "fields": {
+    "name": "Electronice și Electrocasnice",
+    "slug": "electronice-si-electrocasnice",
+    "icon": "fas fa-laptop",
+    "color": "#9c27b0",
+    "parent": null
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 442,
+  "fields": {
+    "name": "Telefoane",
+    "slug": "telefoane",
+    "icon": "fas fa-laptop",
+    "color": "#9c27b0",
+    "parent": 441
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 443,
+  "fields": {
+    "name": "Calculatoare/Laptopuri",
+    "slug": "calculatoare-laptopuri",
+    "icon": "fas fa-laptop",
+    "color": "#9c27b0",
+    "parent": 441
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 444,
+  "fields": {
+    "name": "Tablete",
+    "slug": "tablete",
+    "icon": "fas fa-laptop",
+    "color": "#9c27b0",
+    "parent": 441
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 445,
+  "fields": {
+    "name": "TV/Audio/Video",
+    "slug": "tv-audio-video",
+    "icon": "fas fa-laptop",
+    "color": "#9c27b0",
+    "parent": 441
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 446,
+  "fields": {
+    "name": "Aparate Foto/Video",
+    "slug": "aparate-foto-video",
+    "icon": "fas fa-laptop",
+    "color": "#9c27b0",
+    "parent": 441
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 447,
+  "fields": {
+    "name": "Jocuri/Console",
+    "slug": "jocuri-console",
+    "icon": "fas fa-laptop",
+    "color": "#9c27b0",
+    "parent": 441
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 448,
+  "fields": {
+    "name": "Electrocasnice Mari",
+    "slug": "electrocasnice-mari",
+    "icon": "fas fa-laptop",
+    "color": "#9c27b0",
+    "parent": 441
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 449,
+  "fields": {
+    "name": "Electrocasnice Mici",
+    "slug": "electrocasnice-mici",
+    "icon": "fas fa-laptop",
+    "color": "#9c27b0",
+    "parent": 441
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 450,
+  "fields": {
+    "name": "Accesorii Electronice",
+    "slug": "accesorii-electronice",
+    "icon": "fas fa-laptop",
+    "color": "#9c27b0",
+    "parent": 441
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 451,
+  "fields": {
+    "name": "Smart Home",
+    "slug": "smart-home",
+    "icon": "fas fa-laptop",
+    "color": "#9c27b0",
+    "parent": 441
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 452,
+  "fields": {
+    "name": "Modă și Frumusețe",
+    "slug": "moda-si-frumusete",
+    "icon": "fas fa-tshirt",
+    "color": "#e91e63",
+    "parent": null
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 453,
+  "fields": {
+    "name": "Haine Damă",
+    "slug": "haine-dama",
+    "icon": "fas fa-tshirt",
+    "color": "#e91e63",
+    "parent": 452
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 454,
+  "fields": {
+    "name": "Haine Bărbați",
+    "slug": "haine-barbati",
+    "icon": "fas fa-tshirt",
+    "color": "#e91e63",
+    "parent": 452
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 455,
+  "fields": {
+    "name": "Haine Copii",
+    "slug": "haine-copii",
+    "icon": "fas fa-tshirt",
+    "color": "#e91e63",
+    "parent": 452
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 456,
+  "fields": {
+    "name": "Încălțăminte",
+    "slug": "incaltaminte",
+    "icon": "fas fa-tshirt",
+    "color": "#e91e63",
+    "parent": 452
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 457,
+  "fields": {
+    "name": "Accesorii (Genți, Ceasuri, Bijuterii)",
+    "slug": "accesorii-genti-ceasuri-bijuterii",
+    "icon": "fas fa-tshirt",
+    "color": "#e91e63",
+    "parent": 452
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 458,
+  "fields": {
+    "name": "Cosmetice/Parfumuri",
+    "slug": "cosmetice-parfumuri",
+    "icon": "fas fa-tshirt",
+    "color": "#e91e63",
+    "parent": 452
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 459,
+  "fields": {
+    "name": "Ochelari",
+    "slug": "ochelari",
+    "icon": "fas fa-tshirt",
+    "color": "#e91e63",
+    "parent": 452
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 460,
+  "fields": {
+    "name": "Haine Vintage",
+    "slug": "haine-vintage",
+    "icon": "fas fa-tshirt",
+    "color": "#e91e63",
+    "parent": 452
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 461,
+  "fields": {
+    "name": "Casă și Grădină",
+    "slug": "casa-si-gradina",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent": null
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 462,
+  "fields": {
+    "name": "Mobilier",
+    "slug": "mobilier",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent": 461
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 463,
+  "fields": {
+    "name": "Mobilier Copii",
+    "slug": "mobilier-copii",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent": 461
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 464,
+  "fields": {
+    "name": "Grădină/Terasă",
+    "slug": "gradina-terasa",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent": 461
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 465,
+  "fields": {
+    "name": "Textile Casă",
+    "slug": "textile-casa",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent": 461
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 466,
+  "fields": {
+    "name": "Vase și Tacâmuri",
+    "slug": "vase-si-tacamuri",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent": 461
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 467,
+  "fields": {
+    "name": "Decorațiuni/Artă",
+    "slug": "decoratiuni-arta",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent": 461
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 468,
+  "fields": {
+    "name": "Scule și Unelte",
+    "slug": "scule-si-unelte",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent": 461
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 469,
+  "fields": {
+    "name": "Materiale de Construcție",
+    "slug": "materiale-de-constructie",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent": 461
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 470,
+  "fields": {
+    "name": "Instalații",
+    "slug": "instalatii",
+    "icon": "fas fa-home",
+    "color": "#4caf50",
+    "parent": 461
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 471,
+  "fields": {
+    "name": "Sport, Timp Liber, Artă",
+    "slug": "sport-timp-liber-arta",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent": null
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 472,
+  "fields": {
+    "name": "Echipamente Sportive",
+    "slug": "echipamente-sportive",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent": 471
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 473,
+  "fields": {
+    "name": "Biciclete",
+    "slug": "biciclete",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent": 471
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 474,
+  "fields": {
+    "name": "Fitness/Sală",
+    "slug": "fitness-sala",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent": 471
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 475,
+  "fields": {
+    "name": "Sporturi de Apă",
+    "slug": "sporturi-de-apa",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent": 471
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 476,
+  "fields": {
+    "name": "Vânătoare/Pescuit",
+    "slug": "vanatoare-pescuit",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent": 471
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 477,
+  "fields": {
+    "name": "Drumeții/Camping",
+    "slug": "drumetii-camping",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent": 471
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 478,
+  "fields": {
+    "name": "Muzică/Instrumente",
+    "slug": "muzica-instrumente",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent": 471
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 479,
+  "fields": {
+    "name": "Cărți/Reviste",
+    "slug": "carti-reviste",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent": 471
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 480,
+  "fields": {
+    "name": "Cărți Copii",
+    "slug": "carti-copii",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent": 471
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 481,
+  "fields": {
+    "name": "Jocuri/Jucării",
+    "slug": "jocuri-jucarii",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent": 471
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 482,
+  "fields": {
+    "name": "Colecții",
+    "slug": "colectii",
+    "icon": "fas fa-futbol",
+    "color": "#ff5722",
+    "parent": 471
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 483,
+  "fields": {
+    "name": "Mama și Copilul",
+    "slug": "mama-si-copilul",
+    "icon": "fas fa-baby",
+    "color": "#ffeb3b",
+    "parent": null
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 484,
+  "fields": {
+    "name": "Îmbrăcăminte Copii",
+    "slug": "imbracaminte-copii",
+    "icon": "fas fa-baby",
+    "color": "#ffeb3b",
+    "parent": 483
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 485,
+  "fields": {
+    "name": "Jucării",
+    "slug": "jucarii",
+    "icon": "fas fa-baby",
+    "color": "#ffeb3b",
+    "parent": 483
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 486,
+  "fields": {
+    "name": "Cărucioare/Scaune Auto",
+    "slug": "carucioare-scaune-auto",
+    "icon": "fas fa-baby",
+    "color": "#ffeb3b",
+    "parent": 483
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 487,
+  "fields": {
+    "name": "Hrană Bebeluși",
+    "slug": "hrana-bebelusi",
+    "icon": "fas fa-baby",
+    "color": "#ffeb3b",
+    "parent": 483
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 488,
+  "fields": {
+    "name": "Articole Sarcină",
+    "slug": "articole-sarcina",
+    "icon": "fas fa-baby",
+    "color": "#ffeb3b",
+    "parent": 483
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 489,
+  "fields": {
+    "name": "Animale",
+    "slug": "animale",
+    "icon": "fas fa-paw",
+    "color": "#795548",
+    "parent": null
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 490,
+  "fields": {
+    "name": "Câini",
+    "slug": "caini",
+    "icon": "fas fa-paw",
+    "color": "#795548",
+    "parent": 489
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 491,
+  "fields": {
+    "name": "Pisici",
+    "slug": "pisici",
+    "icon": "fas fa-paw",
+    "color": "#795548",
+    "parent": 489
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 492,
+  "fields": {
+    "name": "Păsări",
+    "slug": "pasari",
+    "icon": "fas fa-paw",
+    "color": "#795548",
+    "parent": 489
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 493,
+  "fields": {
+    "name": "Pești",
+    "slug": "pesti",
+    "icon": "fas fa-paw",
+    "color": "#795548",
+    "parent": 489
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 494,
+  "fields": {
+    "name": "Animale Mici",
+    "slug": "animale-mici",
+    "icon": "fas fa-paw",
+    "color": "#795548",
+    "parent": 489
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 495,
+  "fields": {
+    "name": "Animale de Fermă",
+    "slug": "animale-de-ferma",
+    "icon": "fas fa-paw",
+    "color": "#795548",
+    "parent": 489
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 496,
+  "fields": {
+    "name": "Animale de Companie",
+    "slug": "animale-de-companie",
+    "icon": "fas fa-paw",
+    "color": "#795548",
+    "parent": 489
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 497,
+  "fields": {
+    "name": "Accesorii Animale",
+    "slug": "accesorii-animale",
+    "icon": "fas fa-paw",
+    "color": "#795548",
+    "parent": 489
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 498,
+  "fields": {
+    "name": "Hrană Animale",
+    "slug": "hrana-animale",
+    "icon": "fas fa-paw",
+    "color": "#795548",
+    "parent": 489
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 499,
+  "fields": {
+    "name": "Servicii Veterinare",
+    "slug": "servicii-veterinare",
+    "icon": "fas fa-paw",
+    "color": "#795548",
+    "parent": 489
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 500,
+  "fields": {
+    "name": "Servicii, Afaceri, Echipamente Firme",
+    "slug": "servicii-afaceri-echipamente-firme",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent": null
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 501,
+  "fields": {
+    "name": "Servicii IT",
+    "slug": "servicii-it",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent": 500
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 502,
+  "fields": {
+    "name": "Servicii Curățenie",
+    "slug": "servicii-curatenie",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent": 500
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 503,
+  "fields": {
+    "name": "Servicii Transport",
+    "slug": "servicii-transport",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent": 500
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 504,
+  "fields": {
+    "name": "Servicii Medicale",
+    "slug": "servicii-medicale",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent": 500
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 505,
+  "fields": {
+    "name": "Servicii Juridice",
+    "slug": "servicii-juridice",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent": 500
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 506,
+  "fields": {
+    "name": "Servicii Financiare",
+    "slug": "servicii-financiare",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent": 500
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 507,
+  "fields": {
+    "name": "Consultanță",
+    "slug": "consultanta",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent": 500
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 508,
+  "fields": {
+    "name": "Traduceri",
+    "slug": "traduceri",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent": 500
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 509,
+  "fields": {
+    "name": "Publicitate",
+    "slug": "publicitate",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent": 500
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 510,
+  "fields": {
+    "name": "Echipamente Birou",
+    "slug": "echipamente-birou",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent": 500
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 511,
+  "fields": {
+    "name": "Echipamente Industriale",
+    "slug": "echipamente-industriale",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent": 500
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 512,
+  "fields": {
+    "name": "Echipamente Siguranță",
+    "slug": "echipamente-siguranta",
+    "icon": "fas fa-tools",
+    "color": "#607d8b",
+    "parent": 500
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 513,
+  "fields": {
+    "name": "Agro și Industrie",
+    "slug": "agro-si-industrie",
+    "icon": "fas fa-tractor",
+    "color": "#8bc34a",
+    "parent": null
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 514,
+  "fields": {
+    "name": "Utilaje Agricole",
+    "slug": "utilaje-agricole",
+    "icon": "fas fa-tractor",
+    "color": "#8bc34a",
+    "parent": 513
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 515,
+  "fields": {
+    "name": "Utilaje Construcții",
+    "slug": "utilaje-constructii",
+    "icon": "fas fa-tractor",
+    "color": "#8bc34a",
+    "parent": 513
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 516,
+  "fields": {
+    "name": "Semințe/Plante",
+    "slug": "seminte-plante",
+    "icon": "fas fa-tractor",
+    "color": "#8bc34a",
+    "parent": 513
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 517,
+  "fields": {
+    "name": "Produse Chimice",
+    "slug": "produse-chimice",
+    "icon": "fas fa-tractor",
+    "color": "#8bc34a",
+    "parent": 513
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 518,
+  "fields": {
+    "name": "HoReCa",
+    "slug": "horeca-1",
+    "icon": "fas fa-tractor",
+    "color": "#8bc34a",
+    "parent": 513
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 519,
+  "fields": {
+    "name": "Educație",
+    "slug": "educatie",
+    "icon": "fas fa-graduation-cap",
+    "color": "#3f51b5",
+    "parent": null
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 520,
+  "fields": {
+    "name": "Cursuri",
+    "slug": "cursuri",
+    "icon": "fas fa-graduation-cap",
+    "color": "#3f51b5",
+    "parent": 519
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 521,
+  "fields": {
+    "name": "Meditații",
+    "slug": "meditatii",
+    "icon": "fas fa-graduation-cap",
+    "color": "#3f51b5",
+    "parent": 519
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 522,
+  "fields": {
+    "name": "Limbi străine",
+    "slug": "limbi-straine",
+    "icon": "fas fa-graduation-cap",
+    "color": "#3f51b5",
+    "parent": 519
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 523,
+  "fields": {
+    "name": "IT/Software",
+    "slug": "it-software",
+    "icon": "fas fa-graduation-cap",
+    "color": "#3f51b5",
+    "parent": 519
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 524,
+  "fields": {
+    "name": "Artă/Muzică",
+    "slug": "arta-muzica",
+    "icon": "fas fa-graduation-cap",
+    "color": "#3f51b5",
+    "parent": 519
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 525,
+  "fields": {
+    "name": "Sănătate",
+    "slug": "sanatate",
+    "icon": "fas fa-heartbeat",
+    "color": "#f44336",
+    "parent": null
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 526,
+  "fields": {
+    "name": "Servicii medicale",
+    "slug": "servicii-medicale-1",
+    "icon": "fas fa-heartbeat",
+    "color": "#f44336",
+    "parent": 525
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 527,
+  "fields": {
+    "name": "Aparatură medicală",
+    "slug": "aparatura-medicala",
+    "icon": "fas fa-heartbeat",
+    "color": "#f44336",
+    "parent": 525
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 528,
+  "fields": {
+    "name": "Suplimente",
+    "slug": "suplimente",
+    "icon": "fas fa-heartbeat",
+    "color": "#f44336",
+    "parent": 525
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 529,
+  "fields": {
+    "name": "Echipamente fitness",
+    "slug": "echipamente-fitness",
+    "icon": "fas fa-heartbeat",
+    "color": "#f44336",
+    "parent": 525
+  }
+},
+{
+  "model": "marketplace.category",
+  "pk": 530,
+  "fields": {
+    "name": "Test Category",
+    "slug": "test-category",
+    "icon": null,
+    "color": null,
+    "parent": null
+  }
+},
+{
+  "model": "marketplace.listing",
+  "pk": 53,
+  "fields": {
+    "title": "caut femeie serioasa",
+    "description": "Caut femeie de 85 de ani ptr relatie :))",
+    "price": "0.00",
+    "currency": "RON",
+    "location": "Oradea, Bihor",
+    "latitude": "47.0549163",
+    "longitude": "21.9285231",
+    "address": "Calea Nationala nr 12",
+    "city": "Oradea",
+    "county": "Bihor",
+    "postal_code": "710441",
+    "country": "România",
+    "location_verified": false,
+    "user": 1,
+    "category": 395,
+    "subcategory": 405,
+    "status": "active",
+    "created_at": "2025-07-01T09:04:53.118Z",
+    "updated_at": "2025-07-20T08:29:46.249Z",
+    "expires_at": null,
+    "is_premium": false,
+    "is_featured": true,
+    "views": 20,
+    "metadata": null,
+    "is_verified": false,
+    "slug": "caut-femeie-serioasa"
+  }
+},
+{
+  "model": "marketplace.listing",
+  "pk": 54,
+  "fields": {
+    "title": "Apartament 3 camere Herastrau",
+    "description": "Apartament superb cu 3 camere în zona Herastrau, 85mp, etaj 4/8, complet mobilat și utilat. Vedere spre parc, parcare subterană, lift. Ideal pentru familie.",
+    "price": "180000.00",
+    "currency": "RON",
+    "location": "București, Sector 1, Herastrau",
+    "latitude": "44.4783693",
+    "longitude": "26.0730494",
+    "address": "Strada Aviatorilor nr. 15",
+    "city": "București",
+    "county": "Ilfov",
+    "postal_code": null,
+    "country": "România",
+    "location_verified": false,
+    "user": 7,
+    "category": 421,
+    "subcategory": null,
+    "status": "active",
+    "created_at": "2025-07-01T19:17:48.758Z",
+    "updated_at": "2025-07-20T08:29:46.249Z",
+    "expires_at": null,
+    "is_premium": false,
+    "is_featured": true,
+    "views": 2,
+    "metadata": null,
+    "is_verified": false,
+    "slug": "apartament-3-camere-herastrau"
+  }
+},
+{
+  "model": "marketplace.listing",
+  "pk": 55,
+  "fields": {
+    "title": "Mercedes-Benz C-Class 2020",
+    "description": "Mercedes-Benz C220d AMG Line, an 2020, 45.000 km, motor diesel 2.0L, 194 CP. Mașina este în garanție, service la reprezentanță, fără accidente.",
+    "price": "35000.00",
+    "currency": "RON",
+    "location": "Cluj-Napoca, Cluj",
+    "latitude": "46.7690858",
+    "longitude": "23.5857032",
+    "address": "Strada Memorandumului nr. 28",
+    "city": "Cluj-Napoca",
+    "county": "Cluj",
+    "postal_code": "400004",
+    "country": "România",
+    "location_verified": true,
+    "user": 3,
+    "category": 457,
+    "subcategory": null,
+    "status": "active",
+    "created_at": "2025-07-01T19:17:50.661Z",
+    "updated_at": "2025-07-20T08:29:46.248Z",
+    "expires_at": null,
+    "is_premium": false,
+    "is_featured": true,
+    "views": 0,
+    "metadata": null,
+    "is_verified": false,
+    "slug": "mercedes-benz-c-class-2020"
+  }
+},
+{
+  "model": "marketplace.listing",
+  "pk": 56,
+  "fields": {
+    "title": "MacBook Pro M2 2023",
+    "description": "MacBook Pro 14\" cu chip M2, 16GB RAM, 512GB SSD. Stare perfectă, folosit pentru programare. Include încărcător original și husă de protecție.",
+    "price": "8500.00",
+    "currency": "RON",
+    "location": "Timișoara, Timiș",
+    "latitude": "45.7482938",
+    "longitude": "21.2338238",
+    "address": "Bulevardul Vasile Parvan nr. 4",
+    "city": "Timișoara",
+    "county": "Timiș",
+    "postal_code": "300224",
+    "country": "România",
+    "location_verified": true,
+    "user": 7,
+    "category": 457,
+    "subcategory": null,
+    "status": "active",
+    "created_at": "2025-07-01T19:17:51.310Z",
+    "updated_at": "2025-07-20T08:29:46.247Z",
+    "expires_at": null,
+    "is_premium": false,
+    "is_featured": true,
+    "views": 0,
+    "metadata": null,
+    "is_verified": false,
+    "slug": "macbook-pro-m2-2023"
+  }
+},
+{
+  "model": "marketplace.listing",
+  "pk": 57,
+  "fields": {
+    "title": "Casă cu grădină Brașov",
+    "description": "Casă individuală cu 4 camere și grădină de 500mp în Brașov. Renovată recent, încălzire centrală, garaj pentru 2 mașini. Zonă liniștită.",
+    "price": "250000.00",
+    "currency": "RON",
+    "location": "Brașov, Brașov",
+    "latitude": "45.7061257",
+    "longitude": "25.6584319",
+    "address": "Strada Măceșului nr. 12",
+    "city": "Brașov",
+    "county": "Brașov",
+    "postal_code": "500360",
+    "country": "România",
+    "location_verified": true,
+    "user": 9,
+    "category": 421,
+    "subcategory": null,
+    "status": "active",
+    "created_at": "2025-07-01T19:17:52.345Z",
+    "updated_at": "2025-07-20T08:29:46.247Z",
+    "expires_at": null,
+    "is_premium": false,
+    "is_featured": true,
+    "views": 2,
+    "metadata": null,
+    "is_verified": false,
+    "slug": "casa-cu-gradina-brasov"
+  }
+},
+{
+  "model": "marketplace.listing",
+  "pk": 58,
+  "fields": {
+    "title": "PlayStation 5 + jocuri",
+    "description": "PlayStation 5 în stare perfectă + 5 jocuri (FIFA 24, Spider-Man, God of War, etc.). Include 2 controllere și toate cablurile originale.",
+    "price": "2800.00",
+    "currency": "RON",
+    "location": "Constanța, Constanța",
+    "latitude": "44.1771189",
+    "longitude": "28.6416179",
+    "address": "Bulevardul Mamaia nr. 150",
+    "city": "Constanța",
+    "county": "Constanța",
+    "postal_code": "900698",
+    "country": "România",
+    "location_verified": true,
+    "user": 2,
+    "category": 457,
+    "subcategory": null,
+    "status": "active",
+    "created_at": "2025-07-01T19:17:53.536Z",
+    "updated_at": "2025-07-20T08:29:46.246Z",
+    "expires_at": null,
+    "is_premium": false,
+    "is_featured": false,
+    "views": 2,
+    "metadata": null,
+    "is_verified": false,
+    "slug": "playstation-5-jocuri"
+  }
+},
+{
+  "model": "marketplace.listing",
+  "pk": 59,
+  "fields": {
+    "title": "Rochie de mireasă designer",
+    "description": "Rochie de mireasă marca Pronovias, mărimea 36-38, purtată o singură dată. Include voal și accesorii. Curățată profesional.",
+    "price": "3500.00",
+    "currency": "RON",
+    "location": "Iași, Iași",
+    "latitude": "47.1798692",
+    "longitude": "27.5203041",
+    "address": "Strada Lascăr Catargi nr. 54",
+    "city": "Iași",
+    "county": "Iași",
+    "postal_code": "700069",
+    "country": "România",
+    "location_verified": true,
+    "user": 8,
+    "category": 457,
+    "subcategory": null,
+    "status": "active",
+    "created_at": "2025-07-01T19:17:55.081Z",
+    "updated_at": "2025-07-20T08:29:46.245Z",
+    "expires_at": null,
+    "is_premium": false,
+    "is_featured": false,
+    "views": 0,
+    "metadata": null,
+    "is_verified": false,
+    "slug": "rochie-de-mireasa-designer"
+  }
+},
+{
+  "model": "marketplace.listing",
+  "pk": 60,
+  "fields": {
+    "title": "Mobilă living modern",
+    "description": "Set complet mobilă living: canapea extensibilă, fotolii, masă de cafea, bibliotecă. Design modern, culoare gri, stare foarte bună.",
+    "price": "4500.00",
+    "currency": "RON",
+    "location": "Ploiești, Prahova",
+    "latitude": "44.9503503",
+    "longitude": "25.9961330",
+    "address": "Strada Republicii nr. 89",
+    "city": "Ploiești",
+    "county": "Prahova",
+    "postal_code": "100070",
+    "country": "România",
+    "location_verified": true,
+    "user": 7,
+    "category": 457,
+    "subcategory": null,
+    "status": "active",
+    "created_at": "2025-07-01T19:17:55.781Z",
+    "updated_at": "2025-07-20T08:29:46.243Z",
+    "expires_at": null,
+    "is_premium": false,
+    "is_featured": false,
+    "views": 4,
+    "metadata": null,
+    "is_verified": false,
+    "slug": "mobila-living-modern"
+  }
+},
+{
+  "model": "marketplace.listing",
+  "pk": 61,
+  "fields": {
+    "title": "Bicicletă electrică Cube",
+    "description": "Bicicletă electrică Cube Touring Hybrid, autonomie 100km, baterie Samsung, 8 viteze Shimano. Perfectă pentru oraș și trasee lungi.",
+    "price": "6500.00",
+    "currency": "RON",
+    "location": "Sibiu, Sibiu",
+    "latitude": "45.7944488",
+    "longitude": "24.1503579",
+    "address": "Strada Nicolae Bălcescu nr. 25",
+    "city": "Sibiu",
+    "county": "Sibiu",
+    "postal_code": "550159",
+    "country": "România",
+    "location_verified": true,
+    "user": 3,
+    "category": 457,
+    "subcategory": null,
+    "status": "active",
+    "created_at": "2025-07-01T19:17:56.802Z",
+    "updated_at": "2025-07-20T08:29:46.242Z",
+    "expires_at": null,
+    "is_premium": false,
+    "is_featured": false,
+    "views": 0,
+    "metadata": null,
+    "is_verified": false,
+    "slug": "bicicleta-electrica-cube"
+  }
+},
+{
+  "model": "marketplace.listing",
+  "pk": 62,
+  "fields": {
+    "title": "Test Listing for Promotion",
+    "description": "This is a test listing for promotion",
+    "price": "100.00",
+    "currency": "RON",
+    "location": "Bucharest",
+    "latitude": null,
+    "longitude": null,
+    "address": null,
+    "city": null,
+    "county": null,
+    "postal_code": null,
+    "country": "România",
+    "location_verified": false,
+    "user": 2,
+    "category": 530,
+    "subcategory": null,
+    "status": "active",
+    "created_at": "2025-07-02T09:19:37.481Z",
+    "updated_at": "2025-07-20T08:29:46.239Z",
+    "expires_at": null,
+    "is_premium": false,
+    "is_featured": true,
+    "views": 0,
+    "metadata": null,
+    "is_verified": false,
+    "slug": "test-listing-for-promotion"
+  }
+},
+{
+  "model": "marketplace.listing",
+  "pk": 63,
+  "fields": {
+    "title": "caut baba",
+    "description": "Caut baba minim 85 de ani",
+    "price": "85.00",
+    "currency": "RON",
+    "location": "Botoșani, Botoșani",
+    "latitude": "47.9285002",
+    "longitude": "26.7826680",
+    "address": "Mihai Viteazu",
+    "city": "Botoșani",
+    "county": "Botoșani",
+    "postal_code": "710040",
+    "country": "România",
+    "location_verified": true,
+    "user": 10,
+    "category": 395,
+    "subcategory": 400,
+    "status": "pending",
+    "created_at": "2025-07-20T08:15:55.521Z",
+    "updated_at": "2025-07-20T08:29:46.237Z",
+    "expires_at": null,
+    "is_premium": false,
+    "is_featured": false,
+    "views": 0,
+    "metadata": null,
+    "is_verified": false,
+    "slug": "caut-baba"
+  }
+},
+{
+  "model": "marketplace.userprofile",
+  "pk": 1,
+  "fields": {
+    "user": 1,
+    "avatar": null,
+    "bio": null,
+    "phone": null,
+    "location": null,
+    "is_premium": false,
+    "premium_until": null,
+    "stripe_customer_id": null,
+    "stripe_subscription_id": null,
+    "credits_balance": "3.50",
+    "total_credits_purchased": "0.00",
+    "mfa_enabled": false,
+    "mfa_secret": null,
+    "mfa_backup_codes": [],
+    "last_mfa_used": null,
+    "last_password_change": "2025-07-05T08:20:20.474Z",
+    "failed_login_attempts": 0,
+    "account_locked_until": null,
+    "created_at": "2025-06-27T13:54:43.876Z",
+    "updated_at": "2025-07-02T08:40:55.615Z"
+  }
+},
+{
+  "model": "marketplace.userprofile",
+  "pk": 2,
+  "fields": {
+    "user": 7,
+    "avatar": null,
+    "bio": null,
+    "phone": null,
+    "location": null,
+    "is_premium": false,
+    "premium_until": null,
+    "stripe_customer_id": null,
+    "stripe_subscription_id": null,
+    "credits_balance": "0.00",
+    "total_credits_purchased": "0.00",
+    "mfa_enabled": false,
+    "mfa_secret": null,
+    "mfa_backup_codes": [],
+    "last_mfa_used": null,
+    "last_password_change": "2025-07-05T08:20:20.474Z",
+    "failed_login_attempts": 0,
+    "account_locked_until": null,
+    "created_at": "2025-06-27T23:23:58.301Z",
+    "updated_at": "2025-06-30T17:54:50.630Z"
+  }
+},
+{
+  "model": "marketplace.userprofile",
+  "pk": 3,
+  "fields": {
+    "user": 8,
+    "avatar": null,
+    "bio": null,
+    "phone": null,
+    "location": null,
+    "is_premium": false,
+    "premium_until": null,
+    "stripe_customer_id": null,
+    "stripe_subscription_id": null,
+    "credits_balance": "0.00",
+    "total_credits_purchased": "0.00",
+    "mfa_enabled": false,
+    "mfa_secret": null,
+    "mfa_backup_codes": [],
+    "last_mfa_used": null,
+    "last_password_change": "2025-07-05T08:20:20.474Z",
+    "failed_login_attempts": 0,
+    "account_locked_until": null,
+    "created_at": "2025-07-01T07:05:56.723Z",
+    "updated_at": "2025-07-01T07:05:57.226Z"
+  }
+},
+{
+  "model": "marketplace.userprofile",
+  "pk": 4,
+  "fields": {
+    "user": 9,
+    "avatar": null,
+    "bio": null,
+    "phone": null,
+    "location": null,
+    "is_premium": false,
+    "premium_until": null,
+    "stripe_customer_id": null,
+    "stripe_subscription_id": null,
+    "credits_balance": "0.00",
+    "total_credits_purchased": "0.00",
+    "mfa_enabled": false,
+    "mfa_secret": null,
+    "mfa_backup_codes": [],
+    "last_mfa_used": null,
+    "last_password_change": "2025-07-05T08:20:20.474Z",
+    "failed_login_attempts": 0,
+    "account_locked_until": null,
+    "created_at": "2025-07-01T07:05:57.244Z",
+    "updated_at": "2025-07-01T07:05:57.700Z"
+  }
+},
+{
+  "model": "marketplace.userprofile",
+  "pk": 5,
+  "fields": {
+    "user": 2,
+    "avatar": null,
+    "bio": null,
+    "phone": null,
+    "location": null,
+    "is_premium": false,
+    "premium_until": null,
+    "stripe_customer_id": null,
+    "stripe_subscription_id": null,
+    "credits_balance": "0.10",
+    "total_credits_purchased": "5.00",
+    "mfa_enabled": false,
+    "mfa_secret": null,
+    "mfa_backup_codes": [],
+    "last_mfa_used": null,
+    "last_password_change": "2025-07-05T08:20:20.474Z",
+    "failed_login_attempts": 0,
+    "account_locked_until": null,
+    "created_at": "2025-07-02T09:19:37.471Z",
+    "updated_at": "2025-07-02T09:19:37.494Z"
+  }
+},
+{
+  "model": "marketplace.userprofile",
+  "pk": 6,
+  "fields": {
+    "user": 10,
+    "avatar": null,
+    "bio": "",
+    "phone": null,
+    "location": null,
+    "is_premium": false,
+    "premium_until": null,
+    "stripe_customer_id": null,
+    "stripe_subscription_id": null,
+    "credits_balance": "0.00",
+    "total_credits_purchased": "0.00",
+    "mfa_enabled": false,
+    "mfa_secret": null,
+    "mfa_backup_codes": [],
+    "last_mfa_used": null,
+    "last_password_change": "2025-07-18T17:20:42.547Z",
+    "failed_login_attempts": 0,
+    "account_locked_until": null,
+    "created_at": "2025-07-18T17:20:42.547Z",
+    "updated_at": "2025-07-19T19:37:39.068Z"
+  }
+},
+{
+  "model": "marketplace.userprofile",
+  "pk": 7,
+  "fields": {
+    "user": 11,
+    "avatar": null,
+    "bio": null,
+    "phone": null,
+    "location": null,
+    "is_premium": false,
+    "premium_until": null,
+    "stripe_customer_id": null,
+    "stripe_subscription_id": null,
+    "credits_balance": "0.00",
+    "total_credits_purchased": "0.00",
+    "mfa_enabled": false,
+    "mfa_secret": null,
+    "mfa_backup_codes": [],
+    "last_mfa_used": null,
+    "last_password_change": "2025-07-19T16:12:19.017Z",
+    "failed_login_attempts": 0,
+    "account_locked_until": null,
+    "created_at": "2025-07-19T16:12:19.017Z",
+    "updated_at": "2025-07-19T16:12:19.039Z"
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 1,
+  "fields": {
+    "password": "pbkdf2_sha256$600000$PbKNHflMUxWSMoU5DYVuol$MOaDwFeRjKKLMPLHORnE+50MpBFek8PV6/GNQLH2Q7c=",
+    "last_login": "2025-07-02T08:24:38.474Z",
+    "is_superuser": true,
+    "username": "admin",
+    "first_name": "",
+    "last_name": "",
+    "email": "admin@piata.ro",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2025-06-06T14:25:24.560Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 2,
+  "fields": {
+    "password": "pbkdf2_sha256$600000$Vz4xXWiGBactZadgvztjcI$3Hm7n5gzNYxewcVjmgIvf8q/yvmk6+v8RZQeJk8DHGk=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "testuser",
+    "first_name": "Test",
+    "last_name": "User",
+    "email": "test@example.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-06-06T16:38:42.007Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 3,
+  "fields": {
+    "password": "pbkdf2_sha256$600000$4wlBVLur4u1Hw4HqEsMQVw$r6qYQEj3DV+VVxPTMQSrRYqLZ2Zcrle5FTUr3r5+dXU=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "john_doe",
+    "first_name": "John",
+    "last_name": "Doe",
+    "email": "john@example.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-06-06T17:19:03.867Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 4,
+  "fields": {
+    "password": "pbkdf2_sha256$600000$G1ifA0qRfVwQvP83fIeEj2$B71lrOa07WVRAYcGEDokeJURZQ2PBEo/0WSfXikTvb8=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "jane_smith",
+    "first_name": "Jane",
+    "last_name": "Smith",
+    "email": "jane@example.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-06-06T17:19:04.141Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 5,
+  "fields": {
+    "password": "pbkdf2_sha256$600000$5ycvVNkZZXJcjxNTLuaT4D$K+Uxkyl71VyFspFhBis1VM2j8UqqzyuiKE2yYj455nI=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "alex_popescu",
+    "first_name": "Alex",
+    "last_name": "Popescu",
+    "email": "alex@example.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-06-06T17:19:04.416Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 6,
+  "fields": {
+    "password": "pbkdf2_sha256$600000$E25LqehsFcjAra9twYZZar$eJJ47NxuzKUMhK6BjYPtaCx1x8hu6KE3RtrastMhvqg=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "maria_ionescu",
+    "first_name": "Maria",
+    "last_name": "Ionescu",
+    "email": "maria@example.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-06-06T17:19:04.694Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 7,
+  "fields": {
+    "password": "pbkdf2_sha256$600000$7bBsg5B77xaRCB62tvZi46$GN+W+VXmqJiTNKKYlYzFEhtDHX/IWEi1G4sTia/Ohzs=",
+    "last_login": "2025-06-30T17:54:50.627Z",
+    "is_superuser": true,
+    "username": "shiva",
+    "first_name": "",
+    "last_name": "",
+    "email": "ionutbaltag3@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2025-06-06T17:31:27.486Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 8,
+  "fields": {
+    "password": "pbkdf2_sha256$600000$xuNrfgy1n5f0ofs3wrQxPA$uXODNCRw7fiv0KVh19g+CFLm12566JoANHgdp2PnbAQ=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "ion_popescu",
+    "first_name": "Ion",
+    "last_name": "Popescu",
+    "email": "ion@example.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-07-01T07:05:56.722Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 9,
+  "fields": {
+    "password": "pbkdf2_sha256$600000$AxZEHUNQyMnVr7rrjy7CA0$ZvT1CLA9a7nCxUyoKL5GBQCRpU0w583Aw3/wEFg/N3g=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "alex_dumitrescu",
+    "first_name": "Alexandru",
+    "last_name": "Dumitrescu",
+    "email": "alex@example.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-07-01T07:05:57.244Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 10,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$697LRNjimFy4JNcps9KsXv$vDywWcdj0365AB4GZPkeCVsn08EKrk3itKPxvNWcJgU=",
+    "last_login": "2025-07-19T19:37:39.063Z",
+    "is_superuser": true,
+    "username": "valentin",
+    "first_name": "",
+    "last_name": "",
+    "email": "ionutbaltag3@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2025-07-18T17:20:41.886Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 11,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$Yn8DiWK50ZKGM0o4sTz3li$AVRnkDrrnsWHQ5XIEi70jUpz5nNiNy6b6pl5+9lo0fg=",
+    "last_login": "2025-07-19T16:12:19.036Z",
+    "is_superuser": false,
+    "username": "vasile",
+    "first_name": "",
+    "last_name": "",
+    "email": "test@gmail.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-07-19T16:12:18.440Z",
+    "groups": [],
+    "user_permissions": []
+  }
+}
+]

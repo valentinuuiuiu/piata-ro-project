@@ -16,7 +16,7 @@
         
         <!-- Form -->
         <div class="p-6">
-            <form class="signup" id="signup_form" method="post" action="{% url 'marketplace:signup' %}">
+            <form class="signup" id="signup_form" method="post" action="{% url 'account_signup' %}">
                 {% csrf_token %}
                 
                 {% if form.errors %}
@@ -98,7 +98,7 @@
             
             <p class="text-center text-gray-600 text-sm">
                 Ai deja un cont?
-                <a href="{% url 'marketplace:login' %}" class="text-accent hover:text-green-600 font-medium">
+                <a href="{% url 'account_login' %}" class="text-accent hover:text-green-600 font-medium">
                     Autentifică-te
                 </a>
             </p>

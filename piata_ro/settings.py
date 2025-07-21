@@ -1,7 +1,8 @@
 from dotenv import load_dotenv
 load_dotenv()
-from dotenv import load_dotenv
-load_dotenv()
+
+import os
+from pathlib import Path
 """
 Django settings for piata_ro project.
 
@@ -14,9 +15,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
-import os
-from pathlib import Path
-from dotenv import load_dotenv
+
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,7 +28,7 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # Production Security Configuration
-DEBUG = os.getenv('DEBUG', 'False').lower() == 'true' and os.getenv('ENVIRONMENT') == 'development'
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 from dotenv import load_dotenv
 import os
@@ -49,7 +49,7 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0,piata.ro
 # Security Settings for Production
 if not DEBUG:
     # HTTPS/SSL Configuration
-    SECURE_SSL_REDIRECT = False
+    SECURE_SSL_REDIRECT = True
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
@@ -152,11 +152,13 @@ MIDDLEWARE = [
 # Site ID for django.contrib.sites
 SITE_ID = 1
 
-# Authentication backends
+# Authentication backends (ensuring AllAuth priority)
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',  # Handles email login
 ]
+# Added logout redirect URL
+LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 ROOT_URLCONF = 'piata_ro.urls'
 
@@ -186,10 +188,15 @@ ASGI_APPLICATION = 'piata_ro.asgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# Database Configuration - PostgreSQL with pgvector support
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME', 'piata_ro'),
+        'USER': os.getenv('DB_USER', 'piata_ro'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'piata_ro_secure_password_2024'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 
@@ -234,6 +241,10 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'marketplace', 'static'),
 ]
 
+# Add proper MIME types
+import mimetypes
+mimetypes.add_type("text/css", ".css", True)
+
 # Media files (user uploads)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -245,8 +256,7 @@ THUMBNAIL_SIZE = (400, 400)  # Thumbnail dimensions
 ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 MAX_IMAGES_PER_LISTING = 10  # Maximum images per listing
 
-# Authentication settings
-LOGIN_URL = '/auth/clerk/login/'
+LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
@@ -288,6 +298,51 @@ GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_OAUTH2_CLIENT_SECRET')
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Redis Cache Configuration
+REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+REDIS_PORT = int(os.getenv('REDIS_PORT', '6379'))
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', 'piata_ro_redis_password_2024')
+REDIS_DB = int(os.getenv('REDIS_DB', '0'))
+
+# Build Redis URL with proper authentication
+REDIS_URL = f'redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}'
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': REDIS_URL,
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'CONNECTION_POOL_KWARGS': {
+                'max_connections': 50,
+                'timeout': 20,
+                'retry_on_timeout': True,
+            },
+            'SOCKET_CONNECT_TIMEOUT': 5,
+            'SOCKET_TIMEOUT': 5,
+            'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
+            'IGNORE_EXCEPTIONS': True,  # Don't crash if Redis is unavailable
+        },
+        'KEY_PREFIX': 'piata_ro',
+        'TIMEOUT': 300,  # 5 minutes default timeout
+    }
+}
+
+# Use Redis for session cache
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
+
+# Cache timeout settings
+CACHE_MIDDLEWARE_SECONDS = 60 * 15  # 15 minutes
+CACHE_MIDDLEWARE_KEY_PREFIX = 'piata_ro'
+
+# Cache middleware
+if not DEBUG:
+    MIDDLEWARE.insert(1, 'django.middleware.cache.UpdateCacheMiddleware')
+    MIDDLEWARE.append('django.middleware.cache.FetchFromCacheMiddleware')
 
 # Stripe Configuration
 STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')

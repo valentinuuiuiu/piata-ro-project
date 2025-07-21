@@ -311,18 +311,18 @@
 <script>
 // Location search functionality
 var locationTimeout;
-const locationInput = document.getElementById('location-search');
+const locationSearchInput = document.getElementById('location-search');
 const locationSuggestions = document.getElementById('location-suggestions');
 const distanceFilter = document.getElementById('distance-filter');
 
 // Show distance filter when location has value
-if (locationInput && locationInput.value.trim()) {
+if (locationSearchInput && locationSearchInput.value.trim()) {
     distanceFilter.classList.remove('hidden');
 }
 
 // Location search with autocomplete
-if (locationInput) {
-    locationInput.addEventListener('input', function() {
+if (locationSearchInput) {
+    locationSearchInput.addEventListener('input', function() {
         const query = this.value.trim();
         
         if (query.length < 2) {
@@ -343,7 +343,7 @@ if (locationInput) {
     
     // Hide suggestions when clicking outside
     document.addEventListener('click', function(e) {
-        if (!locationInput.contains(e.target) && !locationSuggestions.contains(e.target)) {
+        if (!locationSearchInput.contains(e.target) && !locationSuggestions.contains(e.target)) {
             locationSuggestions.classList.add('hidden');
         }
     });
@@ -379,13 +379,13 @@ function displayLocationSuggestions(suggestions) {
 }
 
 function selectLocation(displayName, lat, lon) {
-    locationInput.value = displayName;
+    locationSearchInput.value = displayName;
     locationSuggestions.classList.add('hidden');
     distanceFilter.classList.remove('hidden');
     
     // Store coordinates for potential use
-    locationInput.dataset.lat = lat;
-    locationInput.dataset.lon = lon;
+    locationSearchInput.dataset.lat = lat;
+    locationSearchInput.dataset.lon = lon;
 }
 
 function useCurrentLocation() {
@@ -410,9 +410,9 @@ function useCurrentLocation() {
                 .then(response => response.json())
                 .then(data => {
                     if (data.address) {
-                        locationInput.value = data.address;
-                        locationInput.dataset.lat = lat;
-                        locationInput.dataset.lon = lon;
+                        locationSearchInput.value = data.address;
+                        locationSearchInput.dataset.lat = lat;
+                        locationSearchInput.dataset.lon = lon;
                         distanceFilter.classList.remove('hidden');
                         
                         // Show success notification
