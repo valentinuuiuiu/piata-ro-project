@@ -220,12 +220,14 @@ def get_listings(limit: int = 10, offset: int = 0) -> dict:
 def get_database_stats() -> dict:
     """Get basic database statistics"""
     try:
+        # Use the status field instead of is_active
+        active_listings = Listing.objects.filter(status="active")
         return {
             "users_count": User.objects.count(),
             "listings_count": Listing.objects.count(),
             "categories_count": Category.objects.count(),
-            "active_listings_count": Listing.objects.filter(is_active=True).count(),
-            "total_revenue_potential": sum(listing.price for listing in Listing.objects.filter(is_active=True))
+            "active_listings_count": active_listings.count(),
+            "total_revenue_potential": sum(listing.price for listing in active_listings)
         }
     except Exception as e:
         return {"error": f"Failed to get database stats: {str(e)}"}
@@ -272,123 +274,74 @@ def health_check() -> dict:
         "service": "Simple SQL Agent for Piata.ro"
     }
 
-# Import MCP framework
-try:
-    from mcp.server.fastmcp import FastMCP
-    from mcp.types import Tool
-except ImportError:
-    print("❌ MCP framework not found. Please install it with: pip install mcp-server[fastmcp]")
-    sys.exit(1)
+# Simplified server using FastAPI directly
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
+from typing import Optional
 
 def main():
     """Main function to run the agent"""
     print("🚀 Starting Simple SQL Agent for Piata.ro...")
     
-    # Create MCP server
-    server = FastMCP(
-        name="Simple SQL Agent for Piata.ro",
+    # Create FastAPI app
+    app = FastAPI(
+        title="Simple SQL Agent for Piata.ro",
         description="A simple SQL agent for Piata.ro marketplace operations"
     )
     
-    # Define tools using the correct MCP API
-    @server.tool(
-        name="create_user",
-        description="Create a new user in the database",
-        parameters=UserCreateData.model_json_schema()  # Use model_json_schema instead of schema
+    # Add CORS middleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
-    def create_user_tool(data: dict) -> dict:
-        return create_user(data)
     
-    @server.tool(
-        name="get_user_info",
-        description="Retrieve information about a user",
-        parameters={
-            "type": "object",
-            "properties": {
-                "user_id": {"type": "integer", "description": "ID of the user to retrieve"}
-            },
-            "required": ["user_id"]
-        }
-    )
-    def get_user_info_tool(user_id: int) -> dict:
+    # Register the functions as API endpoints
+    @app.post("/create_user")
+    def create_user_endpoint(data: UserCreateData):
+        """Create a new user in the database"""
+        return create_user(data.dict())
+    
+    @app.get("/get_user_info/{user_id}")
+    def get_user_info_endpoint(user_id: int):
+        """Retrieve information about a user"""
         return get_user_info(user_id)
     
-    @server.tool(
-        name="authenticate_user",
-        description="Authenticate a user with username and password",
-        parameters={
-            "type": "object",
-            "properties": {
-                "username": {"type": "string", "description": "Username of the user"},
-                "password": {"type": "string", "description": "Password of the user"}
-            },
-            "required": ["username", "password"]
-        }
-    )
-    def authenticate_user_tool(username: str, password: str) -> dict:
+    @app.post("/authenticate_user")
+    def authenticate_user_endpoint(username: str, password: str):
+        """Authenticate a user with username and password"""
         return authenticate_user(username, password)
     
-    @server.tool(
-        name="create_listing",
-        description="Create a new marketplace listing",
-        parameters=ListingCreateData.model_json_schema()  # Use model_json_schema instead of schema
-    )
-    def create_listing_tool(data: dict) -> dict:
-        return create_listing(data)
+    @app.post("/create_listing")
+    def create_listing_endpoint(data: ListingCreateData):
+        """Create a new marketplace listing"""
+        return create_listing(data.dict())
     
-    @server.tool(
-        name="search_listings",
-        description="Search for listings by title or description",
-        parameters={
-            "type": "object",
-            "properties": {
-                "query": {"type": "string", "description": "Search query"},
-                "category_id": {"type": "integer", "description": "Optional category ID to filter by"}
-            },
-            "required": ["query"]
-        }
-    )
-    def search_listings_tool(query: str, category_id: Optional[int] = None) -> dict:
+    @app.get("/search_listings")
+    def search_listings_endpoint(query: str, category_id: Optional[int] = None):
+        """Search for listings by title or description"""
         return search_listings(query, category_id)
     
-    @server.tool(
-        name="get_listings",
-        description="Get a list of listings with pagination",
-        parameters={
-            "type": "object",
-            "properties": {
-                "limit": {"type": "integer", "description": "Number of listings to return (default: 10)"},
-                "offset": {"type": "integer", "description": "Number of listings to skip (default: 0)"}
-            }
-        }
-    )
-    def get_listings_tool(limit: int = 10, offset: int = 0) -> dict:
+    @app.get("/get_listings")
+    def get_listings_endpoint(limit: int = 10, offset: int = 0):
+        """Get a list of listings with pagination"""
         return get_listings(limit, offset)
     
-    @server.tool(
-        name="get_database_stats",
-        description="Get basic database statistics",
-        parameters={}
-    )
-    def get_database_stats_tool() -> dict:
+    @app.get("/get_database_stats")
+    def get_database_stats_endpoint():
+        """Get basic database statistics"""
         return get_database_stats()
     
-    @server.tool(
-        name="execute_custom_query",
-        description="Execute a custom SELECT query (read-only)",
-        parameters={
-            "type": "object",
-            "properties": {
-                "query": {"type": "string", "description": "SQL SELECT query to execute"}
-            },
-            "required": ["query"]
-        }
-    )
-    def execute_custom_query_tool(query: str) -> dict:
+    @app.post("/execute_custom_query")
+    def execute_custom_query_endpoint(query: str):
+        """Execute a custom SELECT query (read-only)"""
         return execute_custom_query(query)
     
-    # Add health check endpoint
-    @server.app.get("/health")
+    # Health check endpoint
+    @app.get("/health")
     def health():
         return health_check()
     
@@ -401,7 +354,10 @@ def main():
     
     print("\n🎯 Simple SQL Agent ready for Piata.ro database operations!")
     print(f"🌐 Server starting on {args.host}:{args.port}")
-    server.run(host=args.host, port=args.port)
+    
+    # Run the server
+    uvicorn.run(app, host=args.host, port=args.port)
+
 
 if __name__ == "__main__":
     main()

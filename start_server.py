@@ -135,12 +135,8 @@ class ServerManager:
                 "name": "Simple SQL Agent",
                 "script": archive_path / "simple_sql_agent.py",
                 "port": 8002
-            },
-            {
-                "name": "Stock Agent",
-                "script": archive_path / "stock_agent.py",
-                "port": 8003
             }
+            # Stock Agent is disabled due to compatibility issues
         ]
     
     def check_django_server(self) -> bool:
