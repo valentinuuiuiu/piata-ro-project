@@ -13,3 +13,7 @@ For more information on production servers see: https://docs.djangoproject.com/e
 [22/Jul/2025 15:52:38] "GET / HTTP/1.1" 200 34284
 [22/Jul/2025 16:28:33] "GET / HTTP/1.1" 200 34284
 [22/Jul/2025 17:22:24] "GET / HTTP/1.1" 200 34284
+[22/Jul/2025 17:23:09] "HEAD / HTTP/1.1" 200 0
+[22/Jul/2025 17:43:23] "GET / HTTP/1.1" 200 34284
+[22/Jul/2025 17:43:32] "GET / HTTP/1.1" 200 34284
+[22/Jul/2025 17:43:32] "GET /static/css/main.css HTTP/1.1" 200 132
