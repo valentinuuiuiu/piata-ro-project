@@ -260,6 +260,18 @@ class AdminAssistantAdmin(admin.ModelAdmin):
             ),
         ]
         return custom_urls + urls
+    
+    def has_add_permission(self, request):
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        return True
+    
+    def has_delete_permission(self, request, obj=None):
+        return False
+    
+    def has_module_permission(self, request):
+        return request.user.is_staff
 
 # Create a dummy model to attach our admin view
 class AdminAssistantModel(models.Model):

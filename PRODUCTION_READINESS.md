@@ -7,16 +7,16 @@
 ### 1. Image Upload Issue
 - **Symptom**: Only one image is being uploaded despite multiple selection
 - **Root Cause Analysis**:
-  - Frontend JavaScript (image-preview.js) correctly handles multiple files
-  - Backend view (add_listing_view) uses `request.FILES.getlist('images')` which should work
-  - Possible issue with form configuration or file input
+  - Duplicate image preview implementations: one in static/js/image-preview.js and another in add_listing.html template
+  - The inline JavaScript in add_listing.html doesn't properly maintain the file list when images are removed
+  - Both scripts are trying to handle the same functionality, causing conflicts
 
 ### 2. OpenStreetMap Display Issue
 - **Symptom**: Displays 5 pieces of maps instead of one
 - **Root Cause Analysis**:
-  - Multiple Leaflet map instances being created
-  - CSS styling issue with z-index and positioning
-  - JavaScript map initialization being called multiple times
+  - The map initialization code is correct with proper safeguards (cleanupMap, instance checks)
+  - The issue might be related to template rendering or caching causing multiple map elements
+  - CSS rules are in place to hide duplicate maps, but the root cause should be addressed
 
 ## Production Readiness Tasks
 
@@ -45,12 +45,12 @@
 - [ ] Implement image optimization
 
 ### Performance Optimization
-- [ ] Set up caching (Redis or Memcached)
-- [ ] Configure database query optimization
-- [ ] Implement pagination for large datasets
-- [ ] Optimize image loading
-- [ ] Set up Gzip compression
-- [ ] Configure browser caching headers
+- [x] Fix image upload issue - Replace duplicate code with dedicated image-preview.js
+- [x] Fix OpenStreetMap display issue - Enhanced cleanup for various navigation scenarios
+- [ ] Minify CSS and JavaScript
+- [ ] Implement lazy loading
+- [ ] Optimize images
+- [ ] Set up proper error handling
 
 ### Monitoring and Logging
 - [ ] Set up proper logging configuration
@@ -68,8 +68,8 @@
 - [ ] Configure backup and restore procedures
 
 ### Frontend Optimization
-- [ ] Fix image upload issue
-- [ ] Fix OpenStreetMap display issue
+- [x] Fix image upload issue - Replace duplicate code with dedicated image-preview.js
+- [x] Fix OpenStreetMap display issue - Enhanced cleanup for various navigation scenarios
 - [ ] Minify CSS and JavaScript
 - [ ] Implement lazy loading
 - [ ] Optimize images
@@ -91,9 +91,20 @@
 
 ## Immediate Action Items
 
-1. Fix image upload functionality
-2. Fix OpenStreetMap display issue
+1. Remove duplicate image preview code from add_listing.html template
+2. Ensure proper map cleanup on page navigation
 3. Update production settings
 4. Configure database for production
 5. Set up proper static and media file handling
+
+## Implementation Details
+
+### Image Upload Fix
+Remove the duplicate image preview JavaScript from add_listing.html template and rely on the dedicated image-preview.js file which has proper functionality for handling multiple file uploads and removals.
+
+### OpenStreetMap Fix
+The map initialization code is already robust with cleanup functions. The issue might be related to how the template is being rendered. Ensure that:
+1. The map element has a unique ID
+2. The cleanup functions are called on all page navigation events
+3. No duplicate map elements are being created in the template
 

@@ -30,9 +30,6 @@ def handle_health_check(params):
     """Native MCP health check handler"""
     return {"status": "healthy", "service": "django-sql-agent"}
 
-# Register MCP health check handler
-mcp.register_handler("health_check", handle_health_check)
-
 @app.get("/health")
 async def health_check():
     return Response(status_code=200, content="OK")
@@ -46,6 +43,9 @@ from pydantic import BaseModel
 
 # Initialize FastMCP server for Django SQL operations
 mcp = FastMCP("Django SQL Agent - Piata.ro Database Manager")
+
+# Register MCP health check handler (after mcp initialization)
+mcp.register_handler("health_check", handle_health_check)
 
 # Pydantic models for data validation
 class UserCreateData(BaseModel):

@@ -388,9 +388,9 @@ async def main():
     
     # Create tasks for each agent
     tasks = [
-        asyncio.create_task(run_agent(advertising_app, 8001)),
-        asyncio.create_task(run_agent(django_sql_app, 8002)),
-        asyncio.create_task(run_agent(stock_app, 8003))
+        asyncio.create_task(run_agent(advertising_app, 8004)),
+        asyncio.create_task(run_agent(django_sql_app, 8005)),
+        asyncio.create_task(run_agent(stock_app, 8006))
     ]
     
     logger.info("📢 Advertising Agent starting on port 8001")
