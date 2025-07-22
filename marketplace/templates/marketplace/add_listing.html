@@ -707,13 +707,9 @@ function removeImage(index) {
         }
     });
     
-    imagesInput.files = dt.files;
-    imagesInput.dispatchEvent(new Event('change'));
-}
-</script>
+    <!-- Load image preview functionality -->
+    {% load static %}
+    <script src="{% static 'js/image-preview.js' %}"></script>
 
-<!-- Load any additional static files -->
-{% load static %}
-
-{% endblock %}
-{% endblock %}
+    {% endblock %}
+    {% endblock %}
