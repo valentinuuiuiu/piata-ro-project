@@ -780,6 +780,18 @@ window.addEventListener('beforeunload', function() {
     cleanupMap();
 });
 
+// Also cleanup on page hide (for mobile browsers and tabs)
+window.addEventListener('pagehide', function() {
+    cleanupMap();
+});
+
+// Handle potential SPA-like navigation
+document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden') {
+        cleanupMap();
+    }
+});
+
 function initializeMap() {
     // Prevent multiple map initializations
     if (map !== null) {
