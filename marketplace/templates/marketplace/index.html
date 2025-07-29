@@ -16,11 +16,11 @@
             <!-- Quick Stats -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
                 <div class="text-center">
-                    <div id="totalListingsStat" class="text-3xl md:text-4xl font-bold mb-2">0</div>
+                    <div id="totalListingsStat" class="text-3xl md:text-4xl font-bold mb-2">{{ total_listings }}</div>
                     <div class="text-lg opacity-80">Anunțuri active</div>
                 </div>
                 <div class="text-center">
-                    <div id="totalCategoriesStat" class="text-3xl md:text-4xl font-bold mb-2">0</div>
+                    <div id="totalCategoriesStat" class="text-3xl md:text-4xl font-bold mb-2">{{ total_categories }}</div>
                     <div class="text-lg opacity-80">Categorii</div>
                 </div>
                 <div class="text-center">
@@ -193,7 +193,11 @@
 
         // Update category count for stats
         const totalCategoriesStatEl = document.getElementById('totalCategoriesStat');
-        if (totalCategoriesStatEl) animateCounter(totalCategoriesStatEl, categories.length);
+        if (totalCategoriesStatEl) {
+            // Use the context value if available, otherwise use API value
+            const totalCount = {{ total_categories }} || categories.length;
+            animateCounter(totalCategoriesStatEl, totalCount);
+        }
 
 
         // Populate search dropdown
@@ -246,8 +250,10 @@
 
         // Update total listings count for stats
         const totalListingsStatEl = document.getElementById('totalListingsStat');
-        if (totalListingsStatEl && listings.count !== undefined) {
-             animateCounter(totalListingsStatEl, listings.count);
+        if (totalListingsStatEl) {
+            // Use the context value if available, otherwise use API value
+            const totalCount = {{ total_listings }} || (listings.count !== undefined ? listings.count : 0);
+            animateCounter(totalListingsStatEl, totalCount);
         }
 
 

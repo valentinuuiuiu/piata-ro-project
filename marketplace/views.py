@@ -299,6 +299,7 @@ def home_view(request):
         "recent_listings": recent_listings,
         "total_listings": total_listings,
         "total_categories": total_categories,
+        "user": request.user,
     }
 
     return render(request, "marketplace/index.html", context)
@@ -306,7 +307,15 @@ def home_view(request):
 
 def categories_view(request):
     """Categories listing page."""
-    categories = Category.objects.filter(parent__isnull=True).prefetch_related('subcategories')
+    categories = Category.objects.filter(parent__isnull=True).prefetch_related(
+        'subcategories'
+    )
+    
+    # Add listing counts to each category
+    for category in categories:
+        category.listings_count = category.listings.filter(status='active').count()
+        for subcategory in category.subcategories.all():
+            subcategory.listings_count = subcategory.listings.filter(status='active').count()
     
     context = {
         "categories": categories,

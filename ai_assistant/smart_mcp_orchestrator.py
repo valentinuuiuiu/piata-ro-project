@@ -30,8 +30,7 @@ logger = logging.getLogger(__name__)
 class MCPServerType(str, Enum):
     """Enum for MCP server types"""
     ADVERTISING = "advertising"
-    DATABASE = "database" 
-    STOCK = "stock"
+    DATABASE = "database"
 
 class MCPServerConfig(BaseModel):
     """Configuration for MCP servers"""
@@ -101,7 +100,7 @@ class SmartMCPOrchestrator(BaseModel):
     mcp_servers: Dict[MCPServerType, MCPServerConfig] = Field(
         default_factory=lambda: {
             MCPServerType.ADVERTISING: MCPServerConfig(
-                name="Advertising Agent",
+                name="Marketing Agent",
                 port=8001,
                 url="http://localhost:8001",
                 description="Marketing optimization, pricing strategies, content generation",
@@ -115,7 +114,7 @@ class SmartMCPOrchestrator(BaseModel):
                 ]
             ),
             MCPServerType.DATABASE: MCPServerConfig(
-                name="Django SQL Agent", 
+                name="SQL Agent", 
                 port=8002,
                 url="http://localhost:8002",
                 description="Database operations, user management, listing queries",
@@ -127,19 +126,6 @@ class SmartMCPOrchestrator(BaseModel):
                     "search_listings", 
                     "get_database_stats",
                     "execute_custom_query"
-                ]
-            ),
-            MCPServerType.STOCK: MCPServerConfig(
-                name="Stock Agent",
-                port=8003, 
-                url="http://localhost:8003",
-                description="Inventory management, stock tracking, supply chain",
-                tools=[
-                    "check_inventory",
-                    "update_stock",
-                    "get_low_stock_alerts",
-                    "forecast_demand",
-                    "manage_suppliers"
                 ]
             )
         }

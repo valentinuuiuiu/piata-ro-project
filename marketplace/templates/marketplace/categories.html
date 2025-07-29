@@ -38,7 +38,7 @@
                     <li>
                         <a href="{% url 'marketplace:category_detail' subcategory.slug %}" class="text-primary hover:underline text-sm">
                             {{ subcategory.name }}
-                            <span class="text-gray-500 text-xs">(0)</span>
+                            <span class="text-gray-500 text-xs">({{ subcategory.listings_count }})</span>
                         </a>
                     </li>
                     {% endfor %}
@@ -78,7 +78,7 @@
                         <h3 class="text-xl font-semibold">{{ category.name }}</h3>
                         <i class="{{ category.icon|default:'fas fa-folder' }} text-2xl opacity-80"></i>
                     </div>
-                    <p class="text-blue-100 mb-3">0 anunțuri active</p>
+                    <p class="text-blue-100 mb-3">{{ category.listings_count }} anunțuri active</p>
                     <div class="flex items-center text-blue-100">
                         <span class="text-sm">Vezi toate anunțurile</span>
                         <i class="fas fa-arrow-right ml-2"></i>
