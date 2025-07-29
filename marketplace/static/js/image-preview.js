@@ -61,10 +61,18 @@ document.addEventListener('DOMContentLoaded', function() {
         currentFiles = [...currentFiles, ...validFiles];
         updatePreviews();
         
-        // Update the input's files
+        // Create a new DataTransfer object and add all files
         const dataTransfer = new DataTransfer();
-        currentFiles.forEach(file => dataTransfer.items.add(file));
+        currentFiles.forEach(file => {
+            dataTransfer.items.add(file);
+        });
+        
+        // Update the input's files
         imageInput.files = dataTransfer.files;
+        
+        // Trigger change event to ensure the form knows about the files
+        const changeEvent = new Event('change', { bubbles: true });
+        imageInput.dispatchEvent(changeEvent);
     }
 
     // Handle drag and drop
