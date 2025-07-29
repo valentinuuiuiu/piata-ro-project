@@ -763,11 +763,20 @@ function cleanupMap() {
         map.remove();
         map = null;
     }
+    
+    // Also remove any existing leaflet containers
+    const existingMaps = document.querySelectorAll('#listing-map .leaflet-container');
+    existingMaps.forEach(container => {
+        container.remove();
+    });
 }
 
 // Initialize map when page loads
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing page components');
+    // Cleanup any existing map first
+    cleanupMap();
+    
     // Only initialize if map element exists and no map is already created
     if (document.getElementById('listing-map') && !map) {
         initializeMap();
@@ -793,11 +802,8 @@ document.addEventListener('visibilitychange', function() {
 });
 
 function initializeMap() {
-    // Prevent multiple map initializations
-    if (map !== null) {
-        console.log('Map already initialized, skipping...');
-        return;
-    }
+    // Double-check cleanup
+    cleanupMap();
     
     const mapElement = document.getElementById('listing-map');
     if (!mapElement) {
