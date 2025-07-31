@@ -1,10 +1,9 @@
 from django.urls import include, path
-from rest_framework.routers import DefaultRouter
 from django.contrib.auth.views import LogoutView, PasswordResetView, PasswordResetDoneView, PasswordResetConfirmView, PasswordResetCompleteView
+from rest_framework.routers import DefaultRouter
 
 from . import views
 from .deepseek_chat_refactored import deepseek_chat_view
-from .views.auth import login_view, verify_mfa, signup_view # Auth views
 from .recommendations import urls as recommendation_urls
 
 app_name = 'marketplace'
@@ -18,6 +17,16 @@ router.register(r"favorites", views.FavoriteViewSet, basename='favorite')
 router.register(r"users", views.UserProfileViewSet, basename='userprofile')
 
 urlpatterns = [
+    # Authentication views
+    path('auth/clerk/login/', views.login_view, name='login'),
+    path('auth/clerk/signup/', views.signup_view, name='signup'),
+    path('auth/clerk/mfa/', views.verify_mfa, name='verify_mfa'),
+    path('auth/clerk/logout/', LogoutView.as_view(), name='logout'),
+    path('auth/clerk/password_reset/', PasswordResetView.as_view(template_name='account/password_reset.html'), name='password_reset'),
+    path('auth/clerk/password_reset/done/', PasswordResetDoneView.as_view(template_name='registration/password_reset_done.html'), name='password_reset_done'),
+    path('auth/clerk/reset/<uidb64>/<token>/', PasswordResetConfirmView.as_view(template_name='registration/password_reset_confirm.html'), name='password_reset_confirm'),
+    path('auth/clerk/reset/done/', PasswordResetCompleteView.as_view(template_name='registration/password_reset_complete.html'), name='password_reset_complete'),
+    
     # Recommendation endpoints
     path('recommendations/', include(recommendation_urls)),
     
@@ -27,18 +36,6 @@ urlpatterns = [
     # Payment endpoints  
     path('payments/', include('marketplace.payments.urls')),
     
-    # Authentication URLs
-    path('auth/clerk/login/', views.login_view, name='login'),
-    path('auth/clerk/signup/', views.signup_view, name='signup'),
-    path('auth/clerk/mfa/', views.verify_mfa, name='verify_mfa'),
-    path('auth/clerk/logout/', LogoutView.as_view(), name='logout'),
-    
-    # Password Reset
-    path('auth/clerk/password_reset/', PasswordResetView.as_view(template_name='account/password_reset.html'), name='password_reset'),
-    path('auth/clerk/password_reset/done/', PasswordResetDoneView.as_view(template_name='registration/password_reset_done.html'), name='password_reset_done'),
-    path('auth/clerk/reset/<uidb64>/<token>/', PasswordResetConfirmView.as_view(template_name='registration/password_reset_confirm.html'), name='password_reset_confirm'),
-    path('auth/clerk/reset/done/', PasswordResetCompleteView.as_view(template_name='registration/password_reset_complete.html'), name='password_reset_complete'),
-
     # Frontend pages
     path('', views.home_view, name='home'),
     path('categorii/', views.category_list, name='categories'),

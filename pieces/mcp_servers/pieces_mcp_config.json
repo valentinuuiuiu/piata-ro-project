@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "pieces-ltm": {
+      "command": "python",
+      "args": ["-m", "mcp_servers.pieces_ltm.server"],
+      "env": {
+        "PIECES_OS_HOST": "http://localhost:39300",
+        "PIECES_OS_MCP_ENDPOINT": "/model_context_protocol/2024-11-05/messages"
+      }
+    }
+  }
+}

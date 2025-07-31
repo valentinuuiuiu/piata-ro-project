@@ -2,7 +2,8 @@
 Production settings for Piața.ro
 """
 import os
-from .piata_ro.settings import *
+import dj_database_url
+from piata_ro.settings import *
 
 # Security settings
 DEBUG = False
@@ -10,14 +11,7 @@ ALLOWED_HOSTS = ['piata.ro', 'www.piata.ro', '*.azurewebsites.net', 'localhost']
 
 # Database
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'piata_ro'),
-        'USER': os.getenv('DB_USER', 'piata_user'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'piata_password'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
-    }
+    'default': dj_database_url.config(default=os.getenv('DATABASE_URL'))
 }
 
 # Cache

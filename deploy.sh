@@ -12,8 +12,8 @@ if ! command -v docker &> /dev/null; then
 fi
 
 # Check if Docker Compose is installed
-if ! command -v docker-compose &> /dev/null; then
-    echo "❌ Docker Compose is not installed. Please install Docker Compose first."
+if ! command -v docker compose &> /dev/null; then
+    echo "❌ Docker Compose (V2) is not installed. Please install Docker Compose V2 first."
     exit 1
 fi
 
@@ -42,23 +42,26 @@ fi
 
 # Build and start services
 echo "🔨 Building Docker images..."
-docker-compose -f docker-compose.yml build
+docker compose -f docker-compose.yml build
 
 echo "🗄️ Starting database and Redis..."
-docker-compose -f docker-compose.yml up -d db redis
+docker compose -f docker-compose.yml up -d db redis
 
 # Wait for database to be ready
 echo "⏳ Waiting for database to be ready..."
 sleep 10
 
+echo "📁 Creating log directory..."
+docker compose -f docker-compose.yml run --rm web mkdir -p /app/logs
+
 echo "📊 Running database migrations..."
-docker-compose -f docker-compose.yml run --rm web python manage.py migrate
+docker-compose -f docker-compose.yml run --rm web python manage.py migrate --settings=settings_prod
 
 echo "📦 Collecting static files..."
-docker-compose -f docker-compose.yml run --rm web python manage.py collectstatic --noinput
+docker compose -f docker-compose.yml run --rm web python manage.py collectstatic --noinput --settings=settings_prod
 
 echo "👤 Creating superuser (if needed)..."
-docker-compose -f docker-compose.yml run --rm web python manage.py shell -c "
+docker compose -f docker-compose.yml run --rm web python manage.py shell --settings=settings_prod -c "
 from django.contrib.auth.models import User
 if not User.objects.filter(username='admin').exists():
     User.objects.create_superuser('admin', 'admin@piata.ro', 'admin123')
@@ -68,10 +71,10 @@ else:
 "
 
 echo "📝 Populating sample data..."
-docker-compose -f docker-compose.yml run --rm web python manage.py populate_sample_data
+docker compose run --rm web python manage.py populate_sample_data --settings=settings_prod
 
 echo "🚀 Starting all services..."
-docker-compose -f docker-compose.yml up -d
+docker compose -f docker-compose.yml up -d
 
 echo "✅ Deployment completed successfully!"
 echo ""
@@ -82,7 +85,7 @@ echo "   - API: http://localhost/api"
 echo "   - AI Assistant: http://localhost/ai"
 echo ""
 echo "📊 Service status:"
-docker-compose -f docker-compose.yml ps
+docker compose -f docker-compose.yml ps
 
 echo ""
 echo "📋 Next steps:"

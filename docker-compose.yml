@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   db:
-    image: postgres:15
+    image: pgvector/pgvector:pg16
     environment:
       POSTGRES_DB: piata_ro
       POSTGRES_USER: piata_user
@@ -33,6 +33,7 @@ services:
     volumes:
       - ./media:/app/media
       - ./staticfiles:/app/staticfiles
+      - ./logs:/app/logs
 
   mcp-agents:
     build: .

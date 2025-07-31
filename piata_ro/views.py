@@ -18,6 +18,12 @@ from typing import Optional
 # Import Django models for direct database access
 from marketplace.models import Category, Listing
 
+# Import the smart MCP orchestrator
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from ai_assistant.smart_mcp_orchestrator import SmartMCPOrchestrator
+
 def home(request):
     """Home page view"""
     return HttpResponse("""
@@ -243,7 +249,7 @@ def get_marketplace_context() -> dict:
 
 @csrf_exempt
 def process_mcp_query(request):
-    """Enhanced MCP query processor with agent routing"""
+    """Enhanced MCP query processor using Smart MCP Orchestrator"""
     try:
         if request.method == 'GET':
             context = get_marketplace_context()
@@ -252,9 +258,9 @@ def process_mcp_query(request):
                 "status": "ready",
                 "marketplace_context": context,
                 "available_agents": [
-                    {"name": "Django SQL Agent", "port": 8002, "endpoint": "http://localhost:8002"},
-                    {"name": "Advertising Agent", "port": 8001, "endpoint": "http://localhost:8001"},
-                    {"name": "Stock Agent", "port": 8003, "endpoint": "http://localhost:8003"}
+                    {"name": "Django SQL Agent", "endpoint": "/ai/chat/"},
+                    {"name": "Advertising Agent", "endpoint": "/ai/chat/"},
+                    {"name": "Stock Agent", "endpoint": "/ai/chat/"}
                 ],
                 "usage": "Send POST request with 'query' parameter"
             })
@@ -279,113 +285,63 @@ def process_mcp_query(request):
         # Get marketplace context
         marketplace_context = get_marketplace_context()
         
-        # Route query to appropriate MCP agent based on intent analysis
+        # Use Smart MCP Orchestrator instead of separate agent ports
         try:
-            # Get relevant listings for context
-            listings_data = []
-            query_lower = query.lower()
-            
-            # Fetch relevant listings based on query
-            listings = Listing.objects.select_related('category', 'user')
-            
-            # Apply category filters based on query
-            if 'electronics' in query_lower or 'phone' in query_lower or 'iphone' in query_lower:
-                listings = listings.filter(category__name__icontains='Electronics')
-            elif 'car' in query_lower or 'bmw' in query_lower or 'vehicle' in query_lower:
-                listings = listings.filter(category__name__icontains='Cars')
-            elif 'apartment' in query_lower or 'house' in query_lower or 'real estate' in query_lower:
-                listings = listings.filter(category__name__icontains='Real Estate')
-            elif 'job' in query_lower or 'work' in query_lower:
-                listings = listings.filter(category__name__icontains='Jobs')
-            elif 'service' in query_lower:
-                listings = listings.filter(category__name__icontains='Services')
-            
-            # Get up to 10 relevant listings for context
-            listings_data = []
-            for listing in listings[:10]:
-                listings_data.append({
-                    'id': listing.pk,
-                    'title': listing.title,
-                    'price': f"{listing.price} {listing.currency}",
-                    'location': listing.location,
-                    'category': listing.category.name if listing.category else 'N/A',
-                    'description': listing.description[:100] + '...' if len(listing.description) > 100 else listing.description
-                })
-
-            # Route to appropriate MCP agent based on intent analysis
-            agent_port = {
-                'django_sql': 8002,
-                'advertising': 8001,
-                'stock': 8003
-            }.get(intent_analysis['agent'], 8002)  # Default to django_sql
-
+            # Initialize the orchestrator with error handling
             try:
-                # Call MCP agent (using synchronous request)
-                agent_url = f"http://localhost:{agent_port}/process"
+                orchestrator = SmartMCPOrchestrator()
                 
-                # Convert context to JSON-serializable format
-                serializable_context = {
-                    'listings': [],
-                    'marketplace': {}
-                }
+                # Process query using orchestrator
+                import asyncio
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    mcp_response = loop.run_until_complete(
+                        orchestrator.process_request(query)
+                    )
+                    result = {
+                        'response': mcp_response.response,
+                        'tools_used': mcp_response.tools_used,
+                        'tool_results': mcp_response.tool_results
+                    }
+                finally:
+                    loop.close()
                 
-                # Convert listings data to serializable format
-                for listing in listings_data:
-                    serializable_listing = {}
-                    for key, value in listing.items():
-                        if isinstance(value, decimal.Decimal):
-                            serializable_listing[key] = float(value)
-                        else:
-                            serializable_listing[key] = value
-                    serializable_context['listings'].append(serializable_listing)
-                
-                # Convert marketplace context to serializable format
-                def make_serializable(obj):
-                    if isinstance(obj, dict):
-                        return {k: make_serializable(v) for k, v in obj.items()}
-                    elif isinstance(obj, list):
-                        return [make_serializable(item) for item in obj]
-                    elif isinstance(obj, decimal.Decimal):
-                        return float(obj)
-                    else:
-                        return obj
-                
-                serializable_context['marketplace'] = make_serializable(marketplace_context)
-                
-                response = requests.post(
-                    agent_url,
-                    json={
-                        'query': query,
-                        'context': serializable_context
-                    },
-                    timeout=30.0
-                )
-                result = response.json()
-
                 return JsonResponse({
-                    "result": result.get('response', 'No response from agent'),
+                    "result": result.get('response', 'No response from orchestrator'),
                     "status": "success",
                     "query": query,
                     "intent_analysis": intent_analysis,
                     "marketplace_context": marketplace_context,
-                    "processed_with": f"MCP Agent ({intent_analysis['agent']})",
+                    "processed_with": f"Smart MCP Orchestrator ({intent_analysis['agent']})",
                     "timestamp": datetime.now().isoformat()
                 })
 
-            except Exception as e:
-                return JsonResponse({
-                    "error": f"Failed to call MCP agent: {str(e)}",
-                    "status": "error",
-                    "query": query,
-                    "intent_analysis": intent_analysis,
-                    "marketplace_context": marketplace_context,
-                    "processed_with": f"MCP Agent Error ({intent_analysis['agent']})",
-                    "timestamp": datetime.now().isoformat()
-                }, status=500)
-        
-        except Exception as agent_error:
-            # If there's an error with the agent routing, continue to fallback
-            pass
+            except ValueError as ve:
+                # Handle missing API key or configuration issues
+                if "DeepSeek API key" in str(ve):
+                    return JsonResponse({
+                        "warning": "Smart MCP Orchestrator requires DEEPSEEK_API_KEY environment variable",
+                        "status": "fallback",
+                        "query": query,
+                        "intent_analysis": intent_analysis,
+                        "marketplace_context": marketplace_context,
+                        "processed_with": "Direct Database Query (Orchestrator unavailable)",
+                        "timestamp": datetime.now().isoformat()
+                    })
+                else:
+                    raise ve
+
+        except Exception as e:
+            return JsonResponse({
+                "warning": f"Orchestrator unavailable: {str(e)}",
+                "status": "fallback",
+                "query": query,
+                "intent_analysis": intent_analysis,
+                "marketplace_context": marketplace_context,
+                "processed_with": f"Direct Database Query (Orchestrator Error)",
+                "timestamp": datetime.now().isoformat()
+            })
         
         # Fallback: Direct database search for basic queries
         try:
@@ -491,9 +447,9 @@ def interact_with_mcp_agents(request):
             return JsonResponse({
                 "message": "MCP Agent Interaction endpoint",
                 "available_agents": {
-                    "django_sql": "http://localhost:8002",
-                    "advertising": "http://localhost:8001", 
-                    "stock": "http://localhost:8003"
+                    "django_sql": "http://localhost:8005",
+                    "advertising": "http://localhost:8004", 
+                    "stock": "http://localhost:8006"
                 },
                 "usage": "Send POST with 'agent', 'action', and optional 'data'"
             })
@@ -520,9 +476,9 @@ def interact_with_mcp_agents(request):
         
         # Agent URL mapping
         agent_urls = {
-            'django_sql': 'http://localhost:8002',
-            'advertising': 'http://localhost:8001',
-            'stock': 'http://localhost:8003'
+            'django_sql': 'http://localhost:8005',
+            'advertising': 'http://localhost:8004',
+            'stock': 'http://localhost:8006'
         }
         
         if agent not in agent_urls:
@@ -651,6 +607,3 @@ def openai_chat_completions(request):
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON"}, status=400)
     return JsonResponse({"error": "Method not allowed"}, status=405)
-
-
-

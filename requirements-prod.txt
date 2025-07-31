@@ -22,3 +22,5 @@ django-extensions==3.2.3
 django-debug-toolbar==4.2.0
 sentry-sdk[django]==1.39.2
 django-storages[azure]==1.14.2
+transformers==4.35.0
+torch>=1.13.0

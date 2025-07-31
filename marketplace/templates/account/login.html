@@ -5,90 +5,144 @@
 {% block title %}Autentificare - Piața.ro{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-12">
-    <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden">
-        <!-- Header -->
-        <div class="bg-primary text-white p-6 text-center">
-            <i class="fas fa-lock text-4xl mb-3"></i>
-            <h2 class="text-2xl font-bold">Autentificare</h2>
-            <p class="text-sm opacity-80">Intră în contul tău Piața.ro</p>
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <!-- Logo and Brand -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mb-4">
+                <i class="fas fa-store text-white text-2xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900">Piața.ro</h1>
+            <p class="text-gray-600 mt-2">Platforma ta de anunțuri</p>
         </div>
-        
-        <!-- Form -->
-        <div class="p-6">
-            <form class="login" method="POST" action="{% url 'marketplace:login' %}">
-                {% csrf_token %}
-                
-                {% if form.errors %}
-                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-                    <p class="font-medium">{% trans "Te rugăm să corectezi următoarele erori:" %}</p>
-                    {% for field in form %}
-                        {% if field.errors %}
-                        <p class="text-sm">{{ field.label }}: {{ field.errors|striptags }}</p>
-                        {% endif %}
-                    {% endfor %}
+
+        <!-- Login Card -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <!-- Card Header -->
+            <div class="bg-gradient-to-r from-primary to-primary-dark p-6 text-center">
+                <div class="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-full mb-3">
+                    <i class="fas fa-lock text-white text-xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white">Bun venit!</h2>
+                <p class="text-white/80 text-sm">Intră în contul tău pentru a continua</p>
+            </div>
+
+            <!-- Form -->
+            <div class="p-6">
+                <form class="login" method="POST" action="{% url 'marketplace:login' %}">
+                    {% csrf_token %}
                     
-                    {% if form.non_field_errors %}
-                    <p class="text-sm">{{ form.non_field_errors|striptags }}</p>
+                    {% if form.errors %}
+                    <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                            <span class="text-red-700 text-sm font-medium">Erori de autentificare</span>
+                        </div>
+                        <div class="mt-2 text-red-600 text-xs">
+                            {% for field in form %}
+                                {% if field.errors %}
+                                <p class="mb-1">{{ field.label }}: {{ field.errors|striptags }}</p>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if form.non_field_errors %}
+                            <p>{{ form.non_field_errors|striptags }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
                     {% endif %}
-                </div>
-                {% endif %}
-                
-                <div class="mb-4">
-                    <label for="id_username" class="block text-gray-700 text-sm font-medium mb-2">Email sau utilizator:</label>
-                    <input type="text" name="username" placeholder="Adresa ta de email sau utilizator" autocomplete="username" required id="id_username" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
-                </div>
-                
-                <div class="mb-4">
-                    <label for="id_password" class="block text-gray-700 text-sm font-medium mb-2">Parolă:</label>
-                    <input type="password" name="password" placeholder="Parola ta" autocomplete="current-password" required id="id_password" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
-                </div>
-                
-                <div class="flex items-center mb-4">
-                    <input type="checkbox" name="remember" id="id_remember" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
-                    <label for="id_remember" class="ml-2 block text-sm text-gray-700">Ține-mă minte</label>
-                </div>
-                
-                <div class="mb-4">
-                    <button type="submit" class="w-full bg-primary text-white py-2 px-4 rounded-md hover:bg-primary-dark transition duration-200">
-                        <i class="fas fa-sign-in-alt mr-2"></i> Autentificare
+                    
+                    <!-- Email/Username Input -->
+                    <div class="mb-4">
+                        <label for="id_username" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-envelope text-gray-400 mr-1"></i>
+                            Email sau utilizator
+                        </label>
+                        <div class="relative">
+                            <input type="text" name="username" placeholder="Introdu email-ul sau utilizatorul" 
+                                   autocomplete="username" required id="id_username" 
+                                   class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition duration-200">
+                            <i class="fas fa-user absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Password Input -->
+                    <div class="mb-6">
+                        <label for="id_password" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-lock text-gray-400 mr-1"></i>
+                            Parolă
+                        </label>
+                        <div class="relative">
+                            <input type="password" name="password" placeholder="Introdu parola" 
+                                   autocomplete="current-password" required id="id_password" 
+                                   class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition duration-200">
+                            <i class="fas fa-key absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Remember Me & Forgot Password -->
+                    <div class="flex items-center justify-between mb-6">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="remember" id="id_remember" 
+                                   class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                            <span class="ml-2 text-sm text-gray-700">Ține-mă minte</span>
+                        </label>
+                        <a href="{% url 'marketplace:password_reset' %}" 
+                           class="text-sm text-primary hover:text-primary-dark transition duration-200">
+                            <i class="fas fa-question-circle mr-1"></i>
+                            Ai uitat parola?
+                        </a>
+                    </div>
+                    
+                    <!-- Login Button -->
+                    <button type="submit" 
+                            class="w-full bg-gradient-to-r from-primary to-primary-dark text-white py-3 px-4 rounded-lg font-medium hover:from-primary-dark hover:to-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition duration-200 transform hover:scale-105">
+                        <i class="fas fa-sign-in-alt mr-2"></i>
+                        Autentificare
                     </button>
+                </form>
+
+                <!-- Divider -->
+                <div class="relative my-6">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div class="relative flex justify-center">
+                        <span class="bg-white px-4 text-sm text-gray-500">sau</span>
+                    </div>
                 </div>
-                
-                <div class="text-center mb-4">
-                    <a href="{% url 'marketplace:password_reset' %}" class="text-primary hover:text-primary-dark text-sm font-medium">
-                        {% trans "Ai uitat parola?" %}
+
+                <!-- Social Login -->
+                <div class="flex justify-center space-x-3 mb-6">
+                    {% get_providers as socialaccount_providers %}
+                    {% for provider in socialaccount_providers %}
+                    <a title="{{provider.name}}" 
+                       class="flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 hover:bg-gray-200 transition duration-200 transform hover:scale-110" 
+                       href="{% provider_login_url provider.id process=process scope=scope auth_params=auth_params %}">
+                        <i class="fab fa-{{ provider.id }} text-lg text-gray-600"></i>
                     </a>
+                    {% endfor %}
                 </div>
-            </form>
-            
-            <div class="relative py-4">
-                <div class="absolute inset-0 flex items-center">
-                    <div class="w-full border-t border-gray-300"></div>
-                </div>
-                <div class="relative flex justify-center">
-                    <span class="bg-white px-4 text-sm text-gray-500">sau</span>
+
+                <!-- Sign Up Link -->
+                <div class="text-center">
+                    <p class="text-gray-600 text-sm">
+                        Nu ai cont?
+                        <a href="{% url 'marketplace:signup' %}" 
+                           class="text-primary hover:text-primary-dark font-medium transition duration-200">
+                            Creează un cont gratuit
+                        </a>
+                    </p>
                 </div>
             </div>
-            
-            <div class="flex justify-center space-x-4 mb-6">
-                {% get_providers as socialaccount_providers %}
-                {% for provider in socialaccount_providers %}
-                <a title="{{provider.name}}" class="flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 hover:bg-gray-200 transition duration-200" 
-                   href="{% provider_login_url provider.id process=process scope=scope auth_params=auth_params %}">
-                    <i class="fab fa-{{ provider.id }} text-xl"></i>
-                </a>
-                {% endfor %}
-            </div>
-            
-            <p class="text-center text-gray-600 text-sm">
-                Nu ai cont?
-                <a href="{% url 'marketplace:signup' %}" class="text-primary hover:text-primary-dark font-medium">
-                    Creează un cont nou
-                </a>
-            </p>
+        </div>
+
+        <!-- Additional Links -->
+        <div class="mt-6 text-center">
+            <a href="/" class="text-primary hover:text-primary-dark transition duration-200">
+                <i class="fas fa-arrow-left mr-1"></i>
+                Înapoi la pagină principală
+            </a>
         </div>
     </div>
 </div>

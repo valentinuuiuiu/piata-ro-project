@@ -151,7 +151,7 @@ def get_inventory_summary(category: str = "") -> Dict[str, Any]:
         sample_listings = []
         for listing in listings.filter(status='active')[:5]:
             sample_listings.append({
-                "id": listing.id,
+                "id": str(listing.pk),  # Use pk instead of id to avoid type issues
                 "title": listing.title,
                 "price": float(listing.price) if listing.price else 0,
                 "category": listing.category.name if listing.category else "N/A",
@@ -252,11 +252,11 @@ async def process_advertising_query(request: QueryRequest):
 
 @advertising_app.get("/status")
 async def advertising_status():
-    return {"status": "running", "agent": "advertising", "port": 8001}
+    return {"status": "running", "agent": "advertising", "port": 8004}
 
 @advertising_app.get("/health")
 async def advertising_health():
-    return {"status": "healthy", "agent": "advertising", "port": 8001, "timestamp": datetime.now().isoformat()}
+    return {"status": "healthy", "agent": "advertising", "port": 8004, "timestamp": datetime.now().isoformat()}
 
 @advertising_app.post("/deepseek/query")
 async def deepseek_query(request: DeepseekRequest):
@@ -275,16 +275,8 @@ async def deepseek_query(request: DeepseekRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# Shared Deepseek Functions
-async def process_deepseek_query(query: str, context: Dict[str, Any]) -> str:
-    """Process query using Deepseek API"""
-    # TODO: Implement actual API call
-    return f"Processed Deepseek query: {query}"
-
-def validate_deepseek_key(api_key: str) -> bool:
-    """Validate Deepseek API key"""
-    # TODO: Implement actual validation
-    return len(api_key) > 10  # Basic length check for now
+# Shared Deepseek Functions - already defined above
+# Removed duplicate declarations
 
 # Stock Agent Endpoints
 @stock_app.post("/deepseek/query")
@@ -325,11 +317,11 @@ async def process_stock_query(request: QueryRequest):
 
 @stock_app.get("/status")
 async def stock_status():
-    return {"status": "running", "agent": "stock", "port": 8003}
+    return {"status": "running", "agent": "stock", "port": 8006}
 
 @stock_app.get("/health")
 async def stock_health():
-    return {"status": "healthy", "agent": "stock", "port": 8003, "timestamp": datetime.now().isoformat()}
+    return {"status": "healthy", "agent": "stock", "port": 8006, "timestamp": datetime.now().isoformat()}
 
 # Django SQL Agent Endpoints
 @django_sql_app.post("/deepseek/query")
@@ -364,11 +356,11 @@ async def process_sql_query(request: QueryRequest):
 
 @django_sql_app.get("/status")
 async def sql_status():
-    return {"status": "running", "agent": "django_sql", "port": 8002}
+    return {"status": "running", "agent": "django_sql", "port": 8005}
 
 @django_sql_app.get("/health")
 async def sql_health():
-    return {"status": "healthy", "agent": "django_sql", "port": 8002, "timestamp": datetime.now().isoformat()}
+    return {"status": "healthy", "agent": "django_sql", "port": 8005, "timestamp": datetime.now().isoformat()}
 
 # Main function to run all agents
 async def run_agent(app, port):
@@ -393,9 +385,9 @@ async def main():
         asyncio.create_task(run_agent(stock_app, 8006))
     ]
     
-    logger.info("📢 Advertising Agent starting on port 8001")
-    logger.info("🗄️  Django SQL Agent starting on port 8002") 
-    logger.info("📊 Stock Agent starting on port 8003")
+    logger.info("📢 Advertising Agent starting on port 8004")
+    logger.info("🗄️  Django SQL Agent starting on port 8005") 
+    logger.info("📊 Stock Agent starting on port 8006")
     logger.info("🏥 Health endpoints available at /health on all agents")
     
     # Wait for all tasks

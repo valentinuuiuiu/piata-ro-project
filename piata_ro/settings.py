@@ -229,7 +229,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'marketplace', 'static'),
 ]
@@ -246,7 +246,7 @@ ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 MAX_IMAGES_PER_LISTING = 10  # Maximum images per listing
 
 # Authentication settings
-LOGIN_URL = '/auth/clerk/login/'
+LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 

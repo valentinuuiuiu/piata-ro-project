@@ -1,8 +1,8 @@
 
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import Paginator
 from django.views.decorators.cache import cache_page
-from ..models import Listing, Category
+from ..models import Listing, Category, ListingImage
 
 @cache_page(60 * 15)  # Cache for 15 minutes
 def listing_detail(request, slug):
@@ -11,19 +11,25 @@ def listing_detail(request, slug):
         # Try to get by slug first
         try:
             listing = get_object_or_404(
-                Listing.objects.select_related('user', 'category'),
+                Listing.objects.select_related('user', 'category').prefetch_related('images'),
                 slug=slug,
                 status='active'
             )
         except:
             # If slug fails, try by ID (for backward compatibility)
             listing = get_object_or_404(
-                Listing.objects.select_related('user', 'category'),
+                Listing.objects.select_related('user', 'category').prefetch_related('images'),
                 id=slug,
                 status='active'
             )
         
-        return render(request, 'marketplace/listing_detail.html', {'listing': listing})
+        # Get all images for the gallery
+        listing_images = listing.images.all().order_by('order', 'created_at')
+        
+        return render(request, 'marketplace/listing_detail.html', {
+            'listing': listing,
+            'listing_images': listing_images
+        })
     except Exception as e:
         from django.contrib import messages
         messages.error(request, f"Error loading listing: {str(e)}")
@@ -31,8 +37,8 @@ def listing_detail(request, slug):
 
 def listing_list(request):
     """Paginated listing list view"""
-    # Get all active listings
-    listings = Listing.objects.filter(status='active').select_related('category', 'user')
+    # Get all active listings with prefetching for better performance
+    listings = Listing.objects.filter(status='active').select_related('category', 'user').prefetch_related('images')
     
     # Apply filters
     search_query = request.GET.get('search', '')

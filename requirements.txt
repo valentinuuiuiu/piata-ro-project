@@ -34,6 +34,7 @@ requests>=2.31.0
 
 # Redis for caching/sessions
 redis>=5.0.1
+django-redis
 
 # Task queue
 celery>=5.3.4
@@ -62,3 +63,9 @@ django-debug-toolbar>=4.2.0
 # Numpy for data processing
 numpy>=1.24.0
 
+# Transformers for AI search
+transformers>=4.35.0
+torch>=1.13.0
+
+psycopg2-binary
+dj-database-url

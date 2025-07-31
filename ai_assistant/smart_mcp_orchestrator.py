@@ -31,6 +31,7 @@ class MCPServerType(str, Enum):
     """Enum for MCP server types"""
     ADVERTISING = "advertising"
     DATABASE = "database"
+    STOCK = "stock"
 
 class MCPServerConfig(BaseModel):
     """Configuration for MCP servers"""
@@ -126,6 +127,20 @@ class SmartMCPOrchestrator(BaseModel):
                     "search_listings", 
                     "get_database_stats",
                     "execute_custom_query"
+                ]
+            ),
+            MCPServerType.STOCK: MCPServerConfig(
+                name="Stock Agent",
+                port=8003,
+                url="http://localhost:8003",
+                description="Inventory management, stock tracking, supply chain",
+                tools=[
+                    "get_inventory_summary",
+                    "check_stock_levels",
+                    "forecast_demand",
+                    "manage_suppliers",
+                    "track_shipments",
+                    "generate_inventory_reports"
                 ]
             )
         }

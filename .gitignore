@@ -14,3 +14,5 @@ venv/
 *.log
 *.pyc
 .DS_Store
+.env.prod
+.env.example
