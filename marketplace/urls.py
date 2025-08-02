@@ -18,14 +18,15 @@ router.register(r"users", views.UserProfileViewSet, basename='userprofile')
 
 urlpatterns = [
     # Authentication views
-    path('auth/clerk/login/', views.login_view, name='login'),
-    path('auth/clerk/signup/', views.signup_view, name='signup'),
-    path('auth/clerk/mfa/', views.verify_mfa, name='verify_mfa'),
-    path('auth/clerk/logout/', LogoutView.as_view(), name='logout'),
-    path('auth/clerk/password_reset/', PasswordResetView.as_view(template_name='account/password_reset.html'), name='password_reset'),
-    path('auth/clerk/password_reset/done/', PasswordResetDoneView.as_view(template_name='registration/password_reset_done.html'), name='password_reset_done'),
-    path('auth/clerk/reset/<uidb64>/<token>/', PasswordResetConfirmView.as_view(template_name='registration/password_reset_confirm.html'), name='password_reset_confirm'),
-    path('auth/clerk/reset/done/', PasswordResetCompleteView.as_view(template_name='registration/password_reset_complete.html'), name='password_reset_complete'),
+    path('login/', views.redirect_to_allauth_login, name='login'),
+    path('auth/login/', views.login_view, name='password_login'),
+    path('signup/', views.signup_view, name='signup'),
+    path('mfa/', views.verify_mfa, name='verify_mfa'),
+    path('logout/', LogoutView.as_view(), name='logout'),
+    path('password_reset/', PasswordResetView.as_view(template_name='account/password_reset.html'), name='password_reset'),
+    path('password_reset/done/', PasswordResetDoneView.as_view(template_name='registration/password_reset_done.html'), name='password_reset_done'),
+    path('reset/<uidb64>/<token>/', PasswordResetConfirmView.as_view(template_name='registration/password_reset_confirm.html'), name='password_reset_confirm'),
+    path('reset/done/', PasswordResetCompleteView.as_view(template_name='registration/password_reset_complete.html'), name='password_reset_complete'),
     
     # Recommendation endpoints
     path('recommendations/', include(recommendation_urls)),

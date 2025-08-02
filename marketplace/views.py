@@ -1145,7 +1145,6 @@ def process_payment_view(request):
 
 
 @login_required
-@login_required
 def promote_listing_view(request, listing_id):
     """Promote a listing to first page with atomic transaction handling."""
     try:

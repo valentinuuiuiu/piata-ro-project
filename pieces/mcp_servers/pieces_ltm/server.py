@@ -19,7 +19,7 @@ class PiecesLTMServer:
     def __init__(self):
         # Configure the Pieces OS client
         self.configuration = Configuration(
-            host="http://localhost:1000"  # Default Pieces OS port
+            host="http://localhost:39300"  # Pieces OS MCP port
         )
         
         # Create API client

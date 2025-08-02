@@ -8,6 +8,12 @@ import pyotp
 
 from ..models import UserProfile
 
+
+def redirect_to_allauth_login(request):
+    # Delegate login to django-allauth, which supports email + social providers
+    return redirect('account_login')
+
+
 def login_view(request):
     """
     Custom login view that handles both standard login and redirects to MFA if needed

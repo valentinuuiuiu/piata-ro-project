@@ -1,242 +1,120 @@
 {% extends "admin/base_site.html" %}
-{% load static %}
+{% load i18n static %}
 
-{% block title %}Piața.ro AI Assistant{% endblock %}
+{% block title %}AI Assistant - {{ site_title|default:_('Django site admin') }}{% endblock %}
 
-{% block extrahead %}
-<style>
-    .ai-assistant-container {
-        max-width: 1200px;
-        margin: 20px auto;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    
-    .ai-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 20px;
-        border-radius: 8px 8px 0 0;
-    }
-    
-    .ai-status {
-        display: flex;
-        gap: 15px;
-        margin-top: 10px;
-    }
-    
-    .status-item {
-        padding: 5px 10px;
-        border-radius: 15px;
-        font-size: 12px;
-        font-weight: bold;
-    }
-    
-    .status-online {
-        background: rgba(46, 204, 113, 0.2);
-        color: #27ae60;
-    }
-    
-    .status-offline {
-        background: rgba(231, 76, 60, 0.2);
-        color: #e74c3c;
-    }
-    
-    .chat-container {
-        height: 500px;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .chat-messages {
-        flex: 1;
-        overflow-y: auto;
-        padding: 20px;
-        border-bottom: 1px solid #eee;
-    }
-    
-    .message {
-        margin-bottom: 15px;
-        padding: 10px 15px;
-        border-radius: 18px;
-        max-width: 80%;
-    }
-    
-    .message-user {
-        background: #007bff;
-        color: white;
-        margin-left: auto;
-        text-align: right;
-    }
-    
-    .message-assistant {
-        background: #f8f9fa;
-        color: #333;
-        border: 1px solid #dee2e6;
-    }
-    
-    .message-meta {
-        font-size: 11px;
-        opacity: 0.7;
-        margin-top: 5px;
-    }
-    
-    .chat-input-container {
-        padding: 20px;
-        background: #f8f9fa;
-        border-radius: 0 0 8px 8px;
-    }
-    
-    .chat-input {
-        width: 100%;
-        padding: 12px 15px;
-        border: 1px solid #ddd;
-        border-radius: 25px;
-        outline: none;
-        font-size: 14px;
-    }
-    
-    .chat-send {
-        position: absolute;
-        right: 35px;
-        top: 50%;
-        transform: translateY(-50%);
-        background: #007bff;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 35px;
-        height: 35px;
-        cursor: pointer;
-    }
-    
-    .conversations-sidebar {
-        width: 250px;
-        background: #f8f9fa;
-        border-right: 1px solid #dee2e6;
-        padding: 15px;
-    }
-    
-    .conversation-item {
-        padding: 10px;
-        border-radius: 5px;
-        cursor: pointer;
-        margin-bottom: 5px;
-        border: 1px solid transparent;
-    }
-    
-    .conversation-item:hover {
-        background: white;
-        border-color: #dee2e6;
-    }
-    
-    .conversation-item.active {
-        background: #007bff;
-        color: white;
-    }
-    
-    .main-chat {
-        flex: 1;
-    }
-    
-    .chat-layout {
-        display: flex;
-        height: 600px;
-    }
-</style>
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django site admin') }}</a></h1>
 {% endblock %}
 
+{% block nav-global %}{% endblock %}
+
 {% block content %}
-<div class="ai-assistant-container">
-    <div class="ai-header">
-        <h1>🤖 Piața.ro AI Assistant</h1>
-        <p>Your intelligent marketplace management assistant</p>
+<div id="content-main">
+    <div class="module" style="margin-bottom: 20px;">
+        <h2>🤖 AI Assistant</h2>
+        <p>Get intelligent help with database management, marketing optimization, and inventory control.</p>
         
-        <div class="ai-status">
-            <strong>MCP Agents Status (DeepSeek Powered):</strong>
-            {% for agent, status in mcp_status.items %}
-                <span class="status-item status-{{ status|lower }}">
-                    {{ agent }}: {{ status }}
-                </span>
-            {% endfor %}
-        </div>
-    </div>
-    
-    <div class="chat-layout">
-        <div class="conversations-sidebar">
-            <h3>Recent Conversations</h3>
-            <div id="conversations-list">
-                {% for conversation in conversations %}
-                <div class="conversation-item" data-id="{{ conversation.id }}">
-                    <strong>{{ conversation.title|truncatechars:30 }}</strong>
-                    <div style="font-size: 11px; opacity: 0.7;">
-                        {{ conversation.updated_at|date:"M d, H:i" }}
+        <!-- Conversation List -->
+        <div style="display: flex; gap: 20px;">
+            <div style="flex: 1;">
+                <h3>Conversations</h3>
+                <div id="conversation-list" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 10px;">
+                    {% for conv in conversations %}
+                    <div class="conversation-item" style="padding: 10px; border-bottom: 1px solid #eee; cursor: pointer;" 
+                         onclick="loadConversation({{ conv.id }})">
+                        <strong>{{ conv.title }}</strong>
+                        <br>
+                        <small>{{ conv.updated_at|date:"M d, Y H:i" }}</small>
                     </div>
+                    {% empty %}
+                    <p>No conversations yet. Start a new one!</p>
+                    {% endfor %}
                 </div>
-                {% endfor %}
+                <button onclick="startNewConversation()" class="button" style="margin-top: 10px;">New Conversation</button>
             </div>
             
-            <button id="new-conversation" class="btn btn-primary btn-sm" style="margin-top: 15px; width: 100%;">
-                + New Conversation
-            </button>
-        </div>
-        
-        <div class="main-chat">
-            <div class="chat-container">
-                <div class="chat-messages" id="chat-messages">
-                    <div class="message message-assistant">
-                        <div>👋 Hello! I'm your Piața.ro AI Assistant powered by DeepSeek. I can help you with:</div>
-                        <ul style="margin: 10px 0; padding-left: 20px;">
-                            <li><strong>Database:</strong> Manage listings, users, and data queries</li>
-                            <li><strong>Advertising:</strong> Optimize marketing, pricing, and promotions</li>
-                            <li><strong>Stock:</strong> Handle inventory, supply chain, and forecasting</li>
-                        </ul>
-                        <div>What would you like to help you with today?</div>
+            <!-- Chat Area -->
+            <div style="flex: 2;">
+                <div id="chat-area" style="border: 1px solid #ddd; height: 400px; display: flex; flex-direction: column;">
+                    {% if active_conversation %}
+                    <div style="padding: 10px; border-bottom: 1px solid #ddd;">
+                        <h3>{{ active_conversation.title }}</h3>
                     </div>
+                    <div id="messages" style="flex: 1; overflow-y: auto; padding: 10px;">
+                        {% for msg in messages %}
+                        <div style="margin-bottom: 15px;">
+                            <strong>{{ msg.role|capfirst }}:</strong>
+                            <div style="background: #f0f0f0; padding: 10px; border-radius: 5px; margin-top: 5px;">
+                                {{ msg.content }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div style="flex: 1; display: flex; align-items: center; justify-content: center; color: #666;">
+                        Select a conversation or start a new one
+                    </div>
+                    {% endif %}
                 </div>
                 
-                <div class="chat-input-container">
-                    <div style="position: relative;">
-                        <input type="text" id="chat-input" class="chat-input" 
-                               placeholder="Ask me anything about your marketplace..." 
-                               onkeypress="handleKeyPress(event)">
-                        <button id="send-button" class="chat-send" onclick="sendMessage()">➤</button>
-                    </div>
+                <!-- Input Area -->
+                <div style="margin-top: 10px; display: flex; gap: 10px;">
+                    <input type="text" id="message-input" placeholder="Type your message..." 
+                           style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"
+                           onkeypress="if(event.key === 'Enter') sendMessage()">
+                    <button onclick="sendMessage()" class="button">Send</button>
                 </div>
+                
+                <!-- Status -->
+                <div id="status" style="margin-top: 10px; color: #666;"></div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-let currentConversationId = null;
+let currentConversationId = {% if active_conversation %}{{ active_conversation.id }}{% else %}null{% endif %};
 
-function handleKeyPress(event) {
-    if (event.key === 'Enter') {
-        sendMessage();
-    }
+function loadConversation(conversationId) {
+    currentConversationId = conversationId;
+    window.location.href = '/ai-assistant/?conversation=' + conversationId;
+}
+
+function startNewConversation() {
+    fetch('/ai-assistant/new/', {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.conversation_id) {
+            loadConversation(data.conversation_id);
+        }
+    })
+    .catch(error => console.error('Error:', error));
 }
 
 function sendMessage() {
-    const input = document.getElementById('chat-input');
+    const input = document.getElementById('message-input');
     const message = input.value.trim();
     
     if (!message) return;
     
-    // Add user message to chat
-    addMessage(message, true);
+    const status = document.getElementById('status');
+    status.textContent = 'Sending...';
+    
+    // Add user message to UI
+    addMessage('user', message);
     input.value = '';
     
-    // Show loading
-    const loadingDiv = addMessage('🤔 Thinking...', false, true);
-    
-    // Send to backend
-    fetch('{% url "ai_assistant:ai_chat_api" %}', {
+    fetch('/ai-assistant/chat/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
+            'X-CSRFToken': getCookie('csrftoken'),
         },
         body: JSON.stringify({
             message: message,
@@ -245,68 +123,80 @@ function sendMessage() {
     })
     .then(response => response.json())
     .then(data => {
-        // Remove loading message
-        loadingDiv.remove();
-        
-        // Add assistant response
-        addMessage(data.response, false, false, data.agent_used);
-        currentConversationId = data.conversation_id;
-        
-        // Update conversations list if new
-        if (!currentConversationId) {
-            location.reload(); // Simple refresh for now
+        if (data.success) {
+            addMessage('assistant', data.response);
+            status.textContent = '';
+            
+            // Update conversation title if it's new
+            if (data.conversation_id && !currentConversationId) {
+                currentConversationId = data.conversation_id;
+            }
+        } else {
+            status.textContent = 'Error: ' + (data.error || 'Unknown error');
         }
     })
     .catch(error => {
-        loadingDiv.remove();
-        addMessage('Sorry, I encountered an error. Please try again.', false);
         console.error('Error:', error);
+        status.textContent = 'Error sending message';
     });
 }
 
-function addMessage(text, isUser, isLoading = false, agent = null) {
-    const messagesContainer = document.getElementById('chat-messages');
+function addMessage(role, content) {
+    const messagesDiv = document.getElementById('messages');
+    if (!messagesDiv) return;
+    
     const messageDiv = document.createElement('div');
-    messageDiv.className = `message message-${isUser ? 'user' : 'assistant'}`;
+    messageDiv.style.marginBottom = '15px';
     
-    let content = `<div>${text}</div>`;
-    if (!isUser && agent && !isLoading) {
-        content += `<div class="message-meta">via ${agent}</div>`;
+    const roleSpan = document.createElement('strong');
+    roleSpan.textContent = role.charAt(0).toUpperCase() + role.slice(1) + ':';
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.style.background = role === 'user' ? '#e3f2fd' : '#f0f0f0';
+    contentDiv.style.padding = '10px';
+    contentDiv.style.borderRadius = '5px';
+    contentDiv.style.marginTop = '5px';
+    contentDiv.textContent = content;
+    
+    messageDiv.appendChild(roleSpan);
+    messageDiv.appendChild(contentDiv);
+    messagesDiv.appendChild(messageDiv);
+    
+    // Scroll to bottom
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
     }
-    
-    messageDiv.innerHTML = content;
-    messagesContainer.appendChild(messageDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    
-    return messageDiv;
+    return cookieValue;
 }
 
-function newConversation() {
-    currentConversationId = null;
-    document.getElementById('chat-messages').innerHTML = `
-        <div class="message message-assistant">
-            <div>👋 Hello! I'm your Piața.ro AI Assistant. What can I help you with?</div>
-        </div>
-    `;
-    
-    // Remove active class from all conversations
-    document.querySelectorAll('.conversation-item').forEach(item => {
-        item.classList.remove('active');
-    });
+// Check MCP status
+function checkMCPStatus() {
+    fetch('/ai-assistant/status/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                document.getElementById('status').textContent = 'MCP Orchestrator: Online';
+                document.getElementById('status').style.color = 'green';
+            }
+        })
+        .catch(error => {
+            console.error('Status check failed:', error);
+        });
 }
 
-document.getElementById('new-conversation').addEventListener('click', newConversation);
-
-// Handle conversation selection
-document.querySelectorAll('.conversation-item').forEach(item => {
-    item.addEventListener('click', function() {
-        // Mark as active
-        document.querySelectorAll('.conversation-item').forEach(i => i.classList.remove('active'));
-        this.classList.add('active');
-        
-        currentConversationId = this.dataset.id;
-        // You could load conversation history here
-    });
-});
+// Check status on load
+document.addEventListener('DOMContentLoaded', checkMCPStatus);
 </script>
 {% endblock %}

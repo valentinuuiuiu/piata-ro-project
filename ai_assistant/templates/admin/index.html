@@ -14,11 +14,71 @@
         <p style="margin-bottom: 15px; opacity: 0.9;">
             Get intelligent help with database management, marketing optimization, and inventory control.
         </p>
-        <a href="/admin/ai/mcp-orchestrator/" 
-           class="button" 
-           style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block; font-size: 16px;">
-            💬 Start Chatting Now
-        </a>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="/admin/ai-assistant/" 
+               class="button" 
+               style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block; font-size: 16px;">
+                💬 Chat Assistant
+            </a>
+            <a href="/admin/ai-assistant/mcp-orchestrator/" 
+               class="button" 
+               style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block; font-size: 16px;">
+                ⚙️ MCP Orchestrator
+            </a>
+        </div>
     </div>
 </div>
+
+<!-- MCP Server Status -->
+<div class="module" style="margin-bottom: 20px;">
+    <h2>MCP Server Status</h2>
+    <div id="mcp-server-status" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+        <div class="server-status" data-server="advertising">
+            <h4>Advertising Agent</h4>
+            <div class="status-indicator" style="width: 20px; height: 20px; border-radius: 50%; background: #ccc; display: inline-block;"></div>
+            <span class="status-text">Checking...</span>
+        </div>
+        <div class="server-status" data-server="database">
+            <h4>Database Agent</h4>
+            <div class="status-indicator" style="width: 20px; height: 20px; border-radius: 50%; background: #ccc; display: inline-block;"></div>
+            <span class="status-text">Checking...</span>
+        </div>
+        <div class="server-status" data-server="stock">
+            <h4>Stock Agent</h4>
+            <div class="status-indicator" style="width: 20px; height: 20px; border-radius: 50%; background: #ccc; display: inline-block;"></div>
+            <span class="status-text">Checking...</span>
+        </div>
+    </div>
+</div>
+
+<script>
+// Check MCP server status on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const servers = ['advertising', 'database', 'stock'];
+    
+    servers.forEach(server => {
+        fetch(`/ai-assistant/check-mcp/${server}/`)
+            .then(response => response.json())
+            .then(data => {
+                const statusElement = document.querySelector(`[data-server="${server}"] .status-indicator`);
+                const textElement = document.querySelector(`[data-server="${server}"] .status-text`);
+                
+                if (data.status === 'online') {
+                    statusElement.style.background = '#4caf50';
+                    textElement.textContent = 'Online';
+                } else {
+                    statusElement.style.background = '#f44336';
+                    textElement.textContent = data.error || 'Offline';
+                }
+            })
+            .catch(error => {
+                console.error(`Status check failed for ${server}:`, error);
+                const statusElement = document.querySelector(`[data-server="${server}"] .status-indicator`);
+                const textElement = document.querySelector(`[data-server="${server}"] .status-text`);
+                statusElement.style.background = '#f44336';
+                textElement.textContent = 'Error';
+            });
+    });
+});
+</script>
 {% endblock %}

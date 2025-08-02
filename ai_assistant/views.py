@@ -2,13 +2,14 @@ import json
 import asyncio
 from django.shortcuts import render, redirect
 from django.contrib.admin.views.decorators import staff_member_required
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.contrib import admin
 from django.urls import path
-from .models import Conversation, Message
-from .mcp_orchestrator import MCPOrchestrator
+from django.conf import settings
+from .models import Conversation, Message, MCPServerConfig, ChatSessionLog
+from .smart_mcp_orchestrator import SmartMCPOrchestrator
 from marketplace.services.chat_service import marketplace_chat_service
 
 @staff_member_required
@@ -35,9 +36,22 @@ def ai_assistant_view(request):
         'messages': messages,
         'has_permission': True,
         'mcp_status': {'django_sql': 'Online', 'advertising': 'Online', 'stock': 'Online'},  # Simple status for now
+        'mcp_orchestrator_endpoint': getattr(settings, 'MCP_ORCHESTRATOR_ENDPOINT', 'http://localhost:8000'),
+        'mcp_servers': getattr(settings, 'MCP_SERVERS', {}),
     }
     
     return render(request, 'admin/ai_assistant/chat.html', context)
+
+@staff_member_required
+def mcp_orchestrator_view(request):
+    """MCP Orchestrator interface in Django Admin"""
+    context = {
+        'title': 'MCP Orchestrator - Piața.ro',
+        'mcp_orchestrator_endpoint': getattr(settings, 'MCP_ORCHESTRATOR_ENDPOINT', 'http://localhost:8000'),
+        'mcp_servers': getattr(settings, 'MCP_SERVERS', {}),
+    }
+    
+    return render(request, 'admin/ai_assistant/mcp_orchestrator.html', context)
 
 @csrf_exempt
 def ai_chat_api(request):
@@ -75,8 +89,8 @@ def ai_chat_api(request):
         # Save user message
         user_message = Message.objects.create(
             conversation=conversation,
-            role='user',
-            content=message
+            is_user=True,
+            text=message
         )
         
         # Get conversation history
@@ -88,7 +102,7 @@ def ai_chat_api(request):
             })
         
         # Process with MCP Orchestrator
-        orchestrator = MCPOrchestrator()
+        orchestrator = SmartMCPOrchestrator()
         
         # Run async function in sync context
         loop = asyncio.new_event_loop()
@@ -103,20 +117,29 @@ def ai_chat_api(request):
         # Save assistant response
         assistant_message = Message.objects.create(
             conversation=conversation,
-            role='assistant',
-            content=result['response'],
-            mcp_tools_used=result.get('tools_used', [])
+            is_user=False,
+            text=result.response
+        )
+        
+        # Log the chat session
+        ChatSessionLog.objects.create(
+            user=request.user,
+            status='completed'
         )
         
         return JsonResponse({
             'success': True,
-            'response': result['response'],
+            'response': result.response,
             'conversation_id': getattr(conversation, 'id', getattr(conversation, 'pk', None)),
             'message_id': assistant_message.pk,
-            'tools_used': result.get('tools_used', [])
+            'tools_used': getattr(result, 'tools_used', []),
+            'intent_analysis': getattr(result.intent_analysis, 'dict', lambda: None)() if result.intent_analysis else None
         })
     
     except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Chat API error: {e}")
         return JsonResponse({'error': str(e)}, status=500)
 
 @staff_member_required
@@ -126,7 +149,7 @@ def new_conversation(request):
         user=request.user,
         title="New Conversation"
     )
-    return redirect(f'/ai-assistant/?conversation={conversation.pk}')
+    return JsonResponse({'conversation_id': conversation.pk})
 
 @staff_member_required 
 def delete_conversation(request, conversation_id):
@@ -136,21 +159,45 @@ def delete_conversation(request, conversation_id):
         conversation.delete()
     except Conversation.DoesNotExist:
         pass
-    return redirect('/ai-assistant/')
+    return JsonResponse({'success': True})
 
 def ai_status(request):
     """Simple status endpoint for AI assistant"""
     return JsonResponse({'status': 'ok', 'service': 'ai_assistant'})
 
+@staff_member_required
+def check_mcp_server(request, server_name):
+    """Check status of specific MCP server"""
+    try:
+        server_config = getattr(settings, 'MCP_SERVERS', {}).get(server_name)
+        if not server_config:
+            return JsonResponse({'status': 'offline', 'error': 'Server not configured'})
+        
+        # Try to connect to the server
+        import httpx
+        with httpx.Client(timeout=5.0) as client:
+            response = client.get(f"{server_config.url}/health", follow_redirects=True)
+            if response.status_code == 200:
+                return JsonResponse({'status': 'online'})
+            else:
+                return JsonResponse({'status': 'offline', 'error': f'Server returned {response.status_code}'})
+    except Exception as e:
+        return JsonResponse({'status': 'offline', 'error': str(e)})
+
 # Admin integration
-class AIAssistantAdmin:
+class AIAssistantAdmin(admin.ModelAdmin):
     """Custom admin section for AI Assistant"""
     
     def get_urls(self):
         urls = [
             path('ai-assistant/', ai_assistant_view, name='ai_assistant'),
+            path('ai-assistant/mcp-orchestrator/', mcp_orchestrator_view, name='mcp_orchestrator'),
             path('ai-assistant/chat/', ai_chat_api, name='ai_chat_api'),
             path('ai-assistant/new/', new_conversation, name='new_conversation'),
             path('ai-assistant/delete/<int:conversation_id>/', delete_conversation, name='delete_conversation'),
+            path('ai-assistant/status/', ai_status, name='ai_status'),
+            path('ai-assistant/check-mcp/<str:server_name>/', check_mcp_server, name='check_mcp_server'),
         ]
         return urls
+
+# Custom admin integration - handled through URL inclusion in main urls.py
