@@ -1,0 +1,45 @@
+/* Piata.ro Design System Utilities */
+:root{--primary:#2563eb;--primary-hover:#1d4ed8;--accent:#f59e0b;--accent-hover:#d97706;--bg:#f7f8fb;--surface:#ffffff;--text:#0f172a;--muted:#64748b;--border:#e5e7eb;--success:#16a34a;--warning:#f59e0b;--danger:#ef4444;--info:#0ea5e9}
+html,body{background:var(--bg);color:var(--text)}
+.container{max-width:1200px;margin:0 auto;padding:0 1rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 6px 20px rgba(2,6,23,.06);transition:transform .15s ease,box-shadow .15s ease}
+.card:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(2,6,23,.08)}
+.rounded-xl{border-radius:14px}
+.shadow-soft{box-shadow:0 6px 20px rgba(2,6,23,.06)}
+.divider{height:1px;background:var(--border);margin:16px 0}
+.h1{font-size:2rem;font-weight:800;letter-spacing:-.02em;color:var(--text)}
+.h2{font-size:1.5rem;font-weight:700;color:var(--text)}
+.lead{font-size:1.125rem;color:#334155}
+.muted{color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.65rem 1rem;border-radius:12px;font-weight:600;border:1px solid transparent;transition:all .18s ease;cursor:pointer;text-decoration:none}
+.btn:focus{outline:none;box-shadow:0 0 0 3px rgba(37,99,235,.25)}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-hover)}
+.btn-ghost{background:#fff;color:#1f2937;border-color:var(--border)}
+.btn-ghost:hover{border-color:#cbd5e1}
+.btn-accent{background:var(--accent);color:#111827}
+.btn-accent:hover{background:var(--accent-hover)}
+.input{width:100%;padding:.65rem .85rem;border:1px solid var(--border);border-radius:12px;background:#fff;transition:border-color .15s ease,box-shadow .15s ease}
+.input:focus{outline:0;border-color:#93c5fd;box-shadow:0 0 0 4px rgba(59,130,246,.15)}
+.input-error{border-color:var(--danger)}
+.help{color:var(--muted);font-size:.875rem}
+.badge{display:inline-flex;align-items:center;padding:.25rem .5rem;font-weight:600;border-radius:9999px;font-size:.75rem}
+.badge-success{background:#ecfdf5;color:#065f46}
+.badge-warning{background:#fffbeb;color:#92400e}
+.badge-danger{background:#fef2f2;color:#991b1b}
+.alert{padding:.75rem 1rem;border-radius:12px;border:1px solid}
+.alert-info{background:#eff6ff;color:#1e3a8a;border-color:#bfdbfe}
+.alert-success{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}
+.alert-danger{background:#fef2f2;color:#991b1b;border-color:#fecaca}
+.nav{display:flex;align-items:center;gap:1rem}
+.nav-item{color:#334155;font-weight:600;padding:.5rem .75rem;border-radius:10px}
+.nav-item:hover{background:#e2e8f0;color:var(--text)}
+.hover-raise{transition:transform .15s ease,box-shadow .15s ease}
+.hover-raise:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(2,6,23,.12)}
+/* Chat bubbles for assistants */
+.msg{padding:.5rem .75rem;border-radius:14px;margin:.35rem 0;max-width:80%}
+.msg-user{background:#e0f2fe;margin-left:auto}
+.msg-assistant{background:#eef2ff;border-left:3px solid var(--primary)}
+/* Admin header links */
+#custom-admin-nav .button{background:var(--primary);color:#fff;border-radius:10px;padding:.4rem .75rem}
+#custom-admin-nav .button:hover{background:var(--primary-hover)}

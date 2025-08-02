@@ -10,7 +10,7 @@ SECRET_KEY = 'django-insecure-your-secret-key-here'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
 # Application definition
 INSTALLED_APPS = [
@@ -63,6 +63,10 @@ TEMPLATES = [
     },
 ]
 
+# In DEBUG, prefer console email if RESEND_API_KEY is missing
+if DEBUG and not os.getenv('RESEND_API_KEY'):
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 WSGI_APPLICATION = 'piata_ro.wsgi.application'
 
 # Database
@@ -98,6 +102,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -147,7 +153,7 @@ AUTHENTICATION_BACKENDS = [
 
 ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
-ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_EMAIL_VERIFICATION = 'optional'  # set to 'mandatory' when Resend is fully configured
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
 LOGIN_URL = 'marketplace:login'
 LOGIN_REDIRECT_URL = '/'
@@ -160,9 +166,6 @@ SOCIALACCOUNT_PROVIDERS = {
             'user',
             'user:email',
         ],
-        'APP': {
-            'client_id': os.environ.get('GITHUB_CLIENT_ID'),
-            'secret': os.environ.get('GITHUB_CLIENT_SECRET'),
-        }
+        # Credentials are managed in the database via SocialApp; no APP override here
     }
 }

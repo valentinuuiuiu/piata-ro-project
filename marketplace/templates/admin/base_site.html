@@ -298,4 +298,9 @@ ul.messagelist li.warning {
 </style>
 {% endblock %}
 
-{% block nav-global %}{% endblock %}
+{% block nav-global %}
+<div id="custom-admin-nav" style="position: absolute; right: 40px; top: 18px;">
+  <a href="/admin/assistant/" class="button" style="margin-right:8px;">💬 Assistant</a>
+  <a href="/admin/ai-assistant/" class="button">🤖 AI Assistant</a>
+</div>
+{% endblock %}
