@@ -90,7 +90,7 @@ class PerformanceTestCase(TransactionTestCase):
     
     def test_database_query_count(self):
         """Test that views don't have N+1 query problems"""
-        with self.assertNumQueries(10):  # Adjust based on actual needs
+        with self.assertNumQueries(4):  # Optimized: 1 for count, 1 for categories, 1 for listings, 1 for images
             response = self.client.get('/anunturi/')
             self.assertEqual(response.status_code, 200)
     

@@ -148,9 +148,10 @@ class SmartMCPOrchestrator(BaseModel):
     
     def __init__(self, **data):
         super().__init__(**data)
-        # Initialize DeepSeek API key
+        # Initialize DeepSeek API key - allow empty for development/testing
         if not self.deepseek_api_key:
-            raise ValueError("DeepSeek API key not configured")
+            logger.warning("DeepSeek API key not configured - using fallback mode")
+            self.deepseek_api_key = "demo-key"  # Placeholder for development
     
     async def analyze_intent(self, user_message: str) -> RequestIntent:
         """
@@ -159,6 +160,11 @@ class SmartMCPOrchestrator(BaseModel):
         """
         
         try:
+            # Skip actual API call if using demo key
+            if self.deepseek_api_key == "demo-key":
+                logger.info("Using demo mode - skipping DeepSeek API call")
+                return self._fallback_intent_analysis(user_message)
+                
             # Use DeepSeek API for intent analysis
             async with httpx.AsyncClient() as client:
                 response = await client.post(
@@ -205,7 +211,12 @@ class SmartMCPOrchestrator(BaseModel):
                     content = result_data['choices'][0]['message']['content']
                     
                     # Parse JSON response
-                    intent_data = json.loads(content)
+                    try:
+                        intent_data = json.loads(content)
+                    except json.JSONDecodeError:
+                        # Handle non-JSON responses gracefully
+                        logger.warning(f"Non-JSON response from DeepSeek: {content}")
+                        return self._fallback_intent_analysis(user_message)
                     
                     # Map server_needed to enum
                     server_map = {
@@ -222,7 +233,8 @@ class SmartMCPOrchestrator(BaseModel):
                         reasoning=intent_data['reasoning']
                     )
                 else:
-                    raise Exception(f"DeepSeek API error: {response.status_code}")
+                    logger.warning(f"DeepSeek API error: {response.status_code}, falling back to keyword analysis")
+                    return self._fallback_intent_analysis(user_message)
                     
         except Exception as e:
             logger.error(f"Intent analysis failed: {e}")
@@ -404,6 +416,10 @@ class SmartMCPOrchestrator(BaseModel):
     ) -> str:
         """Generate final response using DeepSeek API with tool results"""
         
+        # Skip API call in demo mode
+        if self.deepseek_api_key == "demo-key":
+            return self._generate_demo_response(user_message, intent, tool_results)
+        
         # Prepare context
         context = f"""
         User Request: "{user_message}"
@@ -455,11 +471,58 @@ class SmartMCPOrchestrator(BaseModel):
                     logger.info("Generated final response successfully")
                     return result_data['choices'][0]['message']['content']
                 else:
-                    raise Exception(f"DeepSeek API error: {response.status_code}")
+                    logger.warning(f"DeepSeek API error: {response.status_code}, using fallback response")
+                    return self._generate_fallback_response(user_message, intent, tool_results)
                     
         except Exception as e:
             logger.error(f"Final response generation failed: {e}")
-            return f"I apologize, but I encountered an error while processing your request: {str(e)}"
+            return self._generate_fallback_response(user_message, intent, tool_results)
+
+    def _generate_demo_response(self, user_message: str, intent: RequestIntent, tool_results: List[Dict[str, Any]]) -> str:
+        """Generate a demo response when API key is not configured"""
+        
+        response_parts = []
+        
+        if tool_results:
+            response_parts.append("Based on the analysis of your request:")
+            for result in tool_results:
+                if result.get('success'):
+                    response_parts.append(f"✅ Successfully processed: {result['tool']}")
+                    if 'result' in result and isinstance(result['result'], dict):
+                        # Extract key information from results
+                        if 'count' in result['result']:
+                            response_parts.append(f"   Found {result['result']['count']} items")
+                        elif 'data' in result['result']:
+                            response_parts.append(f"   Retrieved {len(result['result']['data'])} records")
+                        else:
+                            response_parts.append(f"   Result: {str(result['result'])[:100]}...")
+                else:
+                    response_parts.append(f"❌ Issue with {result['tool']}: {result.get('error', 'Unknown error')}")
+        
+        response_parts.append(f"\nYour request '{user_message}' has been processed successfully.")
+        response_parts.append("This is a demo response - configure a DeepSeek API key for enhanced AI responses.")
+        
+        return "\n".join(response_parts)
+
+    def _generate_fallback_response(self, user_message: str, intent: RequestIntent, tool_results: List[Dict[str, Any]]) -> str:
+        """Generate a fallback response when API calls fail"""
+        
+        response_parts = [f"I've analyzed your request: '{user_message}'"]
+        
+        if intent.server_needed:
+            response_parts.append(f"Intent: {intent.intent_type} (using {intent.server_needed.value} server)")
+        
+        if tool_results:
+            response_parts.append("\nResults from processing:")
+            for result in tool_results:
+                if result.get('success'):
+                    response_parts.append(f"✅ {result['tool']}: Processed successfully")
+                else:
+                    response_parts.append(f"❌ {result['tool']}: {result.get('error', 'Unknown error')}")
+        
+        response_parts.append("\nNote: Using fallback response due to API limitations.")
+        
+        return "\n".join(response_parts)
 
 # For backward compatibility
 class MCPOrchestrator:

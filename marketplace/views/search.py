@@ -3,7 +3,7 @@
 from django.shortcuts import render
 from django.db.models import Q
 from django.core.paginator import Paginator
-from ..models import Listing
+from ..models import Listing, Category
 
 def search(request):
     """Unified search view"""
@@ -29,8 +29,9 @@ def search(request):
         )
     
     paginator = Paginator(results.select_related('category'), 20)
-    return render(request, 'marketplace/search_results.html', {
+    return render(request, 'marketplace/search.html', {
         'results': paginator.get_page(request.GET.get('page')),
-        'query': query
+        'query': query,
+        'categories': Category.objects.all()
     })
 

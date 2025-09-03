@@ -18,9 +18,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import TemplateView
 from django.contrib.auth import views as auth_views
-from django.conf import settings
-from django.conf.urls.static import static
 from django.http import HttpResponse
 from django.views.generic import RedirectView
 import os
@@ -65,7 +64,5 @@ urlpatterns = [
 
 # Add media and static serving in development
 if settings.DEBUG:
-    print(f"DEBUG: Adding static files serving for {settings.STATIC_URL} from {settings.STATIC_ROOT}")
-    print(f"DEBUG: Static root exists: {os.path.exists(settings.STATIC_ROOT)}")
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

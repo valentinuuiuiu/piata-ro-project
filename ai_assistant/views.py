@@ -7,8 +7,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.contrib import admin
 from django.urls import path
+from django.views.decorators.http import require_http_methods
+from django.core.exceptions import ValidationError
 from .models import Conversation, Message
-from .mcp_orchestrator import MCPOrchestrator
+from .smart_mcp_orchestrator import MCPOrchestrator
+from .validators import InputValidator
 from marketplace.services.chat_service import marketplace_chat_service
 
 @staff_member_required
@@ -54,6 +57,16 @@ def ai_chat_api(request):
         message = data.get('message', '').strip()
         conversation_id = data.get('conversation_id')
         
+        # Validate input
+        validation_result = InputValidator.validate_message(message)
+        if not validation_result['valid']:
+            return JsonResponse({
+                'error': 'Invalid input', 
+                'details': validation_result['errors']
+            }, status=400)
+        
+        message = validation_result['sanitized']
+        
         if not message:
             return JsonResponse({'error': 'Message is required'}, status=400)
         
@@ -76,15 +89,17 @@ def ai_chat_api(request):
         user_message = Message.objects.create(
             conversation=conversation,
             role='user',
-            content=message
+            content=message,
+            text=message,
+            is_user=True
         )
         
         # Get conversation history
         history = []
         for msg in Message.objects.filter(conversation=conversation, timestamp__lt=user_message.timestamp):
             history.append({
-                'role': 'user' if msg.is_user else 'assistant',
-                'content': msg.text,
+                'role': msg.role or ('user' if msg.is_user else 'assistant'),
+                'content': msg.content or msg.text,
             })
         
         # Process with MCP Orchestrator
@@ -105,6 +120,8 @@ def ai_chat_api(request):
             conversation=conversation,
             role='assistant',
             content=result['response'],
+            text=result['response'],
+            is_user=False,
             mcp_tools_used=result.get('tools_used', [])
         )
         
