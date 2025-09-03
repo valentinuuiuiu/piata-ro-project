@@ -1,7 +1,3 @@
-from dotenv import load_dotenv
-load_dotenv()
-from dotenv import load_dotenv
-load_dotenv()
 """
 Django settings for piata_ro project.
 
@@ -49,34 +45,53 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0,piata.ro
 # Security Settings for Production
 if not DEBUG:
     # HTTPS/SSL Configuration
-    SECURE_SSL_REDIRECT = False
+    SECURE_SSL_REDIRECT = True
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     
     # Cookie Security
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_AGE = 1209600  # 2 weeks
     SESSION_SAVE_EVERY_REQUEST = True
+    SESSION_COOKIE_HTTPONLY = True
+    CSRF_COOKIE_HTTPONLY = True
     
     # Headers
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
+    SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
     
     # Content Security Policy
     CSP_DEFAULT_SRC = ("'self'",)
-    CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'")
+    CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'")
     CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
-    CSP_IMG_SRC = ("'self'", "data:")
+    CSP_IMG_SRC = ("'self'", "data:", "https:")
+    CSP_CONNECT_SRC = ("'self'", "https://api.stripe.com", "https://hooks.stripe.com")
+    CSP_FONT_SRC = ("'self'", "data:", "https:")
+    CSP_OBJECT_SRC = ("'none'",)
     
     # Rate Limiting
     RATELIMIT_ENABLE = True
     RATELIMIT_VIEW = 'piata_ro.views.rate_limit_exceeded'
+    RATELIMIT_USE_CACHE = 'default'
     
     # Admin Hardening
     ADMIN_URL = os.getenv('ADMIN_URL', 'admin/')  # Change default admin URL
+    
+    # Security middleware
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    
+    # Prevent clickjacking
+    X_FRAME_OPTIONS = 'DENY'
+    
+    # SSL Redirect
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # PraisonAI Configuration
 PRAISONAI_CONFIG = {
@@ -98,10 +113,14 @@ OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
 
 # LangSmith Configuration
-LANGCHAIN_TRACING_V2 = True
-LANGCHAIN_ENDPOINT = "https://api.smith.langchain.com"
-LANGCHAIN_API_KEY = "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"
-LANGCHAIN_PROJECT = "piata-ro-mcp-orchestrator"
+LANGCHAIN_TRACING_V2 = os.getenv('LANGCHAIN_TRACING_V2', 'False').lower() == 'true'
+LANGCHAIN_ENDPOINT = os.getenv('LANGCHAIN_ENDPOINT', 'https://api.smith.langchain.com')
+LANGCHAIN_API_KEY = os.getenv('LANGCHAIN_API_KEY')
+LANGCHAIN_PROJECT = os.getenv('LANGCHAIN_PROJECT', 'piata-ro-mcp-orchestrator')
+
+# Security: Validate API keys are set in production
+if not DEBUG and not LANGCHAIN_API_KEY:
+    raise ValueError("LANGCHAIN_API_KEY must be set in production")
 
 # Django AllAuth Configuration
 ACCOUNT_LOGIN_METHODS = {'email'}
@@ -111,6 +130,180 @@ ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_LOGOUT_ON_GET = True
 ACCOUNT_RATE_LIMITS = {
     'login_failed': '5/5m',
+}
+
+# Enhanced Logging Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+        'json': {
+            'format': '{ "timestamp": "%(asctime)s", "level": "%(levelname)s", "logger": "%(name)s", "message": "%(message)s", "trace_id": "%(trace_id)s", "user_id": "%(user_id)s", "ip": "%(ip)s" }',
+            'style': '{',
+        },
+        'production': {
+            'format': '[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s [%(user)s] [%(ip)s]',
+            'style': '[',
+        },
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+        'require_exception_true': {
+            '()': 'django.utils.log.RequireException',
+        },
+        'request_id': {
+            '()': 'correlation_id.CorrelationIDFilter',
+        },
+        'user_ip': {
+            '()': 'utils.logging.UserIPFilter',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': '/app/logs/django.log',
+            'maxBytes': 10485760,  # 10MB
+            'backupCount': 5,
+            'formatter': 'production',
+        },
+        'file_debug': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': '/app/logs/django_debug.log',
+            'maxBytes': 10485760,  # 10MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+        'file_error': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': '/app/logs/django_error.log',
+            'maxBytes': 10485760,  # 10MB
+            'backupCount': 10,
+            'formatter': 'production',
+        },
+        'production_json': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': '/app/logs/django_production.log',
+            'maxBytes': 10485760,  # 10MB
+            'backupCount': 10,
+            'formatter': 'json',
+        },
+        'sentry': {
+            'level': 'ERROR',
+            'class': 'raven.handlers.logging.SentryHandler',
+            'dsn': os.getenv('SENTRY_DSN'),
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file', 'production_json'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['file_error', 'sentry'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['file_error', 'sentry'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['file_debug'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'marketplace': {
+            'handlers': ['console', 'file', 'production_json'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'api': {
+            'handlers': ['console', 'file', 'production_json'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'ai_assistant': {
+            'handlers': ['console', 'file', 'production_json'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'celery': {
+            'handlers': ['console', 'file', 'production_json'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
+# Sentry Configuration
+if os.getenv('SENTRY_DSN'):
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+    from sentry_sdk.integrations.celery import CeleryIntegration
+    
+    sentry_sdk.init(
+        dsn=os.getenv('SENTRY_DSN'),
+        integrations=[
+            DjangoIntegration(),
+            CeleryIntegration(),
+        ],
+        traces_sample_rate=0.2,
+        profiles_sample_rate=0.5,
+        send_default_pii=True,
+        environment=os.getenv('ENVIRONMENT', 'development'),
+    )
+
+# Correlation ID middleware for request tracing
+MIDDLEWARE.insert(0, 'correlation_id.middleware.CorrelationIDMiddleware')
+
+# Custom logging settings
+LOGGING_CONFIG = 'logging.config.dictConfig'
+
+# Database query logging
+LOGGING_CONFIG = 'logging.config.dictConfig'
+DATABASES['default']['OPTIONS'] = {
+    'connect_timeout': 10,
+    'command_timeout': 30,
+}
+
+# Slow query logging
+DATABASES['default']['OPTIONS']['SLOW_QUERY_THRESHOLD'] = 0.5
+
+# Application monitoring
+MONITORING_ENABLED = os.getenv('MONITORING_ENABLED', 'True').lower() == 'true'
+MONITORING_EXPORTER_PORT = int(os.getenv('MONITORING_EXPORTER_PORT', 8001))
+
+# Health check settings
+HEALTH_CHECK_SETTINGS = {
+    'django_db': True,
+    'redis': True,
+    'celery': True,
+    'storage': True,
+    'external_apis': True,
 }
 
 # Application definition
@@ -147,6 +340,10 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # AllAuth middleware
     'allauth.account.middleware.AccountMiddleware',
+    # Rate limiting middleware
+    'django_ratelimit.middleware.RatelimitMiddleware',
+    # Security headers middleware
+    'django.middleware.security.SecurityMiddleware',
 ]
 
 # Site ID for django.contrib.sites
