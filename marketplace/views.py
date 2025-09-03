@@ -410,7 +410,9 @@ def category_detail_view(request, category_slug):
 
 def listings_view(request):
     """All listings page with filtering."""
-    listings = Listing.objects.filter(status="active").order_by("-created_at")
+    listings = Listing.objects.filter(status="active").select_related('user', 'category').prefetch_related(
+        models.Prefetch('images', queryset=ListingImage.objects.order_by('-is_main', 'order', 'id'))
+    ).order_by("-created_at")
     categories = Category.objects.all()
     
     # Apply filters

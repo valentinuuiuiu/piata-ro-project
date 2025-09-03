@@ -142,7 +142,20 @@ class CategoryCache:
     @staticmethod
     def invalidate_categories():
         """Clear category cache"""
-        cache.delete_pattern(f"{CACHE_PREFIX_CATEGORY}*")
+        try:
+            if hasattr(cache, 'delete_pattern'):
+                cache.delete_pattern(f"{CACHE_PREFIX_CATEGORY}*")
+            elif hasattr(cache, 'keys'):
+                # Fallback for caches with keys method
+                keys = [key for key in cache.keys(f"{CACHE_PREFIX_CATEGORY}*") if key is not None]
+                for key in keys:
+                    cache.delete(key)
+            else:
+                # For LocMemCache and similar, we can't easily invalidate by pattern
+                # This is expected behavior for development/testing
+                logger.debug("Cache backend doesn't support pattern deletion, skipping category cache invalidation")
+        except Exception as e:
+            logger.warning(f"Failed to invalidate category cache: {e}")
 
 
 class SearchCache:
@@ -220,7 +233,19 @@ class UserCache:
     @staticmethod
     def invalidate_user_cache(user_id: int):
         """Clear all cache for a specific user"""
-        cache.delete_pattern(f"{CACHE_PREFIX_USER}:*:{user_id}*")
+        try:
+            if hasattr(cache, 'delete_pattern'):
+                cache.delete_pattern(f"{CACHE_PREFIX_USER}:*:{user_id}*")
+            elif hasattr(cache, 'keys'):
+                # Fallback for caches with keys method
+                keys = [key for key in cache.keys(f"{CACHE_PREFIX_USER}:*:{user_id}*") if key is not None]
+                for key in keys:
+                    cache.delete(key)
+            else:
+                # For LocMemCache and similar, we can't easily invalidate by pattern
+                logger.debug("Cache backend doesn't support pattern deletion, skipping user cache invalidation")
+        except Exception as e:
+            logger.warning(f"Failed to invalidate user cache for user {user_id}: {e}")
 
 
 # Cache warming utilities
@@ -246,7 +271,19 @@ def invalidate_listing_cache(listing):
     """Invalidate all caches related to a listing"""
     ListingCache.delete_listing(listing.id)
     # Also invalidate search cache as results might have changed
-    cache.delete_pattern(f"{CACHE_PREFIX_SEARCH}*")
+    try:
+        if hasattr(cache, 'delete_pattern'):
+            cache.delete_pattern(f"{CACHE_PREFIX_SEARCH}*")
+        elif hasattr(cache, 'keys'):
+            # Fallback for caches with keys method
+            keys = [key for key in cache.keys(f"{CACHE_PREFIX_SEARCH}*") if key is not None]
+            for key in keys:
+                cache.delete(key)
+        else:
+            # For LocMemCache and similar, we can't easily invalidate by pattern
+            logger.debug("Cache backend doesn't support pattern deletion, skipping search cache invalidation")
+    except Exception as e:
+        logger.warning(f"Failed to invalidate search cache: {e}")
 
 
 def invalidate_user_cache(user):

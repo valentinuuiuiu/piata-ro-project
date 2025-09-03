@@ -131,6 +131,16 @@ class Listing(models.Model):
     @property
     def main_image(self):
         """Get the main image or first image if none marked as main"""
+        # Use prefetched images if available to avoid N+1 queries
+        if hasattr(self, '_prefetched_objects_cache') and 'images' in self._prefetched_objects_cache:
+            images = list(self.images.all())
+            if images:
+                # Find main image or first image
+                main_images = [img for img in images if img.is_main]
+                return main_images[0] if main_images else images[0]
+            return None
+        
+        # Fallback to database query if not prefetched
         return self.images.filter(is_main=True).first() or self.images.first()
 
     def add_image(self, image_file, is_main=False):

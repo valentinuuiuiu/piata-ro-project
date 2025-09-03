@@ -41,6 +41,7 @@ urlpatterns = [
     path('categorii/', views.category_list, name='categories'),
     path('categorii/<slug:category_slug>/', views.category_detail, name='category_detail'),
     path('anunturi/', views.listing_list, name='listings'),
+    path('cautare/', views.search, name='search'),
     path('anunt/<slug:slug>/', views.listing_detail, name='listing_detail'),
     path('adauga-anunt/', views.add_listing_view, name='add_listing'),
     path('profil/', views.profile_view, name='profile'),

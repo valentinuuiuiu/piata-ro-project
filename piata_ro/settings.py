@@ -26,10 +26,7 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 # Production Security Configuration
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true' and os.getenv('ENVIRONMENT') == 'development'
 
-from dotenv import load_dotenv
-import os
 
-load_dotenv()
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 if not SECRET_KEY:
@@ -145,13 +142,9 @@ LOGGING = {
             'format': '{levelname} {message}',
             'style': '{',
         },
-        'json': {
-            'format': '{ "timestamp": "%(asctime)s", "level": "%(levelname)s", "logger": "%(name)s", "message": "%(message)s", "trace_id": "%(trace_id)s", "user_id": "%(user_id)s", "ip": "%(ip)s" }',
-            'style': '{',
-        },
         'production': {
-            'format': '[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s [%(user)s] [%(ip)s]',
-            'style': '[',
+            'format': '[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s',
+            'style': '%',
         },
     },
     'filters': {
@@ -160,15 +153,6 @@ LOGGING = {
         },
         'require_debug_true': {
             '()': 'django.utils.log.RequireDebugTrue',
-        },
-        'require_exception_true': {
-            '()': 'django.utils.log.RequireException',
-        },
-        'request_id': {
-            '()': 'correlation_id.CorrelationIDFilter',
-        },
-        'user_ip': {
-            '()': 'utils.logging.UserIPFilter',
         },
     },
     'handlers': {
@@ -180,7 +164,7 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': '/app/logs/django.log',
+            'filename': BASE_DIR / 'logs' / 'django.log',
             'maxBytes': 10485760,  # 10MB
             'backupCount': 5,
             'formatter': 'production',
@@ -188,7 +172,7 @@ LOGGING = {
         'file_debug': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': '/app/logs/django_debug.log',
+            'filename': BASE_DIR / 'logs' / 'django_debug.log',
             'maxBytes': 10485760,  # 10MB
             'backupCount': 5,
             'formatter': 'verbose',
@@ -196,38 +180,34 @@ LOGGING = {
         'file_error': {
             'level': 'ERROR',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': '/app/logs/django_error.log',
+            'filename': BASE_DIR / 'logs' / 'django_error.log',
             'maxBytes': 10485760,  # 10MB
             'backupCount': 10,
             'formatter': 'production',
         },
-        'production_json': {
+        'production_file': {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': '/app/logs/django_production.log',
+            'filename': BASE_DIR / 'logs' / 'django_production.log',
             'maxBytes': 10485760,  # 10MB
             'backupCount': 10,
-            'formatter': 'json',
+            'formatter': 'production',
         },
-        'sentry': {
-            'level': 'ERROR',
-            'class': 'raven.handlers.logging.SentryHandler',
-            'dsn': os.getenv('SENTRY_DSN'),
-        },
+        
     },
     'loggers': {
         'django': {
-            'handlers': ['console', 'file', 'production_json'],
+            'handlers': ['console', 'file', 'production_file'],
             'level': 'INFO',
             'propagate': False,
         },
         'django.request': {
-            'handlers': ['file_error', 'sentry'],
+            'handlers': ['file_error'],
             'level': 'ERROR',
             'propagate': False,
         },
         'django.security': {
-            'handlers': ['file_error', 'sentry'],
+            'handlers': ['file_error'],
             'level': 'ERROR',
             'propagate': False,
         },
@@ -237,22 +217,22 @@ LOGGING = {
             'propagate': False,
         },
         'marketplace': {
-            'handlers': ['console', 'file', 'production_json'],
+            'handlers': ['console', 'file', 'production_file'],
             'level': 'INFO',
             'propagate': False,
         },
         'api': {
-            'handlers': ['console', 'file', 'production_json'],
+            'handlers': ['console', 'file', 'production_file'],
             'level': 'INFO',
             'propagate': False,
         },
         'ai_assistant': {
-            'handlers': ['console', 'file', 'production_json'],
+            'handlers': ['console', 'file', 'production_file'],
             'level': 'INFO',
             'propagate': False,
         },
         'celery': {
-            'handlers': ['console', 'file', 'production_json'],
+            'handlers': ['console', 'file', 'production_file'],
             'level': 'INFO',
             'propagate': False,
         },
@@ -277,21 +257,12 @@ if os.getenv('SENTRY_DSN'):
         environment=os.getenv('ENVIRONMENT', 'development'),
     )
 
-# Correlation ID middleware for request tracing
-MIDDLEWARE.insert(0, 'correlation_id.middleware.CorrelationIDMiddleware')
+# Correlation ID middleware for request tracing - will be added after MIDDLEWARE is defined
 
 # Custom logging settings
 LOGGING_CONFIG = 'logging.config.dictConfig'
 
-# Database query logging
-LOGGING_CONFIG = 'logging.config.dictConfig'
-DATABASES['default']['OPTIONS'] = {
-    'connect_timeout': 10,
-    'command_timeout': 30,
-}
-
-# Slow query logging
-DATABASES['default']['OPTIONS']['SLOW_QUERY_THRESHOLD'] = 0.5
+# Database query logging - will be configured after DATABASES is defined
 
 # Application monitoring
 MONITORING_ENABLED = os.getenv('MONITORING_ENABLED', 'True').lower() == 'true'
@@ -342,8 +313,6 @@ MIDDLEWARE = [
     'allauth.account.middleware.AccountMiddleware',
     # Rate limiting middleware
     'django_ratelimit.middleware.RatelimitMiddleware',
-    # Security headers middleware
-    'django.middleware.security.SecurityMiddleware',
 ]
 
 # Site ID for django.contrib.sites
@@ -387,6 +356,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'timeout': 30,
+        }
     }
 }
 
