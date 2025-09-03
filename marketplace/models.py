@@ -120,6 +120,9 @@ class Listing(models.Model):
             models.Index(fields=["price", "status"]),
             models.Index(fields=["city", "status"]),
             models.Index(fields=["latitude", "longitude"]),  # For geospatial queries
+            models.Index(fields=["expires_at"]),  # For expiration jobs
+            models.Index(fields=["location_verified"]),  # For verified listings
+            models.Index(fields=["is_premium", "created_at"]),  # For premium listings
         ]
 
     def __str__(self):

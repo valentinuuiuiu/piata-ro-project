@@ -2,6 +2,9 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render
 from django.http import HttpResponse
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_headers
+from django_ratelimit.decorators import ratelimit
 import os
 import json
 import asyncio
@@ -12,7 +15,7 @@ import requests
 import time
 from pathlib import Path
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 # Import Django models for direct database access
@@ -607,3 +610,28 @@ def openai_chat_completions(request):
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON"}, status=400)
     return JsonResponse({"error": "Method not allowed"}, status=405)
+
+
+@ratelimit(key='ip', rate='100/h', block=True)
+def rate_limit_exceeded(request):
+    """
+    View for handling rate limit exceeded requests
+    """
+    return JsonResponse({
+        'error': 'Rate limit exceeded',
+        'message': 'You have made too many requests. Please try again later.',
+        'retry_after': 3600  # 1 hour
+    }, status=429)
+
+
+@cache_page(60 * 5)  # Cache for 5 minutes
+@vary_on_headers('User-Agent')
+def health_check(request):
+    """
+    Health check endpoint for monitoring
+    """
+    return JsonResponse({
+        'status': 'healthy',
+        'timestamp': timezone.now().isoformat(),
+        'version': '1.0.0'
+    })

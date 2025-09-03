@@ -4,6 +4,7 @@ from django.shortcuts import render
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 from django.contrib.auth.forms import UserCreationForm
 from django.views.decorators.cache import cache_page
 from .utils.cache_utils import ListingCache, SearchCache
@@ -41,6 +42,7 @@ CategorySerializer,
 )
 from .forms import ListingForm, CustomUserCreationForm, UserProfileForm, UserUpdateForm, PromoteListingForm
 
+
 # Configure logger
 logger = logging.getLogger(__name__)
 
@@ -64,6 +66,25 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
         elif hasattr(obj, "sender"):
             return obj.sender == request.user
         return False
+
+
+class StandardResultsSetPagination(PageNumberPagination):
+    """
+    Custom pagination class for API responses
+    """
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+    def get_paginated_response(self, data):
+        return Response({
+            'count': self.page.paginator.count,
+            'next': self.get_next_link(),
+            'previous': self.get_previous_link(),
+            'results': data,
+            'page_size': self.page_size,
+            'total_pages': self.page.paginator.num_pages,
+        })
 
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -95,9 +116,13 @@ class ListingViewSet(viewsets.ModelViewSet):
     search_fields = ["title", "description", "location"]
     ordering_fields = ["created_at", "price", "views"]
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         queryset = Listing.objects.all()
+
+        # Use select_related and prefetch_related to optimize queries
+        queryset = queryset.select_related('category', 'subcategory', 'user').prefetch_related('images')
 
         # Filter by status (default to active)
         status = self.request.query_params.get("status", "active")
@@ -124,24 +149,44 @@ class ListingViewSet(viewsets.ModelViewSet):
         if location:
             queryset = queryset.filter(location__icontains=location)
 
-# Attempt to use cached search results
+        # Filter by city
+        city = self.request.query_params.get("city")
+        if city:
+            queryset = queryset.filter(city__icontains=city)
+
+        # Filter by coordinates (for nearby listings)
+        lat = self.request.query_params.get("latitude")
+        lon = self.request.query_params.get("longitude")
+        if lat and lon:
+            # Use efficient range query for geospatial search
+            lat_range = float(lat) - 0.5  # Rough approximation
+            lon_range = float(lon) - 0.5
+            queryset = queryset.filter(
+                latitude__range=(lat_range, float(lat) + 0.5),
+                longitude__range=(lon_range, float(lon) + 0.5)
+            )
+
+        # Attempt to use cached search results
         filters = {
             "category_id": category_id,
             "min_price": min_price,
             "max_price": max_price,
             "location": location,
+            "city": city,
+            "latitude": lat,
+            "longitude": lon,
         }
         cached_results = SearchCache.get_search_results(status, filters)
         if cached_results:
             return cached_results
 
-        # No cache, proceed with query
-        result_queryset = list(queryset)
+        # No cache, proceed with optimized query
+        queryset = queryset.order_by('-is_featured', '-created_at')
 
         # Cache the result
-        SearchCache.set_search_results(status, filters, result_queryset)
+        SearchCache.set_search_results(status, filters, list(queryset))
 
-        return result_queryset
+        return queryset
 
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:

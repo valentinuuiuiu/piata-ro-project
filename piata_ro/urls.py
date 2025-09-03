@@ -27,7 +27,8 @@ import os
 
 from piata_ro.views import (
     process_mcp_query, test_endpoint, home, interact_with_mcp_agents, 
-    natural_language_query, openai_models_endpoint, openai_chat_completions
+    natural_language_query, openai_models_endpoint, openai_chat_completions,
+    rate_limit_exceeded, health_check
 )
 from marketplace.admin import admin_site
 
@@ -53,6 +54,13 @@ urlpatterns = [
     path('mcp/agents/', interact_with_mcp_agents, name='mcp_agents'),
     path('test_endpoint/', test_endpoint, name='test_endpoint'),
     path('legacy/', home, name='legacy_home'),  # Keep old home as legacy
+    
+    # Health checks and monitoring
+    path('health/', health_check, name='health_check'),
+    path('api/health/', health_check, name='api_health_check'),
+    path('rate-limit/', rate_limit_exceeded, name='rate_limit_exceeded'),
+    path('metrics/', include('django_prometheus.urls')),
+    path('status/', TemplateView.as_view(template_name='status.json', content_type='application/json'), name='status'),
 ]
 
 # Add media and static serving in development
