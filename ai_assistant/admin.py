@@ -6,6 +6,7 @@ from .models import (
     Message,
     AdminQueryLog
 )
+from .views import AIAssistantAdmin
 
 class MCPServerConfigAdmin(admin.ModelAdmin):
     list_display = ('name', 'url', 'description')
@@ -16,8 +17,24 @@ class ChatSessionLogAdmin(admin.ModelAdmin):
     fields = ['user', 'started_at', 'ended_at', 'status']
     readonly_fields = ('started_at',)
 
+class ConversationAdmin(admin.ModelAdmin):
+    list_display = ('user', 'created_at', 'updated_at', 'id')
+    list_filter = ('created_at', 'updated_at')
+    search_fields = ('user__username',)
+    ordering = ('-created_at',)
+
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ('conversation', 'is_user', 'timestamp')
+    list_filter = ('is_user', 'timestamp')
+    search_fields = ('text',)
+    ordering = ('-timestamp',)
+
+# Register model admins
 admin.site.register(MCPServerConfig, MCPServerConfigAdmin)
 admin.site.register(ChatSessionLog, ChatSessionLogAdmin)
-admin.site.register(Conversation)
-admin.site.register(Message)
+admin.site.register(Conversation, ConversationAdmin)
+admin.site.register(Message, MessageAdmin)
 admin.site.register(AdminQueryLog)
+
+# Register the AI Assistant admin interface
+admin.site.register([], AIAssistantAdmin)

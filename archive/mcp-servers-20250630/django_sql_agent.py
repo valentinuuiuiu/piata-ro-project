@@ -14,9 +14,11 @@ from pathlib import Path
 import django
 from django.conf import settings
 
-# Add project root to Python path
+# Add project root to Python path (robustly determine repo root)
 import sys
-sys.path.insert(0, '/workspace/piata-ro-project')
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
 
 # Setup Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'piata_ro.settings')
@@ -42,10 +44,13 @@ from fastmcp import FastMCP
 from pydantic import BaseModel
 
 # Initialize FastMCP server for Django SQL operations
+# For FastMCP >=2.x, use built-in health route instead of register_handler
 mcp = FastMCP("Django SQL Agent - Piata.ro Database Manager")
 
-# Register MCP health check handler (after mcp initialization)
-mcp.register_handler("health_check", handle_health_check)
+# Expose health_check as an MCP tool using FastMCP's decorator API
+@mcp.tool()
+def health_check_tool() -> Dict[str, Any]:
+    return handle_health_check({})
 
 # Pydantic models for data validation
 class UserCreateData(BaseModel):
@@ -78,6 +83,15 @@ class ListingSearchQuery(BaseModel):
     max_price: Optional[float] = None
     user_id: Optional[int] = None
     is_featured: Optional[bool] = None
+
+class FindCategoryQuery(BaseModel):
+    query: str
+
+class DeleteUserQuery(BaseModel):
+    user_id: int
+
+class DeleteListingQuery(BaseModel):
+    listing_id: int
 
 # Database connection helper
 def get_db_connection():
@@ -562,10 +576,110 @@ def get_marketplace_context() -> Dict[str, Any]:
             "marketplace_context": {}
         }
 
+@mcp.tool()
+def find_category(query: FindCategoryQuery) -> Dict[str, Any]:
+    """
+    Find the most relevant category for a given query.
+    
+    Args:
+        query: The user's query to find a category for.
+        
+    Returns:
+        Dictionary with the most relevant category's name and slug.
+    """
+    try:
+        from sentence_transformers import SentenceTransformer
+        from marketplace.models import Category
+        from pgvector.django.functions import L2Distance
+
+        model = SentenceTransformer('all-MiniLM-L6-v2')
+        query_embedding = model.encode(query.query)
+
+        category = Category.objects.order_by(L2Distance("embedding", query_embedding)).first()
+
+        if category:
+            return {
+                "success": True,
+                "category": {
+                    "name": category.name,
+                    "slug": category.slug,
+                }
+            }
+        else:
+            return {
+                "success": False,
+                "error": "No categories found.",
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to find category: {str(e)}",
+        }
+
+@mcp.tool()
+def delete_user(query: DeleteUserQuery) -> Dict[str, Any]:
+    """
+    Delete a user from the database. THIS IS A DESTRUCTIVE OPERATION AND CANNOT BE UNDONE.
+    
+    Args:
+        query: The user ID to delete.
+        
+    Returns:
+        Dictionary with the status of the deletion.
+    """
+    try:
+        user = User.objects.get(id=query.user_id)
+        user.delete()
+        return {
+            "success": True,
+            "message": f"User with ID {query.user_id} has been deleted.",
+        }
+    except User.DoesNotExist:
+        return {
+            "success": False,
+            "error": f"User with ID {query.user_id} not found.",
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to delete user: {str(e)}",
+        }
+
+@mcp.tool()
+def delete_listing(query: DeleteListingQuery) -> Dict[str, Any]:
+    """
+    Delete a listing from the database. THIS IS A DESTRUCTIVE OPERATION AND CANNOT BE UNDONE.
+    
+    Args:
+        query: The listing ID to delete.
+        
+    Returns:
+        Dictionary with the status of the deletion.
+    """
+    try:
+        from marketplace.models import Listing
+        listing = Listing.objects.get(id=query.listing_id)
+        listing.delete()
+        return {
+            "success": True,
+            "message": f"Listing with ID {query.listing_id} has been deleted.",
+        }
+    except Listing.DoesNotExist:
+        return {
+            "success": False,
+            "error": f"Listing with ID {query.listing_id} not found.",
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to delete listing: {str(e)}",
+        }
+
 # Run the MCP server
 if __name__ == "__main__":
     print("🚀 Starting Django SQL Agent MCP Server...")
     print("Available tools:")
+    print("  - health_check: Basic health check")
     print("  - create_user: Create new users")
     print("  - get_user_info: Retrieve user information")
     print("  - authenticate_user: Authenticate users")
@@ -574,4 +688,5 @@ if __name__ == "__main__":
     print("  - get_database_stats: Get database statistics")
     print("  - execute_custom_query: Execute custom SELECT queries")
     print("\n🎯 Django SQL Agent ready for Piata.ro database operations!")
+    # FastMCP 2.x runs a server compatible with MCP; no register_handler is needed
     mcp.run()

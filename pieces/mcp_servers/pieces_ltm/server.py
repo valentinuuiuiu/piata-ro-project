@@ -1,296 +1,389 @@
 #!/usr/bin/env python3
+"""
+Pieces LTM (Long-Term Memory) MCP Server
+Provides persistent memory storage and retrieval capabilities for AI agents
+"""
+
 import asyncio
 import json
-from mcp.server import Server
+import os
+import sqlite3
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+from mcp.server.models import InitializationOptions
+from mcp.server import NotificationOptions, Server
 from mcp.server.stdio import stdio_server
-from mcp.types import (
-    Tool,
-    Resource,
-    ListToolsResult,
-    CallToolResult,
-    ListResourcesResult,
-    ReadResourceResult,
-)
-import pieces_os_client
-from pieces_os_client.api_client import ApiClient
-from pieces_os_client.configuration import Configuration
+from mcp.types import Tool, TextContent, ImageContent, EmbeddedResource
+import mcp.types as types
+
+# Database configuration
+DB_PATH = os.path.join(os.path.dirname(__file__), 'pieces_ltm.db')
 
 class PiecesLTMServer:
     def __init__(self):
-        # Configure the Pieces OS client
-        self.configuration = Configuration(
-            host="http://localhost:39300"  # Pieces OS MCP port
-        )
+        self.db_path = DB_PATH
+        self.init_database()
         
-        # Create API client
-        self.api_client = ApiClient(self.configuration)
+    def init_database(self):
+        """Initialize the SQLite database for long-term memory storage"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
         
-        # Initialize the MCP server
-        self.server = Server("pieces-ltm-server")
-        
-        # Register handlers
-        self.server.list_tools(self.list_tools)
-        self.server.call_tool(self.call_tool)
-        self.server.list_resources(self.list_resources)
-        self.server.read_resource(self.read_resource)
-        
-    async def list_tools(self) -> ListToolsResult:
-        """List available tools for LTM operations"""
-        return ListToolsResult(
-            tools=[
-                Tool(
-                    name="query_ltm",
-                    description="Query the PiecesOS Long Term Memory for relevant information",
-                    inputSchema={
-                        "type": "object",
-                        "properties": {
-                            "query": {
-                                "type": "string",
-                                "description": "The query to search for in LTM"
-                            }
-                        },
-                        "required": ["query"]
-                    }
-                ),
-                Tool(
-                    name="store_memory",
-                    description="Store information in PiecesOS Long Term Memory",
-                    inputSchema={
-                        "type": "object",
-                        "properties": {
-                            "content": {
-                                "type": "string",
-                                "description": "The content to store in LTM"
-                            },
-                            "metadata": {
-                                "type": "object",
-                                "description": "Optional metadata for the memory",
-                                "properties": {
-                                    "tags": {
-                                        "type": "array",
-                                        "items": {"type": "string"}
-                                    },
-                                    "context": {
-                                        "type": "string"
-                                    }
-                                }
-                            }
-                        },
-                        "required": ["content"]
-                    }
-                ),
-                Tool(
-                    name="list_memories",
-                    description="List recent memories from PiecesOS LTM",
-                    inputSchema={
-                        "type": "object",
-                        "properties": {
-                            "limit": {
-                                "type": "integer",
-                                "description": "Maximum number of memories to return",
-                                "default": 10
-                            }
-                        }
-                    }
-                )
-            ]
-        )
-    
-    async def call_tool(self, name: str, arguments: dict) -> CallToolResult:
-        """Execute LTM tools"""
-        try:
-            if name == "query_ltm":
-                query = arguments.get("query", "")
-                # Use Pieces OS API to search LTM
-                result = await self.query_pieces_ltm(query)
-                return CallToolResult(
-                    content=[{"type": "text", "text": json.dumps(result, indent=2)}]
-                )
-                
-            elif name == "store_memory":
-                content = arguments.get("content", "")
-                metadata = arguments.get("metadata", {})
-                # Store in Pieces OS LTM
-                result = await self.store_pieces_memory(content, metadata)
-                return CallToolResult(
-                    content=[{"type": "text", "text": json.dumps(result, indent=2)}]
-                )
-                
-            elif name == "list_memories":
-                limit = arguments.get("limit", 10)
-                # List memories from Pieces OS
-                result = await self.list_pieces_memories(limit)
-                return CallToolResult(
-                    content=[{"type": "text", "text": json.dumps(result, indent=2)}]
-                )
-                
-            else:
-                return CallToolResult(
-                    content=[{"type": "text", "text": f"Unknown tool: {name}"}],
-                    isError=True
-                )
-                
-        except Exception as e:
-            return CallToolResult(
-                content=[{"type": "text", "text": f"Error executing tool: {str(e)}"}],
-                isError=True
+        # Create memories table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS memories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                key TEXT UNIQUE NOT NULL,
+                value TEXT NOT NULL,
+                metadata TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                access_count INTEGER DEFAULT 0
             )
-    
-    async def list_resources(self) -> ListResourcesResult:
-        """List available LTM resources"""
-        return ListResourcesResult(
-            resources=[
-                Resource(
-                    uri="ltm://recent",
-                    name="Recent LTM Entries",
-                    description="Recently stored memories in PiecesOS LTM",
-                    mimeType="application/json"
-                ),
-                Resource(
-                    uri="ltm://tags",
-                    name="LTM Tags",
-                    description="Available tags in PiecesOS LTM",
-                    mimeType="application/json"
-                )
-            ]
-        )
-    
-    async def read_resource(self, uri: str) -> ReadResourceResult:
-        """Read LTM resources"""
-        try:
-            if uri == "ltm://recent":
-                # Get recent memories
-                memories = await self.list_pieces_memories(20)
-                return ReadResourceResult(
-                    contents=[{
-                        "uri": uri,
-                        "text": json.dumps(memories, indent=2),
-                        "mimeType": "application/json"
-                    }]
-                )
-                
-            elif uri == "ltm://tags":
-                # Get available tags
-                tags = await self.get_pieces_tags()
-                return ReadResourceResult(
-                    contents=[{
-                        "uri": uri,
-                        "text": json.dumps(tags, indent=2),
-                        "mimeType": "application/json"
-                    }]
-                )
-                
-            else:
-                return ReadResourceResult(
-                    contents=[{
-                        "uri": uri,
-                        "text": f"Unknown resource: {uri}",
-                        "mimeType": "text/plain"
-                    }]
-                )
-                
-        except Exception as e:
-            return ReadResourceResult(
-                contents=[{
-                    "uri": uri,
-                    "text": f"Error reading resource: {str(e)}",
-                    "mimeType": "text/plain"
-                }]
+        ''')
+        
+        # Create tags table for categorization
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tags (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                memory_id INTEGER,
+                tag TEXT NOT NULL,
+                FOREIGN KEY (memory_id) REFERENCES memories (id)
             )
+        ''')
+        
+        # Create index for faster lookups
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_memories_key ON memories(key)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_memories_created ON memories(created_at)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_tags_tag ON tags(tag)')
+        
+        conn.commit()
+        conn.close()
     
-    async def query_pieces_ltm(self, query: str) -> dict:
-        """Query PiecesOS LTM using the API"""
-        # This is a simplified implementation
-        # In a real implementation, you would use the actual Pieces OS API
+    def store_memory(self, key: str, value: str, metadata: Dict[str, Any] = None, tags: List[str] = None) -> bool:
+        """Store a memory with optional metadata and tags"""
         try:
-            # Import the specific API classes we need
-            from pieces_os_client.api.search_api import SearchApi
-            from pieces_os_client.models.searched_assets import SearchedAssets
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
             
-            # Create search API instance
-            search_api = SearchApi(self.api_client)
+            metadata_json = json.dumps(metadata) if metadata else None
             
-            # Perform search (this is a simplified example)
-            # In practice, you would need to implement the proper search logic
-            result = {
-                "query": query,
-                "status": "connected",
-                "message": "PiecesOS LTM connection established - search functionality would be implemented here"
-            }
+            cursor.execute('''
+                INSERT OR REPLACE INTO memories (key, value, metadata, updated_at)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            ''', (key, value, metadata_json))
             
-            return result
+            memory_id = cursor.lastrowid
+            
+            # Store tags if provided
+            if tags:
+                cursor.execute('DELETE FROM tags WHERE memory_id = ?', (memory_id,))
+                for tag in tags:
+                    cursor.execute('INSERT INTO tags (memory_id, tag) VALUES (?, ?)', (memory_id, tag))
+            
+            conn.commit()
+            conn.close()
+            return True
         except Exception as e:
-            return {
-                "query": query,
-                "status": "error",
-                "error": str(e)
-            }
+            print(f"Error storing memory: {e}")
+            return False
     
-    async def store_pieces_memory(self, content: str, metadata: dict) -> dict:
-        """Store memory in PiecesOS LTM"""
+    def retrieve_memory(self, key: str) -> Optional[Dict[str, Any]]:
+        """Retrieve a memory by key"""
         try:
-            # Import the assets API
-            from pieces_os_client.api.assets_api import AssetsApi
-            from pieces_os_client.models.seeded_asset import SeededAsset
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
             
-            # Create assets API instance
-            assets_api = AssetsApi(self.api_client)
+            cursor.execute('''
+                SELECT id, key, value, metadata, created_at, updated_at, access_count
+                FROM memories WHERE key = ?
+            ''', (key,))
             
-            # Create a seeded asset (simplified)
-            seeded_asset = SeededAsset(
-                # In a real implementation, you would properly structure the asset
-            )
+            row = cursor.fetchone()
+            if row:
+                # Update access count
+                cursor.execute('UPDATE memories SET access_count = access_count + 1 WHERE id = ?', (row[0],))
+                conn.commit()
+                
+                # Get tags
+                cursor.execute('SELECT tag FROM tags WHERE memory_id = ?', (row[0],))
+                tags = [tag[0] for tag in cursor.fetchall()]
+                
+                conn.close()
+                
+                return {
+                    'id': row[0],
+                    'key': row[1],
+                    'value': row[2],
+                    'metadata': json.loads(row[3]) if row[3] else None,
+                    'created_at': row[4],
+                    'updated_at': row[5],
+                    'access_count': row[6] + 1,
+                    'tags': tags
+                }
             
-            result = {
-                "content": content,
-                "metadata": metadata,
-                "status": "stored",
-                "message": "Memory would be stored in PiecesOS LTM - implementation would be completed here"
-            }
-            
-            return result
+            conn.close()
+            return None
         except Exception as e:
-            return {
-                "content": content,
-                "status": "error",
-                "error": str(e)
-            }
+            print(f"Error retrieving memory: {e}")
+            return None
     
-    async def list_pieces_memories(self, limit: int) -> list:
-        """List recent memories from PiecesOS LTM"""
+    def search_memories(self, query: str, tags: List[str] = None, limit: int = 10) -> List[Dict[str, Any]]:
+        """Search memories by content or tags"""
         try:
-            # Import the assets API
-            from pieces_os_client.api.assets_api import AssetsApi
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
             
-            # Create assets API instance
-            assets_api = AssetsApi(self.api_client)
+            sql = '''
+                SELECT DISTINCT m.id, m.key, m.value, m.metadata, m.created_at, m.updated_at, m.access_count
+                FROM memories m
+            '''
+            params = []
             
-            # Get assets snapshot (simplified)
-            # In a real implementation, you would filter and format the results properly
-            memories = [
-                {"id": f"memory_{i}", "content": f"Sample memory {i}", "timestamp": "2025-07-29T20:00:00Z"}
-                for i in range(min(limit, 5))
-            ]
+            conditions = []
+            if query:
+                conditions.append('(m.key LIKE ? OR m.value LIKE ?)')
+                params.extend([f'%{query}%', f'%{query}%'])
             
-            return memories
+            if tags:
+                sql += ' JOIN tags t ON m.id = t.memory_id'
+                tag_conditions = ' OR '.join(['t.tag = ?' for _ in tags])
+                conditions.append(f'({tag_conditions})')
+                params.extend(tags)
+            
+            if conditions:
+                sql += ' WHERE ' + ' AND '.join(conditions)
+            
+            sql += ' ORDER BY m.updated_at DESC LIMIT ?'
+            params.append(limit)
+            
+            cursor.execute(sql, params)
+            rows = cursor.fetchall()
+            
+            results = []
+            for row in rows:
+                # Get tags for each memory
+                cursor.execute('SELECT tag FROM tags WHERE memory_id = ?', (row[0],))
+                memory_tags = [tag[0] for tag in cursor.fetchall()]
+                
+                results.append({
+                    'id': row[0],
+                    'key': row[1],
+                    'value': row[2],
+                    'metadata': json.loads(row[3]) if row[3] else None,
+                    'created_at': row[4],
+                    'updated_at': row[5],
+                    'access_count': row[6],
+                    'tags': memory_tags
+                })
+            
+            conn.close()
+            return results
         except Exception as e:
-            return [{"error": str(e)}]
+            print(f"Error searching memories: {e}")
+            return []
     
-    async def get_pieces_tags(self) -> list:
-        """Get available tags from PiecesOS LTM"""
+    def delete_memory(self, key: str) -> bool:
+        """Delete a memory by key"""
         try:
-            # This would be implemented to fetch actual tags from PiecesOS
-            tags = ["work", "development", "research", "meeting", "todo"]
-            return tags
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            cursor.execute('SELECT id FROM memories WHERE key = ?', (key,))
+            row = cursor.fetchone()
+            
+            if row:
+                memory_id = row[0]
+                cursor.execute('DELETE FROM tags WHERE memory_id = ?', (memory_id,))
+                cursor.execute('DELETE FROM memories WHERE id = ?', (memory_id,))
+                conn.commit()
+            
+            conn.close()
+            return row is not None
         except Exception as e:
-            return [{"error": str(e)}]
+            print(f"Error deleting memory: {e}")
+            return False
     
-    async def run(self):
-        """Run the MCP server"""
-        async with stdio_server() as (read_stream, write_stream):
-            await self.server.run(read_stream, write_stream, app=self)
+    def list_memories(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """List all memories with pagination"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                SELECT id, key, value, metadata, created_at, updated_at, access_count
+                FROM memories
+                ORDER BY updated_at DESC
+                LIMIT ?
+            ''', (limit,))
+            
+            rows = cursor.fetchall()
+            
+            results = []
+            for row in rows:
+                # Get tags for each memory
+                cursor.execute('SELECT tag FROM tags WHERE memory_id = ?', (row[0],))
+                tags = [tag[0] for tag in cursor.fetchall()]
+                
+                results.append({
+                    'id': row[0],
+                    'key': row[1],
+                    'value': row[2][:100] + '...' if len(row[2]) > 100 else row[2],
+                    'metadata': json.loads(row[3]) if row[3] else None,
+                    'created_at': row[4],
+                    'updated_at': row[5],
+                    'access_count': row[6],
+                    'tags': tags
+                })
+            
+            conn.close()
+            return results
+        except Exception as e:
+            print(f"Error listing memories: {e}")
+            return []
 
-# Main entry point
+# Initialize the server
+ltm_server = PiecesLTMServer()
+server = Server("pieces-ltm")
+
+@server.list_tools()
+async def handle_list_tools() -> List[Tool]:
+    """List available tools for the Pieces LTM server"""
+    return [
+        Tool(
+            name="store_memory",
+            description="Store a memory with a key, value, and optional metadata/tags",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "key": {"type": "string", "description": "Unique identifier for the memory"},
+                    "value": {"type": "string", "description": "The content to store"},
+                    "metadata": {"type": "object", "description": "Additional metadata as JSON object"},
+                    "tags": {"type": "array", "items": {"type": "string"}, "description": "Tags for categorization"}
+                },
+                "required": ["key", "value"]
+            }
+        ),
+        Tool(
+            name="retrieve_memory",
+            description="Retrieve a memory by its key",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "key": {"type": "string", "description": "The key of the memory to retrieve"}
+                },
+                "required": ["key"]
+            }
+        ),
+        Tool(
+            name="search_memories",
+            description="Search memories by content or tags",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search query for memory content"},
+                    "tags": {"type": "array", "items": {"type": "string"}, "description": "Filter by tags"},
+                    "limit": {"type": "integer", "description": "Maximum number of results", "default": 10}
+                }
+            }
+        ),
+        Tool(
+            name="delete_memory",
+            description="Delete a memory by its key",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "key": {"type": "string", "description": "The key of the memory to delete"}
+                },
+                "required": ["key"]
+            }
+        ),
+        Tool(
+            name="list_memories",
+            description="List all memories with pagination",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "limit": {"type": "integer", "description": "Maximum number of results", "default": 50}
+                }
+            }
+        )
+    ]
+
+@server.call_tool()
+async def handle_call_tool(name: str, arguments: Dict[str, Any]) -> List[types.TextContent]:
+    """Handle tool calls for the Pieces LTM server"""
+    
+    if name == "store_memory":
+        key = arguments.get("key")
+        value = arguments.get("value")
+        metadata = arguments.get("metadata")
+        tags = arguments.get("tags", [])
+        
+        success = ltm_server.store_memory(key, value, metadata, tags)
+        
+        if success:
+            return [types.TextContent(type="text", text=f"Memory stored successfully with key: {key}")]
+        else:
+            return [types.TextContent(type="text", text=f"Failed to store memory with key: {key}")]
+    
+    elif name == "retrieve_memory":
+        key = arguments.get("key")
+        memory = ltm_server.retrieve_memory(key)
+        
+        if memory:
+            return [types.TextContent(type="text", text=json.dumps(memory, indent=2, default=str))]
+        else:
+            return [types.TextContent(type="text", text=f"No memory found with key: {key}")]
+    
+    elif name == "search_memories":
+        query = arguments.get("query", "")
+        tags = arguments.get("tags", [])
+        limit = arguments.get("limit", 10)
+        
+        memories = ltm_server.search_memories(query, tags, limit)
+        
+        if memories:
+            return [types.TextContent(type="text", text=json.dumps(memories, indent=2, default=str))]
+        else:
+            return [types.TextContent(type="text", text="No memories found matching the criteria")]
+    
+    elif name == "delete_memory":
+        key = arguments.get("key")
+        deleted = ltm_server.delete_memory(key)
+        
+        if deleted:
+            return [types.TextContent(type="text", text=f"Memory deleted successfully: {key}")]
+        else:
+            return [types.TextContent(type="text", text=f"No memory found with key: {key}")]
+    
+    elif name == "list_memories":
+        limit = arguments.get("limit", 50)
+        memories = ltm_server.list_memories(limit)
+        
+        if memories:
+            return [types.TextContent(type="text", text=json.dumps(memories, indent=2, default=str))]
+        else:
+            return [types.TextContent(type="text", text="No memories found")]
+    
+    else:
+        return [types.TextContent(type="text", text=f"Unknown tool: {name}")]
+
+async def main():
+    """Main entry point for the Pieces LTM server"""
+    async with stdio_server() as (read_stream, write_stream):
+        await server.run(
+            read_stream,
+            write_stream,
+            InitializationOptions(
+                server_name="pieces-ltm",
+                server_version="1.0.0",
+                capabilities=server.get_capabilities(
+                    notification_options=NotificationOptions(),
+                    experimental_capabilities={},
+                ),
+            ),
+        )
+
 if __name__ == "__main__":
-    server = PiecesLTMServer()
-    asyncio.run(server.run())
+    asyncio.run(main())

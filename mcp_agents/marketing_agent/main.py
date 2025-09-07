@@ -7,10 +7,18 @@ Runs on port 8001 as specified in the smart_mcp_orchestrator.py
 
 import os
 import json
+import logging
+import time
 from typing import Dict, Any
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, status
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import uvicorn
+from datetime import datetime
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("marketing_agent")
 
 # Setup Django first
 import django
@@ -25,6 +33,30 @@ if not settings.configured:
 from marketplace.models import Listing, Category
 
 app = FastAPI(title="Marketing Agent Server", description="Handles marketing optimization for the marketplace")
+
+# Middleware for logging and error handling
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    request_id = f"req_{int(time.time() * 1000)}"
+    
+    logger.info(f"Request {request_id}: {request.method} {request.url}")
+    
+    try:
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        response.headers["X-Process-Time"] = str(process_time)
+        response.headers["X-Request-ID"] = request_id
+        
+        logger.info(f"Request {request_id} completed in {process_time:.3f}s - Status: {response.status_code}")
+        return response
+    except Exception as e:
+        process_time = time.time() - start_time
+        logger.error(f"Request {request_id} failed in {process_time:.3f}s - Error: {str(e)}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": "Internal server error", "request_id": request_id}
+        )
 
 class ProcessRequest(BaseModel):
     query: str

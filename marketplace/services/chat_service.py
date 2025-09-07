@@ -35,11 +35,29 @@ class DeepSeekChatService:
     MODEL = "deepseek-chat"
     
     def __init__(self):
-        self.api_key = getattr(settings, 'DEEPSEEK_API_KEY', os.getenv('DEEPSEEK_API_KEY'))
+        # Prefer settings, then environment, then try to load from .env file if running in DEBUG
+        self.api_key = getattr(settings, 'DEEPSEEK_API_KEY', None) or os.getenv('DEEPSEEK_API_KEY')
+        if not self.api_key and getattr(settings, 'DEBUG', False):
+            try:
+                # Attempt a minimal .env loader to avoid hard dependency on django-environ
+                env_path = os.path.join(getattr(settings, 'BASE_DIR', ''), '.env')
+                if os.path.exists(env_path):
+                    for line in open(env_path, 'r'):
+                        line = line.strip()
+                        if not line or line.startswith('#') or '=' not in line:
+                            continue
+                        k, v = line.split('=', 1)
+                        k = k.strip()
+                        v = v.strip().strip("'").strip('"')
+                        if k == 'DEEPSEEK_API_KEY' and v:
+                            os.environ['DEEPSEEK_API_KEY'] = v
+                            self.api_key = v
+                            break
+            except Exception as _e:
+                logger.debug(f"Optional .env read failed: {_e}")
         if not self.api_key:
-            # Allow initialization without API key for scenarios like migrations
+            # Log once but allow service object creation so pages render; calls will still fail fast
             logger.warning("DeepSeek API key not configured. Chat service will not function.")
-            # raise ValueError("DeepSeek API key not configured") # Original line
     
     async def chat_completion_async(
         self, 
@@ -48,6 +66,15 @@ class DeepSeekChatService:
         temperature: float = 0.7
     ) -> ChatResponse:
         """Async chat completion using DeepSeek API"""
+        # Fail fast if key is missing to return a clean error upstream
+        if not self.api_key:
+            return ChatResponse(
+                content="",
+                model=self.MODEL,
+                usage={},
+                success=False,
+                error="DeepSeek API key not configured"
+            )
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(

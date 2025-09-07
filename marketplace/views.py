@@ -19,6 +19,7 @@ from django.db import transaction
 from datetime import timedelta
 from decimal import Decimal
 import logging
+from .views.messaging import floating_chat_view, messages_view, conversation_view, send_message_view
 # Note: stripe will be installed separately
 try:
     import stripe
@@ -28,12 +29,11 @@ except ImportError:
 
 from .models import Category, Favorite, Listing, Message, UserProfile, ListingImage, CreditPackage, Payment, CreditTransaction, ListingBoost, ListingReport
 from .serializers import (
-CategorySerializer,
+    CategorySerializer,
     ListingSerializer,
     FavoriteCreateSerializer,
     FavoriteSerializer,
     ListingCreateSerializer,
-    ListingSerializer,
     MessageCreateSerializer,
     MessageSerializer,
     UserProfileSerializer,
@@ -53,7 +53,7 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
     Custom permission to only allow owners of an object to edit it.
     """
 
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(self, request, view, obj):  # type: ignore[override]
         # Read permissions are allowed to any request
         if request.method in permissions.SAFE_METHODS:
             return True
@@ -76,7 +76,7 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     def subcategories(self, request, pk=None):
         category = self.get_object()
         subcategories = Category.objects.filter(parent=category)
-        serializer = self.get_serializer(subcategories, many=True)
+        serializer = CategorySerializer(subcategories, many=True)
         return Response(serializer.data)
 
     @action(detail=True, methods=["get"])
@@ -96,65 +96,56 @@ class ListingViewSet(viewsets.ModelViewSet):
     ordering_fields = ["created_at", "price", "views"]
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
 
-    def get_queryset(self):
+    def get_queryset(self):  # type: ignore[override]
         queryset = Listing.objects.all()
 
-        # Filter by status (default to active)
-        status = self.request.query_params.get("status", "active")
-        if status != "all":
-            queryset = queryset.filter(status=status)
+        params = getattr(self.request, 'query_params', self.request.GET)
 
-        # Filter by category
-        category_id = self.request.query_params.get("category")
+        # Filter by status (default to active)
+        status_val = params.get("status", "active")
+        if status_val and status_val != "all":
+            queryset = queryset.filter(status=status_val)
+
+        # Filter by category (accept category id)
+        category_id = params.get("category")
         if category_id:
-            queryset = queryset.filter(
-                Q(category_id=category_id) | Q(subcategory_id=category_id)
-            )
+            queryset = queryset.filter(Q(category_id=category_id) | Q(subcategory_id=category_id))
 
         # Filter by price range
-        min_price = self.request.query_params.get("min_price")
-        max_price = self.request.query_params.get("max_price")
+        min_price = params.get("min_price")
+        max_price = params.get("max_price")
         if min_price:
-            queryset = queryset.filter(price__gte=min_price)
+            try:
+                queryset = queryset.filter(price__gte=float(min_price))
+            except (ValueError, TypeError):
+                pass
         if max_price:
-            queryset = queryset.filter(price__lte=max_price)
+            try:
+                queryset = queryset.filter(price__lte=float(max_price))
+            except (ValueError, TypeError):
+                pass
 
         # Filter by location
-        location = self.request.query_params.get("location")
+        location = params.get("location")
         if location:
             queryset = queryset.filter(location__icontains=location)
 
-# Attempt to use cached search results
-        filters = {
-            "category_id": category_id,
-            "min_price": min_price,
-            "max_price": max_price,
-            "location": location,
-        }
-        cached_results = SearchCache.get_search_results(status, filters)
-        if cached_results:
-            return cached_results
+        # Try to use cached search results if available
+        try:
+            cache_filters = {
+                "category_id": category_id,
+                "min_price": min_price,
+                "max_price": max_price,
+                "location": location,
+            }
+            cached_results = SearchCache.get_search_results(status_val, cache_filters)
+            if cached_results:
+                return Listing.objects.filter(id__in=[l.id for l in cached_results])
+        except Exception:
+            # Non-fatal: ignore cache errors
+            pass
 
-        # No cache, proceed with query
-        result_queryset = list(queryset)
-
-        # Cache the result
-        SearchCache.set_search_results(status, filters, result_queryset)
-
-        return result_queryset
-
-    def get_serializer_class(self):
-        if self.action in ["create", "update", "partial_update"]:
-            return ListingCreateSerializer
-        return ListingSerializer
-
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        # Increment view count
-        instance.views += 1
-        instance.save(update_fields=["views"])
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+        return queryset
 
     @action(detail=True, methods=["post"])
     def favorite(self, request, pk=None):
@@ -204,11 +195,11 @@ class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
 
-    def get_queryset(self):
+    def get_queryset(self):  # type: ignore[override]
         user = self.request.user
         return Message.objects.filter(Q(sender=user) | Q(receiver=user))
 
-    def get_serializer_class(self):
+    def get_serializer_class(self):  # type: ignore[override]
         if self.action in ["create", "update", "partial_update"]:
             return MessageCreateSerializer
         return MessageSerializer
@@ -218,10 +209,10 @@ class FavoriteViewSet(viewsets.ModelViewSet):
     queryset = Favorite.objects.all()
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
 
-    def get_queryset(self):
+    def get_queryset(self):  # type: ignore[override]
         return Favorite.objects.filter(user=self.request.user)
 
-    def get_serializer_class(self):
+    def get_serializer_class(self):  # type: ignore[override]
         if self.action in ["create", "update", "partial_update"]:
             return FavoriteCreateSerializer
         return FavoriteSerializer
@@ -234,44 +225,17 @@ class UserProfileViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=["get"])
     def listings(self, request, pk=None):
         user = self.get_object()
-        listings = Listing.objects.filter(user=user, status="active")
+        listings = Listing.objects.filter(user=user)
         serializer = ListingSerializer(listings, many=True)
         return Response(serializer.data)
-
     @action(detail=True, methods=["get"])
     def profile(self, request, pk=None):
         user = self.get_object()
-        try:
-            profile = UserProfile.objects.get(user=user)
-        except UserProfile.DoesNotExist:
-            profile = UserProfile.objects.create(user=user)
-
-        serializer = UserProfileSerializer(profile)
+        serializer = UserProfileSerializer(user.userprofile)
         return Response(serializer.data)
 
 
-def home(request):
-    """Homepage view."""
-    # Get all categories for the dropdown
-    categories = Category.objects.all()
 
-    # Get featured/promoted listings
-    featured_listings = Listing.objects.filter(
-        status="active", is_featured=True
-    ).order_by("-created_at")[:8]
-
-    # Get recent listings
-    recent_listings = Listing.objects.filter(status="active").order_by("-created_at")[
-        :8
-    ]
-
-    context = {
-        "categories": categories,
-        "featured_listings": featured_listings,
-        "recent_listings": recent_listings,
-    }
-
-    return render(request, "marketplace/index.html", context)
 
 
 # Frontend Views for the Comprehensive Marketplace
@@ -307,16 +271,22 @@ def home_view(request):
 
 def categories_view(request):
     """Categories listing page."""
+    from django.db.models import Count, Q
+
+    # Annotate categories with active listing counts
     categories = Category.objects.filter(parent__isnull=True).prefetch_related(
         'subcategories'
+    ).annotate(
+        listings_count=Count('listings', filter=Q(listings__status='active'))
     )
-    
-    # Add listing counts to each category
+
+    # Annotate subcategories with active listing counts
     for category in categories:
-        category.listings_count = category.listings.filter(status='active').count()
-        for subcategory in category.subcategories.all():
-            subcategory.listings_count = subcategory.listings.filter(status='active').count()
-    
+        subcategories = list(category.subcategories.all())
+        for subcategory in subcategories:
+            subcategory.listings_count = Listing.objects.filter(category=subcategory, status='active').count()
+        category.subcategories_list = subcategories
+
     context = {
         "categories": categories,
         "page_title": "Toate categoriile",
@@ -367,44 +337,44 @@ def listings_view(request):
     """All listings page with filtering."""
     listings = Listing.objects.filter(status="active").order_by("-created_at")
     categories = Category.objects.all()
-    
+
     # Apply filters
     search_query = request.GET.get('search', '')
     category_id = request.GET.get('category', '')
     min_price = request.GET.get('min_price', '')
     max_price = request.GET.get('max_price', '')
     location = request.GET.get('location', '')
-    
+
     if search_query:
         listings = listings.filter(
-            Q(title__icontains=search_query) | 
+            Q(title__icontains=search_query) |
             Q(description__icontains=search_query)
         )
-    
+
     if category_id:
         listings = listings.filter(category_id=category_id)
-    
+
     if min_price:
         try:
             listings = listings.filter(price__gte=float(min_price))
-        except ValueError:
+        except (ValueError, TypeError):
             pass
-    
+
     if max_price:
         try:
             listings = listings.filter(price__lte=float(max_price))
-        except ValueError:
+        except (ValueError, TypeError):
             pass
-    
+
     if location:
         listings = listings.filter(location__icontains=location)
-    
+
     # Handle pagination
     from django.core.paginator import Paginator
     paginator = Paginator(listings, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         "listings": page_obj,
         "categories": categories,
@@ -415,7 +385,7 @@ def listings_view(request):
         "location": location,
         "page_title": "Toate anunțurile",
     }
-    
+
     return render(request, "marketplace/listings.html", context)
 
 
@@ -468,7 +438,8 @@ def add_listing_view(request):
                 )
             
             messages.success(request, 'Anunțul a fost creat cu succes!')
-            return redirect('marketplace:listing_detail', listing_id=listing.id)
+            # Ensure listing id is serializable
+            return redirect('marketplace:listing_detail', listing_id=str(getattr(listing, 'id', '')))
         else:
             messages.error(request, 'Te rugăm să corectezi erorile de mai jos.')
     else:
@@ -507,12 +478,12 @@ def profile_view(request):
 def profile_edit_view(request):
     """Profile edit page."""
     user_form = UserUpdateForm(instance=request.user)
-    profile_form = UserProfileForm(instance=request.user.profile)
+    profile_form = UserProfileForm(instance=getattr(request.user, 'profile', None))
     
     if request.method == 'POST':
         user_form = UserUpdateForm(request.POST, instance=request.user)
-        profile_form = UserProfileForm(request.POST, instance=request.user.profile)
-        
+        profile_form = UserProfileForm(request.POST, instance=getattr(request.user, 'profile', None))
+
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
             profile_form.save()
@@ -528,131 +499,7 @@ def profile_edit_view(request):
     return render(request, "marketplace/profile_edit.html", context)
 
 
-def messages_view(request):
-    """Messages page with conversation grouping."""
-    from django.shortcuts import redirect
-    from django.db.models import Q, Max, Count
-    
-    if not request.user.is_authenticated:
-        return redirect('login')
-    
-    # Get conversations - group messages by participants
-    conversations = []
-    
-    # Get all unique conversation partners
-    conversation_users = User.objects.filter(
-        Q(sent_messages__receiver=request.user) | 
-        Q(received_messages__sender=request.user)
-    ).distinct().exclude(id=request.user.id)
-    
-    for other_user in conversation_users:
-        # Get latest message in this conversation
-        latest_message = Message.objects.filter(
-            (Q(sender=request.user, receiver=other_user) | 
-             Q(sender=other_user, receiver=request.user))
-        ).order_by('-created_at').first()
-        
-        # Count unread messages from this user
-        unread_count = Message.objects.filter(
-            sender=other_user, 
-            receiver=request.user, 
-            is_read=False
-        ).count()
-        
-        if latest_message:
-            conversations.append({
-                'other_user': other_user,
-                'last_message': latest_message,
-                'unread_count': unread_count,
-            })
-    
-    # Sort conversations by latest message
-    conversations.sort(key=lambda x: x['last_message'].created_at, reverse=True)
-    
-    context = {
-        "conversations": conversations,
-        "page_title": "Mesajele mele",
-    }
-    
-    return render(request, "marketplace/messages.html", context)
-
-
-@login_required
-def conversation_view(request, user_id):
-    """View a conversation with a specific user."""
-    from django.shortcuts import get_object_or_404
-    from django.http import JsonResponse
-    from django.db.models import Q
-    
-    other_user = get_object_or_404(User, id=user_id)
-    
-    # Get all messages between these two users
-    messages = Message.objects.filter(
-        (Q(sender=request.user, receiver=other_user) | 
-         Q(sender=other_user, receiver=request.user))
-    ).order_by('created_at')
-    
-    # Mark messages as read
-    Message.objects.filter(
-        sender=other_user, 
-        receiver=request.user, 
-        is_read=False
-    ).update(is_read=True)
-    
-    if request.method == 'POST':
-        content = request.POST.get('content')
-        if content:
-            message = Message.objects.create(
-                sender=request.user,
-                receiver=other_user,
-                content=content
-            )
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': True,
-                    'message': {
-                        'id': message.id,
-                        'content': message.content,
-                        'created_at': message.created_at.strftime('%H:%M'),
-                        'sender': message.sender.username
-                    }
-                })
-            return redirect('marketplace:conversation', user_id=user_id)
-    
-    context = {
-        'other_user': other_user,
-        'messages': messages,
-        'page_title': f'Conversație cu {other_user.username}',
-    }
-    
-    return render(request, "marketplace/conversation.html", context)
-
-
-@login_required
-def send_message_view(request, listing_id):
-    """Send a message about a specific listing."""
-    from django.shortcuts import get_object_or_404
-    from django.http import JsonResponse
-    
-    listing = get_object_or_404(Listing, id=listing_id)
-    
-    if request.method == 'POST':
-        content = request.POST.get('content')
-        if content and listing.user != request.user:
-            message = Message.objects.create(
-                sender=request.user,
-                receiver=listing.user,
-                listing=listing,
-                content=content
-            )
-            messages.success(request, 'Mesajul tău a fost trimis cu succes!')
-            
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({'success': True})
-                
-            return redirect('marketplace:listing_detail', listing_id=listing_id)
-    
-    return redirect('marketplace:listing_detail', listing_id=listing_id)
+# Moved to messaging.py
 
 
 def favorites_view(request):
@@ -711,6 +558,9 @@ def toggle_favorite_view(request, listing_id):
 
 def search_view(request):
     """Enhanced search results page with advanced filtering including location-based distance."""
+    from django.contrib.gis.geos import Point
+    from django.contrib.gis.db.models.functions import Distance
+
     query = request.GET.get('q', '')
     category_id = request.GET.get('category', '')
     min_price = request.GET.get('min_price', '')
@@ -787,35 +637,17 @@ def search_view(request):
     # Apply distance-based filtering
     if enable_distance and user_lat and user_lng:
         try:
-            from .models import Location
             user_latitude = float(user_lat)
             user_longitude = float(user_lng)
             distance_km = float(distance)
-            
-            # Filter listings within the specified distance
-            nearby_listings = []
-            for listing in listings:
-                if listing.latitude and listing.longitude:
-                    distance_to_listing = Location.calculate_distance(
-                        user_latitude, user_longitude,
-                        float(listing.latitude), float(listing.longitude)
-                    )
-                    if distance_to_listing <= distance_km:
-                        # Add distance as an attribute for sorting/display
-                        listing._distance = distance_to_listing
-                        nearby_listings.append(listing)
-            
-            # Convert back to queryset with proper IDs
-            if nearby_listings:
-                listing_ids = [listing.id for listing in nearby_listings]
-                listings = Listing.objects.filter(id__in=listing_ids, status="active")
-                
-                # Store distance data for later use
-                distance_map = {listing.id: listing._distance for listing in nearby_listings}
-                request._distance_map = distance_map
-            else:
-                listings = Listing.objects.none()
-        
+            user_location = Point(user_longitude, user_latitude, srid=4326)
+
+            listings = listings.filter(
+                location_point__dwithin=(user_location, distance_km * 1000)
+            ).annotate(
+                distance=Distance('location_point', user_location)
+            ).order_by('distance')
+
         except (ValueError, TypeError):
             pass
     
@@ -829,10 +661,8 @@ def search_view(request):
     elif sort_by == 'title':
         listings = listings.order_by('title')
     elif sort_by == 'distance' and enable_distance and user_lat and user_lng:
-        # Sort by distance (if we have distance data)
-        if hasattr(request, '_distance_map'):
-            listings = list(listings)
-            listings.sort(key=lambda x: request._distance_map.get(x.id, float('inf')))
+        # Sorting by distance is already handled by the annotation and order_by above
+        pass
     else:  # -created_at (default)
         listings = listings.order_by('-created_at')
     
@@ -842,13 +672,12 @@ def search_view(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
-    # Add distance information to listings for display
-    if hasattr(request, '_distance_map'):
-        for listing in page_obj:
-            distance_km = request._distance_map.get(listing.id)
-            if distance_km is not None:
-                listing.distance_km = round(distance_km, 1)
-    
+    # Compute total results for pagination summary
+    try:
+        total_results = page_obj.paginator.count
+    except Exception:
+        total_results = len(list(page_obj))
+
     context = {
         "results": page_obj,
         "query": query,
@@ -864,7 +693,7 @@ def search_view(request):
         "user_lng": user_lng,
         "date_from": date_from,
         "condition": condition,
-        "total_results": len(listings) if hasattr(request, '_distance_map') else listings.count(),
+    "total_results": total_results,
         "page_title": f"Căutare: {query}" if query else "Căutare",
     }
     
@@ -890,7 +719,7 @@ def register_view(request):
 @login_required
 def credits_dashboard(request):
     """Credits dashboard showing balance and purchase options"""
-    user_profile = request.user.profile
+    user_profile = getattr(request.user, 'profile', None)
     credit_packages = CreditPackage.objects.filter(is_active=True).order_by('credits')
     recent_transactions = CreditTransaction.objects.filter(user=request.user).order_by('-created_at')[:10]
     
@@ -902,53 +731,7 @@ def credits_dashboard(request):
     }
     return render(request, 'marketplace/credits_cart.html', context)
 
-# @login_required
-# def buy_credits(request, package_id):
-#     """Handle credit purchase via Stripe (Likely deprecated - uses PaymentIntent, current flow uses Checkout Session)"""
-#     try:
-#         package = CreditPackage.objects.get(id=package_id, is_active=True)
-#         user_profile = request.user.profile
-        
-#         if request.method == 'POST':
-#             try:
-#                 # Create Stripe payment intent
-#                 intent = stripe.PaymentIntent.create(
-#                     amount=int(package.price_eur * 100),  # Stripe expects cents
-#                     currency='eur',
-#                     metadata={
-#                         'user_id': request.user.id,
-#                         'package_id': package.id,
-#                         'credits': str(package.credits),
-#                     }
-#                 )
-                
-#                 # Create payment record
-#                 payment = Payment.objects.create(
-#                     user=request.user,
-#                     amount=package.price_eur,
-#                     payment_method='stripe', # This field might not exist on Payment model or needs adjustment
-#                     stripe_payment_intent_id=intent.id,
-#                     status='pending'
-#                 )
-                
-#                 return JsonResponse({
-#                     'client_secret': intent.client_secret,
-#                     'payment_id': payment.id
-#                 })
-                
-#             except stripe.error.StripeError as e:
-#                 return JsonResponse({'error': str(e)}, status=400)
-                
-#         context = {
-#             'package': package,
-#             'user_profile': user_profile,
-#             'stripe_public_key': settings.STRIPE_PUBLISHABLE_KEY,
-#         }
-#         return render(request, 'marketplace/buy_credits.html', context) # This template might also be unused
-        
-#     except CreditPackage.DoesNotExist:
-#         messages.error(request, "Pachetul de credite nu există.")
-#         return redirect('marketplace:buy_credits') # Assuming 'credits_dashboard' is 'marketplace:buy_credits'
+# Functions moved to payments.py
 
 @login_required
 def payment_success(request):
@@ -967,11 +750,26 @@ def payment_success(request):
             session = stripe.checkout.Session.retrieve(session_id)
             
             if session.payment_status == 'paid':
-                # Get metadata from session
-                user_id = session.metadata.get('user_id')
-                total_credits = int(session.metadata.get('total_credits', 0))
-                cart_data = json.loads(session.metadata.get('cart_data', '[]'))
-                currency = session.metadata.get('currency', 'ron')
+                # Get metadata from session (session.metadata may be None or a dict-like object)
+                session_metadata = {}
+                if hasattr(session, 'metadata') and session.metadata:
+                    try:
+                        session_metadata = session.metadata
+                    except Exception:
+                        session_metadata = {}
+
+                user_id = session_metadata.get('user_id') if isinstance(session_metadata, dict) else None
+                try:
+                    total_credits = int(session_metadata.get('total_credits', 0)) if isinstance(session_metadata, dict) else 0
+                except (ValueError, TypeError):
+                    total_credits = 0
+
+                try:
+                    cart_data = json.loads(session_metadata.get('cart_data', '[]')) if isinstance(session_metadata, dict) else []
+                except (TypeError, json.JSONDecodeError):
+                    cart_data = []
+
+                currency = session_metadata.get('currency', 'ron') if isinstance(session_metadata, dict) else 'ron'
                 
                 # Verify user
                 if str(request.user.id) != user_id:
@@ -979,9 +777,10 @@ def payment_success(request):
                     return redirect('marketplace:buy_credits')
                 
                 # Add credits to user profile
-                user_profile = request.user.profile
-                user_profile.credits_balance += Decimal(str(total_credits)) # Use Decimal for precision
-                user_profile.save()
+                user_profile = getattr(request.user, 'profile', None)
+                if user_profile is not None:
+                    user_profile.credits_balance += Decimal(str(total_credits)) # Use Decimal for precision
+                    user_profile.save()
                 
                 # Create transaction records for each item in cart
                 for item in cart_data:
@@ -1012,62 +811,7 @@ def payment_success(request):
     messages.error(request, "Sesiunea de plată nu a fost găsită sau este invalidă.")
     return redirect('marketplace:buy_credits')
 
-# This version seems less complete and uses fields not on Listing model (is_promoted, promoted_until)
-# The version below (originally named promote_listing_view) is more aligned with the models and form.
-# @login_required
-# def promote_listing(request, listing_id):
-#     """Promote a listing to first page for 0.5 credits"""
-#     try:
-#         listing = Listing.objects.get(id=listing_id, user=request.user)
-#         user_profile = request.user.profile
-#         promotion_cost = Decimal('0.50')
-        
-#         if request.method == 'POST':
-#             if user_profile.can_promote_listing(): # can_promote_listing might need adjustment if cost varies
-#                 # Deduct credits
-#                 if user_profile.deduct_credits(promotion_cost):
-#                     # Create listing boost
-#                     boost = ListingBoost.objects.create(
-#                         listing=listing,
-#                         # user=request.user, # ListingBoost model does not have a direct user link, it's via listing.user
-#                         boost_type='featured',
-#                         credits_cost=int(promotion_cost * 2), # Assumes 0.5 credits = 1 unit in credits_cost if it's integer
-#                         duration_days=7, # Hardcoded duration
-#                         # expires_at=timezone.now() + timezone.timedelta(days=7)  # ListingBoost calculates this on save
-#                     )
-                    
-#                     # Mark listing as featured
-#                     listing.is_featured = True
-#                     listing.save()
-                    
-#                     # Create transaction record
-#                     CreditTransaction.objects.create(
-#                         user=request.user,
-#                         transaction_type='spent', # More generic 'spent'
-#                         amount=promotion_cost, # Amount in credits
-#                         description=f"Promovare anunț: {listing.title}",
-#                         listing=listing
-#                     )
-                    
-#                     messages.success(request, f"Anunțul '{listing.title}' a fost promovat cu succes! Va apărea pe prima pagină timp de 7 zile.")
-#                     # Assuming listing_detail takes listing_id, not slug, based on other views.
-#                     return JsonResponse({'success': True, 'redirect_url': reverse('marketplace:listing_detail', kwargs={'listing_id': listing.id})})
-#                 else:
-#                     return JsonResponse({'error': 'Eroare la procesarea creditelor.'}, status=400)
-#             else:
-#                 return JsonResponse({'error': f'Nu ai suficiente credite. Ai nevoie de {promotion_cost} credite.'}, status=400)
-        
-#         context = {
-#             'listing': listing,
-#             'promotion_cost': promotion_cost,
-#             'user_credits': user_profile.credits_balance
-#         }
-#         # This render seems to be for a different promote_listing.html than the form based one.
-#         return render(request, 'marketplace/promote_listing.html', context)
-        
-#     except Listing.DoesNotExist:
-#         messages.error(request, "Anunțul nu există sau nu îți aparține.")
-#         return redirect('marketplace:profile') # Corrected redirect
+
 
 @login_required
 def credits_history(request):
@@ -1076,7 +820,7 @@ def credits_history(request):
     
     context = {
         'transactions': transactions,
-        'user_profile': request.user.profile
+    'user_profile': getattr(request.user, 'profile', None)
     }
     return render(request, 'marketplace/credits_history.html', context)
 
@@ -1120,6 +864,10 @@ def process_payment_view(request):
                 })
             
             # Create Stripe checkout session
+            if stripe is None:
+                messages.error(request, 'Stripe is not configured on the server.')
+                return redirect('marketplace:home')
+
             checkout_session = stripe.checkout.Session.create(
                 payment_method_types=['card'],
                 line_items=line_items,
@@ -1134,7 +882,12 @@ def process_payment_view(request):
                 }
             )
             
-            return redirect(checkout_session.url)
+            # Some stripe versions return url directly, others require .url attribute
+            redirect_url = getattr(checkout_session, 'url', None) or checkout_session.get('url') if isinstance(checkout_session, dict) else None
+            if not redirect_url:
+                # Fallback to hosted_session_url or object URL
+                redirect_url = getattr(checkout_session, 'url', None) or getattr(checkout_session, 'hosted_url', None)
+            return redirect(redirect_url or 'marketplace:home')
             
         except Exception as e:
             messages.error(request, f'Eroare la procesarea plății: {str(e)}')
@@ -1156,7 +909,7 @@ def promote_listing_view(request, listing_id):
     # Check if listing is already featured
     if listing.is_featured:
         messages.info(request, 'Acest anunț este deja promovat.')
-        return redirect('marketplace:listing_detail', listing_id=listing.id)
+        return redirect('marketplace:listing_detail', listing_id=str(listing.id))
     
     # Determine the target category
     target_category = listing.category
@@ -1170,10 +923,10 @@ def promote_listing_view(request, listing_id):
             credits_needed = Decimal(str(duration_days * 0.5))
             auto_repost_interval = request.POST.get('auto_repost_interval', 'none')
             
-            user_profile = request.user.profile
-            
-            # Check if user has enough credits
-            if user_profile.credits_balance < credits_needed:
+            user_profile = getattr(request.user, 'profile', None)
+
+            # Check if user_profile exists and has enough credits
+            if user_profile is None or user_profile.credits_balance < credits_needed:
                 messages.error(request, f'Nu ai suficiente credite. Ai nevoie de {credits_needed} credite pentru promovare.')
                 return redirect('marketplace:credits_dashboard')
             
@@ -1221,22 +974,15 @@ def promote_listing_view(request, listing_id):
                     # Handle auto-repost if selected
                     if auto_repost_interval != 'none':
                         from .tasks import auto_repost_listing
-                        from celery.task.control import add_periodic_task
-                        
-                        # Convert minutes to seconds for Celery
-                        interval_seconds = int(auto_repost_interval) * 60
-                        
-                        # Schedule the periodic task
-                        add_periodic_task(
-                            interval_seconds,
-                            auto_repost_listing.s(listing.id, auto_repost_interval),
-                            name=f'auto-repost-{listing.id}'
-                        )
-                        
-                        # Update boost record with auto-repost flag
+                        # Ensure the task supports delay and listing id is string
+                        try:
+                            listing_id_str = str(getattr(listing, 'id', ''))
+                            if hasattr(auto_repost_listing, 'delay'):
+                                auto_repost_listing.delay(listing_id_str, auto_repost_interval)
+                        except Exception:
+                            logger.exception('Failed to schedule auto repost')
                         boost.auto_repost = True
                         boost.save(update_fields=['auto_repost'])
-                        
                         messages.success(request, f'Repromovarea automată a fost activată - anunțul va fi repostat la fiecare {auto_repost_interval} minute.')
                     
                     messages.success(
@@ -1245,7 +991,7 @@ def promote_listing_view(request, listing_id):
                         f'Acum apare primul în categoria "{category_name}" până pe {expires_at.strftime("%d.%m.%Y")}.'
                     )
                     
-                    return redirect('marketplace:listing_detail', listing_id=listing.id)
+                    return redirect('marketplace:listing_detail', listing_id=str(getattr(listing, 'id', '')))
                     
             except Exception as e:
                 messages.error(request, 'A apărut o eroare la procesarea promovării. Te rugăm să încerci din nou.')
@@ -1262,7 +1008,7 @@ def promote_listing_view(request, listing_id):
         'listing': listing,
         'target_category': category_name,
         'promotion_cost': Decimal('0.5'),
-        'user_credits': request.user.profile.credits_balance,
+    'user_credits': getattr(getattr(request.user, 'profile', None), 'credits_balance', 0),
         'existing_boosts': listing.boosts.filter(is_active=True)
     }
     
@@ -1361,9 +1107,8 @@ def public_profile_view(request, username):
     ).order_by('-created_at')
     
     # Get user profile
-    try:
-        user_profile = profile_user.profile
-    except:
+    user_profile = getattr(profile_user, 'profile', None)
+    if user_profile is None:
         # Create profile if it doesn't exist
         user_profile = UserProfile.objects.create(user=profile_user)
     
@@ -1389,16 +1134,18 @@ def stripe_webhook(request):
     event = None
 
     try:
+        if stripe is None:
+            raise RuntimeError("Stripe library is not available")
         event = stripe.Webhook.construct_event(
             payload, sig_header, endpoint_secret
         )
     except ValueError as e:
         # Invalid payload
         return JsonResponse({'error': str(e)}, status=400)
-    except stripe.error.SignatureVerificationError as e:
-        # Invalid signature
-        return JsonResponse({'error': str(e)}, status=400)
     except Exception as e:
+        # If stripe is available, check for signature verification
+        if stripe is not None and hasattr(stripe, 'error') and hasattr(stripe.error, 'SignatureVerificationError') and isinstance(e, stripe.error.SignatureVerificationError):
+            return JsonResponse({'error': str(e)}, status=400)
         return JsonResponse({'error': 'Generic webhook error', 'detail': str(e)}, status=500)
 
     # Handle the checkout.session.completed event
@@ -1417,10 +1164,12 @@ def stripe_webhook(request):
                 # Already processed by redirect or another webhook call
                 return JsonResponse({'status': 'already processed'}, status=200)
 
-            if payment.status == 'pending' and session.payment_status == 'paid':
+            # Determine payment_status in a defensive way (session may be stripe object or dict)
+            payment_status = getattr(session, 'payment_status', None) if not isinstance(session, dict) else session.get('payment_status')
+            if payment.status == 'pending' and payment_status == 'paid':
                 # Fulfill the purchase
                 user = payment.user
-                user_profile = user.profile
+                user_profile = getattr(user, 'profile', None)
 
                 metadata = session.get('metadata', {}) # Metadata from checkout session creation
                 if not metadata: # Fallback to payment metadata if session metadata is empty
@@ -1443,9 +1192,10 @@ def stripe_webhook(request):
                 except json.JSONDecodeError:
                     cart_data = [] # Or handle error
 
-                # Add credits to user profile
-                user_profile.credits_balance += Decimal(str(total_credits))
-                user_profile.save()
+                # Add credits to user profile (guarded)
+                if user_profile is not None:
+                    user_profile.credits_balance += Decimal(str(total_credits))
+                    user_profile.save()
 
                 # Create transaction records for each item in cart
                 # This part requires cart_data from the payment's metadata
@@ -1494,11 +1244,3 @@ def stripe_webhook(request):
     # etc.
 
     return JsonResponse({'status': 'unhandled event type'}, status=200) # Acknowledge other events
-
-
-def floating_chat_view(request):
-    """Render the floating chat widget with local agent configuration."""
-    context = {
-        'agent_endpoint': 'http://localhost:8001/chat',  # Local MCP agent endpoint
-    }
-    return render(request, 'floating_chat.html', context)

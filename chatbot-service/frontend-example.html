@@ -63,6 +63,15 @@
             
             if (data.error) {
                 messageDiv.innerHTML = `<strong>Error:</strong> ${data.error}`;
+            } else if (data.category) {
+                // Handle find_category response
+                messageDiv.innerHTML = `<strong>Bot:</strong> I think the best category for your item is <strong>${data.category.name}</strong>.`;
+                const createListingLink = document.createElement('a');
+                createListingLink.href = `/add-listing/?category=${data.category.slug}`;
+                createListingLink.innerText = "Create a listing in this category";
+                createListingLink.target = "_blank";
+                messageDiv.appendChild(document.createElement('br'));
+                messageDiv.appendChild(createListingLink);
             } else {
                 messageDiv.innerHTML = `<strong>Bot:</strong> ${JSON.stringify(data)}`;
             }
@@ -85,7 +94,7 @@
                 // Send to chatbot service
                 chatSocket.send(JSON.stringify({
                     intent: detectIntent(message),
-                    message: message,
+                    query: message, // Use query instead of message for find_category
                     timestamp: new Date().toISOString()
                 }));
                 
@@ -94,9 +103,12 @@
             }
         });
 
-        // Simple intent detection
+        // Improved intent detection
         function detectIntent(message) {
             message = message.toLowerCase();
+            if (message.includes('vând') || message.includes('sell') || message.includes('postez') || message.includes('adaug') || message.includes('unde')) {
+                return 'find_category';
+            }
             if (message.includes('optimize') || message.includes('title')) {
                 return 'title_optimize';
             } else if (message.includes('stock') || message.includes('inventory')) {

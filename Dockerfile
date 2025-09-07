@@ -7,6 +7,7 @@ ENV PYTHONUNBUFFERED 1
 
 # Dependencies stage
 FROM base AS dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends libgdal-dev
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 

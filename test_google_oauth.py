@@ -17,7 +17,6 @@ sys.path.insert(0, str(project_root))
 
 # Setup Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'piata_ro.settings')
-django.setup()
 
 from allauth.socialaccount.models import SocialApp
 from django.contrib.sites.models import Site

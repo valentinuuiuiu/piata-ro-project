@@ -7,7 +7,7 @@ pytest>=7.0.0
 httpx>=0.24.0
 
 # Added for Django project
-Django>=4.2.22
+Django>=5.0,<5.1
 djangorestframework>=3.14.0
 
 # YAML support
@@ -34,8 +34,8 @@ Pillow>=10.1.0
 requests>=2.31.0
 
 # Redis for caching/sessions
-redis>=5.0.1
-django-redis
+redis==4.6.0
+django-redis==5.4.0
 
 # Task queue
 celery>=5.3.4
@@ -70,3 +70,6 @@ torch>=1.13.0
 
 psycopg2-binary
 dj-database-url
+requests-cache
+pgvector
+python-json-logger>=2.0.0

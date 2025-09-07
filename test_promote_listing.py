@@ -13,7 +13,6 @@ from datetime import timedelta
 # Setup Django environment
 sys.path.append('/home/shiva/piata-ro-project')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'piata_ro.settings')
-django.setup()
 
 from django.contrib.auth.models import User
 from django.utils import timezone

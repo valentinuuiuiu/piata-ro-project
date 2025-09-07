@@ -92,7 +92,8 @@ class ChatbotManager:
             "title_optimize": AGENTS["advertising"],
             "create_listing": AGENTS["advertising"],
             "product_query": AGENTS["database"],
-            "stock_check": AGENTS["inventory"]
+            "stock_check": AGENTS["inventory"],
+            "find_category": AGENTS["database"], # New intent
         }
         return routing.get(intent, AGENTS["advertising"])  # Default
     
@@ -102,7 +103,8 @@ class ChatbotManager:
             "title_optimize": "/optimize",
             "create_listing": "/listings",
             "product_query": "/query",
-            "stock_check": "/inventory"
+            "stock_check": "/inventory",
+            "find_category": "/find_category", # New endpoint
         }.get(intent, "/chatbot")
 
 manager = ChatbotManager()

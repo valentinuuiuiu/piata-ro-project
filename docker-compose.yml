@@ -1,51 +1,118 @@
 version: '3.8'
 
 services:
+  # Reverse Proxy with SSL
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - web
+      - mcp-agents
+    restart: unless-stopped
+
+  # PostgreSQL Database with optimizations
   db:
     image: pgvector/pgvector:pg16
     environment:
       POSTGRES_DB: piata_ro
       POSTGRES_USER: piata_user
       POSTGRES_PASSWORD: piata_password
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U piata_user -d piata_ro"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
+  # Redis Cache with persistence
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    command: redis-server --appendonly yes --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
+  # Django Web Application
   web:
     build: .
-    ports:
-      - "8000:8000"
     environment:
       - DEBUG=False
+      - DJANGO_SETTINGS_MODULE=settings_prod
       - DATABASE_URL=postgresql://piata_user:piata_password@db:5432/piata_ro
       - REDIS_URL=redis://redis:6379/0
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-      - SECRET_KEY=${SECRET_KEY}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - ALLOWED_HOSTS=localhost,127.0.0.1,piata-ai.ro,www.piata-ai.ro
+      - CSRF_TRUSTED_ORIGINS=https://piata-ai.ro,https://www.piata-ai.ro
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./media:/app/media
       - ./staticfiles:/app/staticfiles
       - ./logs:/app/logs
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
+  # MCP Agents with health checks
   mcp-agents:
     build: .
-    command: python archive/mcp-servers-20250630/simple_http_agents.py
-    ports:
-      - "8001:8001"
-      - "8002:8002" 
-      - "8003:8003"
+    command: >
+      sh -c "
+      python archive/mcp-servers-20250630/advertising-agent.py --host 0.0.0.0 --port 8001 &
+      python archive/mcp-servers-20250630/django_sql_agent.py --host 0.0.0.0 --port 8002 &
+      python archive/mcp-servers-20250630/stock_agent.py --host 0.0.0.0 --port 8003 &
+      wait
+      "
     environment:
-      - DJANGO_SETTINGS_MODULE=piata_ro.settings
+      - DJANGO_SETTINGS_MODULE=settings_prod
+      - DATABASE_URL=postgresql://piata_user:piata_password@db:5432/piata_ro
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8001/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Monitoring and Logging
+  # monitor:
+  #   image: grafana/loki:2.9.0
+  #   ports:
+  #     - "3100:3100"
+  #   command: -config.file=/etc/loki/local-config.yaml
+  #   volumes:
+  #     - ./monitoring/loki:/etc/loki
+  #     - ./logs:/logs
+  #   restart: unless-stopped
 
 volumes:
   postgres_data:
+  redis_data:

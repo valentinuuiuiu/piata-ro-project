@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 from .models_chat import ChatConversation, ChatMessage
 
 
+from pgvector.django import VectorField
+
 class Category(models.Model):
     name = models.CharField(max_length=100)
     slug = models.SlugField(max_length=100, unique=True)
@@ -27,6 +29,7 @@ class Category(models.Model):
         null=True,
         related_name="subcategories",
     )
+    embedding = VectorField(dimensions=384, blank=True, null=True)
 
     class Meta:
         verbose_name_plural = "Categories"
@@ -59,6 +62,8 @@ def listing_image_path(instance, filename):
     return f"listings/{instance.listing.user.id}/{instance.listing.id}/{filename}"
 
 
+from django.contrib.gis.db import models as gis_models
+
 class Listing(models.Model):
     STATUS_CHOICES = (
         ("pending", "Pending"),
@@ -82,6 +87,7 @@ class Listing(models.Model):
     # Enhanced location fields for geolocation services
     latitude = models.DecimalField(max_digits=10, decimal_places=7, blank=True, null=True)
     longitude = models.DecimalField(max_digits=10, decimal_places=7, blank=True, null=True)
+    location_point = gis_models.PointField(blank=True, null=True)
     address = models.CharField(max_length=255, blank=True, null=True)
     city = models.CharField(max_length=100, blank=True, null=True)
     county = models.CharField(max_length=100, blank=True, null=True)
@@ -120,6 +126,11 @@ class Listing(models.Model):
             models.Index(fields=["price", "status"]),
             models.Index(fields=["city", "status"]),
             models.Index(fields=["latitude", "longitude"]),  # For geospatial queries
+            models.Index(fields=["is_premium", "status", "created_at"]),  # Premium listings
+            models.Index(fields=["is_verified", "status"]),  # Verified listings
+            models.Index(fields=["county", "city", "status"]),  # Location-based queries
+            models.Index(fields=["created_at", "status"]),  # Recent listings
+            models.Index(fields=["views", "status"]),  # Popular listings
         ]
 
     def __str__(self):
@@ -153,7 +164,7 @@ class Listing(models.Model):
 
     def get_images_ordered(self):
         """Get all images in correct order"""
-        return self.images.all().order_by('order')
+        return self.listingimage_set.all().order_by('order') if not hasattr(self, 'images') else self.images.all().order_by('order')
     
     @property
     def has_coordinates(self):

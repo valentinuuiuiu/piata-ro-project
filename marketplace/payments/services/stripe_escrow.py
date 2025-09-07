@@ -1,11 +1,12 @@
 
 
 
+import os
 import stripe
 from django.conf import settings
 from ..models import EscrowPayment
 
-stripe.api_key = settings.STRIPE_SECRET_KEY
+stripe.api_key = os.getenv('STRIPE_SECRET_KEY', '')
 
 class StripeEscrowService:
     """Handles escrow payments using Stripe"""

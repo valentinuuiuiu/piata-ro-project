@@ -7,7 +7,28 @@ from piata_ro.settings import *
 
 # Security settings
 DEBUG = False
-ALLOWED_HOSTS = ['piata.ro', 'www.piata.ro', '*.azurewebsites.net', 'localhost']
+SECURE_SSL_REDIRECT = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_HSTS_SECONDS = 31536000  # 1 year
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = 'DENY'
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+CSRF_TRUSTED_ORIGINS = [
+    'https://piata-ai.ro',
+    'https://www.piata-ai.ro',
+    'https://*.azurewebsites.net'
+]
+ALLOWED_HOSTS = [
+    'piata-ai.ro',
+    'www.piata-ai.ro',
+    '*.azurewebsites.net',
+    'localhost',
+    '127.0.0.1'
+]
 
 # Database
 DATABASES = {
@@ -48,28 +69,75 @@ X_FRAME_OPTIONS = 'DENY'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+        'json': {
+            '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+        }
+    },
     'handlers': {
         'file': {
             'level': 'INFO',
-            'class': 'logging.FileHandler',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': '/app/logs/django.log',
+            'maxBytes': 1024 * 1024 * 10,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'verbose'
+        },
+        'error_file': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': '/app/logs/django-error.log',
+            'maxBytes': 1024 * 1024 * 10,
+            'backupCount': 5,
+            'formatter': 'verbose'
         },
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
+            'formatter': 'simple'
         },
+        'json_console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'json'
+        }
     },
     'loggers': {
         'django': {
-            'handlers': ['file', 'console'],
+            'handlers': ['file', 'error_file', 'console'],
             'level': 'INFO',
             'propagate': True,
         },
         'marketplace': {
-            'handlers': ['file', 'console'],
+            'handlers': ['file', 'error_file', 'json_console'],
             'level': 'INFO',
-            'propagate': True,
+            'propagate': False,
         },
+        'ai_assistant': {
+            'handlers': ['file', 'error_file', 'json_console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'mcp_admin': {
+            'handlers': ['file', 'error_file', 'json_console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        # Security logger
+        'django.security.*': {
+            'handlers': ['error_file', 'json_console'],
+            'level': 'WARNING',
+            'propagate': False,
+        }
     },
 }
 

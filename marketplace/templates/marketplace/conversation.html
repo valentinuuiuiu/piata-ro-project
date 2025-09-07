@@ -60,16 +60,11 @@
 
         <!-- Message Input -->
         <div class="border-t border-gray-200 p-4">
-            <form method="post" class="flex space-x-4" id="message-form">
+            <form id="send-form" method="post" action="{% url 'marketplace:conversation' other_user_id %}" class="flex space-x-4">
                 {% csrf_token %}
-                <input type="text" 
-                       name="content" 
-                       id="message-input"
-                       placeholder="Scrie un mesaj..." 
-                       class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                       required>
-                <button type="submit" 
-                        class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                <input type="hidden" name="listing_id" value="{{ listing.id|default:'' }}">
+                <textarea name="content" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent input" rows="3" placeholder="Scrie un mesaj..."></textarea>
+                <button class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors btn btn-primary btn-pill" type="submit">
                     <i class="fas fa-paper-plane mr-2"></i>Trimite
                 </button>
             </form>
@@ -80,71 +75,67 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const messagesContainer = document.getElementById('messages-container');
-    const messageForm = document.getElementById('message-form');
-    const messageInput = document.getElementById('message-input');
-    
-    // Scroll to bottom of messages
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    
-    // Focus on input
-    messageInput.focus();
-    
-    // Handle form submission with AJAX
-    messageForm.addEventListener('submit', function(e) {
+    const sendForm = document.getElementById('send-form');
+    const textarea = sendForm.querySelector('textarea[name="content"]');
+
+    // Scroll to bottom of messages on load
+    if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    if (textarea) {
+        textarea.focus();
+    }
+
+    // Handle AJAX submit to the same URL
+    sendForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        
-        const formData = new FormData(this);
-        const content = messageInput.value.trim();
-        
+        const content = (textarea.value || '').trim();
         if (!content) return;
-        
-        // Add message to UI immediately
+
+        // optimistic UI
         const messageDiv = document.createElement('div');
         messageDiv.className = 'flex justify-end';
         messageDiv.innerHTML = `
             <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-primary text-white">
-                <p class="text-sm">${content}</p>
-                <div class="text-xs mt-1 text-blue-100">
-                    Trimitere...
-                </div>
+                <p class="text-sm"></p>
+                <div class="text-xs mt-1 text-blue-100">Trimitere...</div>
             </div>
         `;
+        messageDiv.querySelector('p').textContent = content;
         messagesContainer.appendChild(messageDiv);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        
-        // Clear input
-        messageInput.value = '';
-        
-        // Send AJAX request
+
+        const formData = new FormData(sendForm);
+
         fetch(window.location.href, {
             method: 'POST',
             body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
-        .then(response => response.json())
+        .then(r => r.json())
         .then(data => {
-            if (data.success) {
-                // Update the time in the message
+            if (data && data.success) {
                 const timeSpan = messageDiv.querySelector('.text-xs');
-                timeSpan.textContent = data.message.created_at;
+                timeSpan.textContent = data.created_at || '';
             } else {
-                // Remove the message if it failed
                 messageDiv.remove();
-                alert('Eroare la trimiterea mesajului');
             }
         })
-        .catch(error => {
+        .catch(() => {
             messageDiv.remove();
-            alert('Eroare la trimiterea mesajului');
+        })
+        .finally(() => {
+            textarea.value = '';
+            textarea.focus();
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         });
     });
-    
-    // Enter key to send message
-    messageInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            messageForm.dispatchEvent(new Event('submit'));
+
+    // Enter to submit with Ctrl/Cmd+Enter newline support
+    textarea.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendForm.dispatchEvent(new Event('submit'));
         }
     });
 });

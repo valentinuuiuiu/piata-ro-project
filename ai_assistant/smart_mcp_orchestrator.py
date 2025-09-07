@@ -277,7 +277,7 @@ class SmartMCPOrchestrator(BaseModel):
     async def route_to_mcp_server(self, intent: RequestIntent, user_message: str) -> List[MCPToolCall]:
         """
         Route request to appropriate MCP server based on intent analysis
-        Returns list of tool calls to make
+        Returns list of tool calls to make with intelligent tool selection
         """
         
         if not intent.server_needed:
@@ -285,13 +285,112 @@ class SmartMCPOrchestrator(BaseModel):
         
         server_config = self.mcp_servers[intent.server_needed]
         
-        # Simple tool selection based on intent - no need for complex LLM routing
-        return [MCPToolCall(
-            server=intent.server_needed,
-            tool="process",  # Use the generic process endpoint
-            params={"query": user_message},
-            expected_result="Response from MCP agent"
-        )]
+        # Enhanced tool selection based on intent and message content
+        tool_calls = []
+        
+        # Database server tools
+        if intent.server_needed == MCPServerType.DATABASE:
+            message_lower = user_message.lower()
+            
+            if any(word in message_lower for word in ['user', 'create user', 'register']):
+                tool_calls.append(MCPToolCall(
+                    server=intent.server_needed,
+                    tool="create_user",
+                    params={"query": user_message},
+                    expected_result="User creation result"
+                ))
+            elif any(word in message_lower for word in ['search', 'find', 'listings', 'items']):
+                tool_calls.append(MCPToolCall(
+                    server=intent.server_needed,
+                    tool="search_listings",
+                    params={"query": user_message},
+                    expected_result="Search results for listings"
+                ))
+            elif any(word in message_lower for word in ['stats', 'statistics', 'analytics']):
+                tool_calls.append(MCPToolCall(
+                    server=intent.server_needed,
+                    tool="get_database_stats",
+                    params={"query": user_message},
+                    expected_result="Database statistics"
+                ))
+            else:
+                # Default to generic query
+                tool_calls.append(MCPToolCall(
+                    server=intent.server_needed,
+                    tool="execute_custom_query",
+                    params={"query": user_message},
+                    expected_result="Query execution result"
+                ))
+        
+        # Advertising server tools
+        elif intent.server_needed == MCPServerType.ADVERTISING:
+            message_lower = user_message.lower()
+            
+            if any(word in message_lower for word in ['title', 'optimize title']):
+                tool_calls.append(MCPToolCall(
+                    server=intent.server_needed,
+                    tool="optimize_listing_title",
+                    params={"query": user_message},
+                    expected_result="Optimized title suggestions"
+                ))
+            elif any(word in message_lower for word in ['description', 'write description']):
+                tool_calls.append(MCPToolCall(
+                    server=intent.server_needed,
+                    tool="generate_description_template",
+                    params={"query": user_message},
+                    expected_result="Generated description template"
+                ))
+            elif any(word in message_lower for word in ['price', 'pricing', 'cost']):
+                tool_calls.append(MCPToolCall(
+                    server=intent.server_needed,
+                    tool="suggest_pricing_strategy",
+                    params={"query": user_message},
+                    expected_result="Pricing strategy suggestions"
+                ))
+            else:
+                # Default to generic marketing optimization
+                tool_calls.append(MCPToolCall(
+                    server=intent.server_needed,
+                    tool="generate_promotional_content",
+                    params={"query": user_message},
+                    expected_result="Promotional content generation"
+                ))
+        
+        # Stock server tools
+        elif intent.server_needed == MCPServerType.STOCK:
+            message_lower = user_message.lower()
+            
+            if any(word in message_lower for word in ['inventory', 'stock levels']):
+                tool_calls.append(MCPToolCall(
+                    server=intent.server_needed,
+                    tool="get_inventory_summary",
+                    params={"query": user_message},
+                    expected_result="Inventory summary"
+                ))
+            elif any(word in message_lower for word in ['forecast', 'demand', 'prediction']):
+                tool_calls.append(MCPToolCall(
+                    server=intent.server_needed,
+                    tool="forecast_demand",
+                    params={"query": user_message},
+                    expected_result="Demand forecast"
+                ))
+            elif any(word in message_lower for word in ['supplier', 'vendor']):
+                tool_calls.append(MCPToolCall(
+                    server=intent.server_needed,
+                    tool="manage_suppliers",
+                    params={"query": user_message},
+                    expected_result="Supplier management result"
+                ))
+            else:
+                # Default to generic stock query
+                tool_calls.append(MCPToolCall(
+                    server=intent.server_needed,
+                    tool="get_inventory_summary",
+                    params={"query": user_message},
+                    expected_result="Inventory information"
+                ))
+        
+        return tool_calls
     
     async def execute_mcp_tools(self, tool_calls: List[MCPToolCall]) -> List[Dict[str, Any]]:
         """Execute the selected MCP tools via real SSE communication"""
@@ -317,8 +416,8 @@ class SmartMCPOrchestrator(BaseModel):
         
         return results
     
-    async def _call_mcp_server(self, tool_call: MCPToolCall) -> Dict[str, Any]:
-        """Make actual call to MCP server via HTTP"""
+    async def _call_mcp_server(self, tool_call: MCPToolCall, max_retries: int = 3) -> Dict[str, Any]:
+        """Make actual call to MCP server via HTTP with retry mechanism"""
         server_config = self.mcp_servers[tool_call.server]
         
         # Prepare the request payload for the MCP server (using MCP protocol format)
@@ -331,39 +430,78 @@ class SmartMCPOrchestrator(BaseModel):
             "id": f"call_{tool_call.tool}_{hash(str(tool_call.params))}"
         }
         
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        retry_count = 0
+        last_error = None
+        
+        while retry_count < max_retries:
             try:
-                # Call the process endpoint on the MCP server
-                response = await client.post(
-                    f"{server_config.url}/process",
-                    json={
-                        "query": tool_call.params.get("query", ""),
-                        "context": tool_call.params
-                    },
-                    headers={"Content-Type": "application/json"}
-                )
-                
-                if response.status_code == 200:
-                    result = response.json()
-                    logger.info(f"MCP server {tool_call.server} returned: {result}")
-                    # Extract the result from MCP protocol response
-                    if "result" in result:
-                        return result["result"]
-                    else:
-                        return result
-                else:
-                    logger.error(f"MCP server error {response.status_code}: {response.text}")
-                    return {"error": f"Server returned {response.status_code}", "details": response.text}
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    # Call the process endpoint on the MCP server
+                    response = await client.post(
+                        f"{server_config.url}/process",
+                        json={
+                            "query": tool_call.params.get("query", ""),
+                            "context": tool_call.params
+                        },
+                        headers={"Content-Type": "application/json"}
+                    )
                     
+                    if response.status_code == 200:
+                        result = response.json()
+                        logger.info(f"MCP server {tool_call.server} returned: {result}")
+                        
+                        # Check if the result contains an error
+                        if isinstance(result, dict) and result.get("error"):
+                            logger.warning(f"MCP server returned error: {result['error']}")
+                            last_error = result["error"]
+                            retry_count += 1
+                            await asyncio.sleep(1 * retry_count)  # Exponential backoff
+                            continue
+                        
+                        # Extract the result from MCP protocol response
+                        if "result" in result:
+                            return result["result"]
+                        else:
+                            return result
+                    elif response.status_code >= 500:
+                        # Server error - retry
+                        logger.warning(f"Server error {response.status_code}, retrying...")
+                        retry_count += 1
+                        await asyncio.sleep(1 * retry_count)  # Exponential backoff
+                        last_error = f"Server error {response.status_code}"
+                        continue
+                    else:
+                        # Client error - don't retry
+                        logger.error(f"MCP server error {response.status_code}: {response.text}")
+                        return {
+                            "error": f"Server returned {response.status_code}", 
+                            "details": response.text[:200]  # Limit detail length
+                        }
+                        
             except httpx.TimeoutException:
-                logger.error(f"Timeout calling {tool_call.server} server")
-                return {"error": "Request timeout"}
+                logger.warning(f"Timeout calling {tool_call.server} server, retrying...")
+                retry_count += 1
+                await asyncio.sleep(1 * retry_count)  # Exponential backoff
+                last_error = "Request timeout"
+                continue
             except httpx.RequestError as e:
-                logger.error(f"Request error calling {tool_call.server}: {e}")
-                return {"error": f"Request failed: {str(e)}"}
+                logger.warning(f"Request error calling {tool_call.server}: {e}, retrying...")
+                retry_count += 1
+                await asyncio.sleep(1 * retry_count)  # Exponential backoff
+                last_error = f"Request failed: {str(e)}"
+                continue
             except Exception as e:
                 logger.error(f"Unexpected error calling {tool_call.server}: {e}")
                 return {"error": f"Unexpected error: {str(e)}"}
+        
+        # If we reached here, all retries failed
+        logger.error(f"All {max_retries} retries failed for {tool_call.server}.{tool_call.tool}")
+        return {
+            "error": f"Failed after {max_retries} attempts",
+            "last_error": last_error,
+            "server": tool_call.server.value,
+            "tool": tool_call.tool
+        }
     
     async def process_request(self, user_message: str, conversation_history: Optional[List[Dict]] = None) -> MCPResponse:
         """

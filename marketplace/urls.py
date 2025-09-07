@@ -5,6 +5,8 @@ from rest_framework.routers import DefaultRouter
 from . import views
 from .deepseek_chat_refactored import deepseek_chat_view
 from .recommendations import urls as recommendation_urls
+from .views.monitoring import MonitoringDashboardView, HealthAPIView, SummaryAPIView, SystemAPIView
+from .views import floating_chat_view
 
 app_name = 'marketplace'
 
@@ -21,6 +23,7 @@ urlpatterns = [
     path('login/', views.redirect_to_allauth_login, name='login'),
     path('auth/login/', views.login_view, name='password_login'),
     path('signup/', views.signup_view, name='signup'),
+    
     path('mfa/', views.verify_mfa, name='verify_mfa'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('password_reset/', PasswordResetView.as_view(template_name='account/password_reset.html'), name='password_reset'),
@@ -39,10 +42,10 @@ urlpatterns = [
     
     # Frontend pages
     path('', views.home_view, name='home'),
-    path('categorii/', views.category_list, name='categories'),
+    path('categorii/', views.categories_view, name='categories'),
     path('categorii/<slug:category_slug>/', views.category_detail, name='category_detail'),
-    path('anunturi/', views.listing_list, name='listings'),
-    path('anunt/<slug:slug>/', views.listing_detail, name='listing_detail'),
+    path('anunturi/', views.listings_view, name='listings'),
+    path('anunt/<str:slug>/', views.listing_detail, name='listing_detail'),
     path('adauga-anunt/', views.add_listing_view, name='add_listing'),
     path('profil/', views.profile_view, name='profile'),
     path('profil/editare/', views.profile_edit_view, name='profile_edit'),
@@ -59,6 +62,7 @@ urlpatterns = [
     path('credite/plata/', views.process_payment_view, name='process_payment'),
     path('credite/succes/', views.payment_success, name='payment_success'),
     path('promoveaza/<int:listing_id>/', views.promote_listing_view, name='promote_listing'),
+    path('credite/istoric/', views.credits_history, name='credits_history'),
     
     # Legal Pages
     path('termeni-si-conditii/', views.terms_of_service_view, name='terms'),
@@ -71,9 +75,15 @@ urlpatterns = [
     path('stripe/webhook/', views.stripe_webhook, name='stripe_webhook'),
     
     # Floating Chat
-    path('chat/', views.floating_chat_view, name='floating_chat'),
+    path('chat/', floating_chat_view, name='floating_chat'),
     path('api/deepseek-chat/', deepseek_chat_view, name='deepseek_chat'),
 
     # API endpoints (keeping existing structure)
     path("api/", include(router.urls)),
+    
+    # Monitoring endpoints
+    path('admin/monitoring/', MonitoringDashboardView.as_view(), name='monitoring_dashboard'),
+    path('admin/monitoring/api/health/', HealthAPIView.as_view(), name='monitoring_health_api'),
+    path('admin/monitoring/api/summary/', SummaryAPIView.as_view(), name='monitoring_summary_api'),
+    path('admin/monitoring/api/system/', SystemAPIView.as_view(), name='monitoring_system_api'),
 ]

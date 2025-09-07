@@ -29,17 +29,26 @@ from piata_ro.views import (
     process_mcp_query, test_endpoint, home, interact_with_mcp_agents, 
     natural_language_query, openai_models_endpoint, openai_chat_completions
 )
-from marketplace.admin import admin_site
+from piata_ro.health_checks import (
+    health_check, readiness_check, liveness_check, 
+    mcp_health_check, database_metrics, cache_metrics
+)
+from django.contrib import admin
 
 urlpatterns = [
     path('', include(('marketplace.urls', 'marketplace'), namespace='marketplace')),  # Include marketplace URLs for frontend
+    path('blog/', include(('marketplace.urls_blog', 'blog'), namespace='blog')),  # Blog URLs
     path('ai/', include(('ai_assistant.urls', 'ai_assistant'), namespace='ai_assistant')),  # Add AI assistant URLs
     path('ai-assistant/', include(('ai_assistant.urls', 'ai_assistant'), namespace='ai_assistant_alt')),  # Alternative path
-    path('admin/', admin_site.urls),
+    path('admin/', admin.site.urls),
     
     # Favicon
     path('favicon.ico', RedirectView.as_view(url='/static/favicon.ico', permanent=True)),
     
+    # Explicit password reset confirm URL
+    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    
+    path('auth/', include('django.contrib.auth.urls')),  # Add default auth routes
     # Allauth URLs (includes social auth)
     path('accounts/', include('allauth.urls')),
     
@@ -53,6 +62,14 @@ urlpatterns = [
     path('mcp/agents/', interact_with_mcp_agents, name='mcp_agents'),
     path('test_endpoint/', test_endpoint, name='test_endpoint'),
     path('legacy/', home, name='legacy_home'),  # Keep old home as legacy
+    
+    # Health check and monitoring endpoints
+    path('health/', health_check, name='health_check'),
+    path('health/readiness/', readiness_check, name='readiness_check'),
+    path('health/liveness/', liveness_check, name='liveness_check'),
+    path('health/mcp/<int:port>/', mcp_health_check, name='mcp_health_check'),
+    path('health/database/metrics/', database_metrics, name='database_metrics'),
+    path('health/cache/metrics/', cache_metrics, name='cache_metrics'),
 ]
 
 # Add media and static serving in development
