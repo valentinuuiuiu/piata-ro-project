@@ -16,3 +16,9 @@ venv/
 .DS_Store
 .env.prod
 .env.example
+
+# Ignored by Gemini for deployment
+bin/
+FannyMae.json
+piata_ro/dev_settings.py
+scratchpad.md

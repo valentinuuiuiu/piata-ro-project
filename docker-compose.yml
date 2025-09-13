@@ -52,6 +52,8 @@ services:
   # Django Web Application
   web:
     build: .
+    command: >
+      sh -c "python manage.py migrate && gunicorn piata_ro.wsgi:application --bind 0.0.0.0:8000"
     environment:
       - DEBUG=False
       - DJANGO_SETTINGS_MODULE=settings_prod
