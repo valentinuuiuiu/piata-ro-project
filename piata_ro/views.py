@@ -15,7 +15,7 @@ import requests
 import time
 from pathlib import Path
 from dotenv import load_dotenv
-from datetime import datetime, timezone
+from django.utils import timezone
 from typing import Optional
 
 # Import Django models for direct database access
