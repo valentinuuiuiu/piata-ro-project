@@ -606,38 +606,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.body.appendChild(countyDatalist);
     countyInput.setAttribute('list', 'county-datalist');
     
-    // Image preview functionality
-    const imagesInput = document.getElementById('{{ form.images.id_for_label }}');
-    const imagePreviewGrid = document.getElementById('image-preview-grid');
-    
-    if (imagesInput) {
-        imagesInput.addEventListener('change', function(e) {
-            imagePreviewGrid.innerHTML = '';
-            const files = Array.from(e.target.files);
-            
-            files.forEach((file, index) => {
-                if (file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const previewDiv = document.createElement('div');
-                        previewDiv.className = 'relative group';
-                        previewDiv.innerHTML = `
-                            <img src="${e.target.result}" class="w-full h-24 object-cover rounded-lg border">
-                            <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
-                                <button type="button" onclick="removeImage(${index})" class="text-white hover:text-red-300">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                            ${index === 0 ? '<div class="absolute top-1 left-1 bg-primary text-white text-xs px-1 rounded">Principală</div>' : ''}
-                        `;
-                        imagePreviewGrid.appendChild(previewDiv);
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        });
-    }
-    
     // Live preview updates
     const titleInput = document.getElementById('{{ form.title.id_for_label }}');
     const priceInput = document.getElementById('{{ form.price.id_for_label }}');
@@ -694,22 +662,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+</script>
 
-// Remove image function (global scope for onclick)
-function removeImage(index) {
-    const imagesInput = document.getElementById('{{ form.images.id_for_label }}');
-    const dt = new DataTransfer();
-    const files = Array.from(imagesInput.files);
-    
-    files.forEach((file, i) => {
-        if (i !== index) {
-            dt.items.add(file);
-        }
-    });
-    
-    <!-- Load image preview functionality -->
-    {% load static %}
-    <script src="{% static 'js/image-preview.js' %}"></script>
-
-    {% endblock %}
-    {% endblock %}
+<!-- Load image preview functionality -->
+{% load static %}
+<script src="{% static 'js/image-preview.js' %}"></script>
+{% endblock %}
+{% endblock %}
