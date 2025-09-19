@@ -64,8 +64,6 @@ django-debug-toolbar>=4.2.0
 numpy>=1.24.0
 
 # Transformers for AI search
-transformers>=4.35.0
-torch>=1.13.0
 
 psycopg2-binary
 dj-database-url

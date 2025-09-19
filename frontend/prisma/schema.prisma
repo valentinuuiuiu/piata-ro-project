@@ -1,0 +1,213 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+
+// User model (from Django auth)
+model User {
+  id                 Int      @id @default(autoincrement())
+  username           String   @unique
+  email              String   @unique
+  password           String
+  first_name         String?
+  last_name          String?
+  is_active          Boolean  @default(true)
+  is_staff           Boolean  @default(false)
+  is_superuser       Boolean  @default(false)
+  date_joined        DateTime @default(now())
+  last_login         DateTime?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  // Relations
+  listings           Listing[]
+  sent_messages      Message[] @relation("sent_messages")
+  received_messages  Message[] @relation("received_messages")
+  favorites          Favorite[]
+  profile            UserProfile?
+  reports_made       Report[]
+}
+
+// Category model
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String
+  slug        String @unique
+  icon        String?
+  color       String?
+  parentId    Int?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  // Relations
+  parent      Category? @relation("CategoryToSubcategories", fields: [parentId], references: [id])
+  subcategories Category[] @relation("CategoryToSubcategories")
+  categoryListings Listing[] @relation("ListingToCategory")
+  subListings Listing[] @relation("ListingToSubcategory")
+
+  @@map("categories")
+}
+
+// Listing model
+model Listing {
+  id            Int           @id @default(autoincrement())
+  title         String
+  description   String
+  price         Float?
+  currency      String        @default("RON")
+  location      String
+  latitude      Float?
+  longitude     Float?
+  address       String?
+  city          String?
+  county        String?
+  postal_code   String?
+  country       String        @default("România")
+  location_verified Boolean   @default(false)
+  userId        Int
+  categoryId    Int
+  subcategoryId Int?
+  status        String        @default("pending")
+  created_at    DateTime      @default(now())
+  updated_at    DateTime      @updatedAt
+  expires_at    DateTime?
+  is_premium    Boolean       @default(false)
+  is_featured   Boolean       @default(false)
+  views         Int           @default(0)
+  metadata      Json?
+  is_verified   Boolean       @default(false)
+
+  // Relations
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category      Category      @relation("ListingToCategory", fields: [categoryId], references: [id], onDelete: Cascade)
+  subcategory   Category?     @relation("ListingToSubcategory", fields: [subcategoryId], references: [id])
+  images        ListingImage[]
+  messages      Message[]
+  favorites     Favorite[]
+  reports       Report[]
+
+  @@map("listings")
+}
+
+// ListingImage model
+model ListingImage {
+  id        Int      @id @default(autoincrement())
+  listingId Int
+  image     String
+  is_main   Boolean  @default(false)
+  order     Int      @default(0)
+  created_at DateTime @default(now())
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("listing_images")
+}
+
+// Message model
+model Message {
+  id          Int      @id @default(autoincrement())
+  senderId    Int
+  receiverId  Int
+  listingId   Int?
+  content     String
+  created_at  DateTime @default(now())
+  is_read     Boolean  @default(false)
+
+  sender   User   @relation("sent_messages", fields: [senderId], references: [id])
+  receiver User   @relation("received_messages", fields: [receiverId], references: [id])
+  listing  Listing? @relation(fields: [listingId], references: [id])
+
+  @@map("messages")
+}
+
+// Favorite model
+model Favorite {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  listingId   Int
+  created_at  DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@map("favorites")
+}
+
+// UserProfile model
+model UserProfile {
+  id                  Int      @id @default(autoincrement())
+  userId              Int      @unique
+  avatar              String?
+  bio                 String?
+  phone               String?
+  location            String?
+  is_premium          Boolean  @default(false)
+  premium_until       DateTime?
+  stripe_customer_id  String?
+  stripe_subscription_id String?
+  credits_balance     Float  @default(0.0)
+  total_credits_purchased Float @default(0.0)
+  mfa_enabled         Boolean  @default(false)
+  mfa_secret          String?
+  mfa_backup_codes    Json     @default("[]")
+  last_mfa_used       DateTime?
+  last_password_change DateTime @default(now())
+  failed_login_attempts Int    @default(0)
+  account_locked_until DateTime?
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+// CreditPackage model
+model CreditPackage {
+  id              Int      @id @default(autoincrement())
+  name            String
+  tier            String   @default("basic")
+  base_credits    Float
+  bonus_credits   Float  @default(0.0)
+  price_eur       Float
+  price_ron       Float
+  is_active       Boolean  @default(true)
+  description     String?
+  stripe_price_id String?
+  referral_bonus  Float  @default(0.0)
+  expires_days    Int      @default(365)
+  created_at      DateTime @default(now())
+  modified_at     DateTime @updatedAt
+
+  @@map("credit_packages")
+}
+
+// Report model
+model Report {
+  id          Int      @id @default(autoincrement())
+  reporterId  Int
+  listingId   Int
+  reason      String
+  description String
+  created_at  DateTime @default(now())
+  is_resolved Boolean  @default(false)
+
+  reporter User   @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  listing  Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("reports")
+}
+
