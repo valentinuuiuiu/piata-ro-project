@@ -1,0 +1,1 @@
+web: gunicorn piata_ro.wsgi:application --log-file=-
