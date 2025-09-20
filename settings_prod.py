@@ -7,7 +7,7 @@ from piata_ro.settings import *
 
 # Security settings
 DEBUG = False
-ALLOWED_HOSTS = ['piata.ro', 'www.piata.ro', '*.azurewebsites.net', 'localhost']
+ALLOWED_HOSTS = ['piata-ai.ro', 'www.piata-ai.ro', '*.piata-ai.ro', '*.azurewebsites.net', 'localhost', '127.0.0.1']
 
 # Database
 DATABASES = {
@@ -24,6 +24,20 @@ CACHES = {
         }
     }
 }
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://piata-ai.ro',
+    'https://www.piata-ai.ro',
+    'https://*.piata-ai.ro',
+    'https://*.azurewebsites.net',
+]
+
+# Security
+SECURE_SSL_REDIRECT = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
 
 # Static files (Azure Blob Storage)
 if os.getenv('AZURE_STORAGE_ACCOUNT_NAME'):
