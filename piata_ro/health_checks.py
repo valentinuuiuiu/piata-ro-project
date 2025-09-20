@@ -40,10 +40,12 @@ def health_check(request):
 
 def check_database():
     """Check database connectivity"""
+    logger.info("Checking database connection...")
     try:
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
             cursor.fetchone()
+        logger.info("Database connection successful.")
         return True
     except Exception as e:
         logger.error(f"Database health check failed: {e}")

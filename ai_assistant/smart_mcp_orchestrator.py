@@ -16,7 +16,7 @@ if not settings.configured:
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'piata_ro.settings')
     django.setup()
 
-# Direct HTTP client for DeepSeek API
+# Direct HTTP client for OpenRouter API
 import httpx
 
 # Set up LangSmith tracing from Django settings

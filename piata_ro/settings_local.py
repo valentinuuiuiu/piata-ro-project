@@ -100,8 +100,12 @@ WSGI_APPLICATION = 'piata_ro.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'NAME': 'piata_ro',
+        'USER': 'piata_user',
+        'PASSWORD': 'piata_password',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 

@@ -341,6 +341,7 @@ def listings_view(request):
     # Apply filters
     search_query = request.GET.get('search', '')
     category_id = request.GET.get('category', '')
+    subcategory_id = request.GET.get('subcategory', '')
     min_price = request.GET.get('min_price', '')
     max_price = request.GET.get('max_price', '')
     location = request.GET.get('location', '')
@@ -352,7 +353,14 @@ def listings_view(request):
         )
 
     if category_id:
-        listings = listings.filter(category_id=category_id)
+        category = Category.objects.get(id=category_id)
+        cat_ids = [category.id]
+        subcats = Category.objects.filter(parent=category)
+        cat_ids.extend(subcats.values_list('id', flat=True))
+        listings = listings.filter(Q(category_id__in=cat_ids) | Q(subcategory_id__in=cat_ids))
+
+    if subcategory_id:
+        listings = listings.filter(subcategory_id=subcategory_id)
 
     if min_price:
         try:
@@ -380,6 +388,7 @@ def listings_view(request):
         "categories": categories,
         "search_query": search_query,
         "selected_category": category_id,
+        "selected_subcategory": subcategory_id,
         "min_price": min_price,
         "max_price": max_price,
         "location": location,

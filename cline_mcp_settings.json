@@ -7,6 +7,12 @@
       },
       "disabled": false,
       "autoApprove": []
+    },
+    "github.com/chroma-core/chroma": {
+      "command": "node",
+      "args": ["/home/shiva/Documents/Cline/MCP/chroma-mcp/build/index.js"],
+      "disabled": false,
+      "autoApprove": []
     }
   }
 }

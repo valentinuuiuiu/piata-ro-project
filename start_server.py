@@ -31,7 +31,7 @@ class MCPAgent:
         """Start the MCP agent process."""
         try:
             print(f"🚀 Starting {self.name} on port {self.port}...")
-            cmd = [sys.executable, str(self.script_path), "--host", "0.0.0.0", "--port", str(self.port)]
+            cmd = ["venv/bin/python", str(self.script_path), "--host", "0.0.0.0", "--port", str(self.port)]
             env = os.environ.copy()
             self.process = subprocess.Popen(
                 cmd,
@@ -124,7 +124,7 @@ class ServerManager:
     def check_django(self) -> bool:
         """Check if Django server is running and accessible"""
         try:
-            r = requests.get("http://127.0.0.1:8000/", timeout=3)
+            r = requests.get("http://127.0.0.1:8009/", timeout=3)
             if r.status_code == 200:
                 return True
             else:
@@ -132,7 +132,7 @@ class ServerManager:
                 return False
         except requests.exceptions.SSLError:
             print("🔒 SSL Error: Something is trying to use HTTPS with development server")
-            print("   Development server only supports HTTP. Use http://localhost:8000")
+            print("   Development server only supports HTTP. Use http://localhost:8009")
             return False
         except requests.exceptions.ConnectionError:
             # Server not running yet or connection refused
@@ -143,15 +143,15 @@ class ServerManager:
 
     def start_django(self) -> bool:
         try:
-            print("🚀 Starting Django development server on port 8000...")
+            print("🚀 Starting Django development server on port 8009...")
             print("⚠️  Note: Development server runs on HTTP only. For HTTPS, use a reverse proxy like nginx.")
             
             # Set environment variable to prevent HTTPS upgrade attempts
             env = os.environ.copy()
             env["PYTHONUNBUFFERED"] = "1"
-            env["DJANGO_SETTINGS_MODULE"] = "piata_ro.settings"
+            env["DJANGO_SETTINGS_MODULE"] = "piata_ro.settings_local"
             
-            cmd = [sys.executable, "manage.py", "runserver", "0.0.0.0:8000", "--noreload", "--insecure"]
+            cmd = ["venv/bin/python", "manage.py", "runserver", "0.0.0.0:8009", "--noreload", "--insecure"]
             self.django_process = subprocess.Popen(
                 cmd, cwd=str(BASE_DIR), env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
             )
@@ -159,7 +159,7 @@ class ServerManager:
             time.sleep(5)  # Give more time for server to start
             if self.check_django():
                 print("✅ Django server started successfully")
-                print("🌐 Server available at: http://localhost:8000")
+                print("🌐 Server available at: http://localhost:8009")
                 print("🔒 For HTTPS, configure nginx or use production deployment")
                 return True
             print("❌ Django server failed to start")

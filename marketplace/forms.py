@@ -144,6 +144,16 @@ class ListingForm(forms.ModelForm):
             ('USD', 'Dolari (USD)'),
         ]
 
+    def clean(self):
+        cleaned_data = super().clean()
+        category = cleaned_data.get('category')
+        subcategory = cleaned_data.get('subcategory')
+        if subcategory and category and subcategory.parent != category:
+            raise forms.ValidationError({
+                'subcategory': "Subcategoria selectată nu aparține categoriei alese. Vă rugăm să selectați o subcategorie validă."
+            })
+        return cleaned_data
+
     def save(self, commit=True):
         from marketplace.location_services import LocationService
         

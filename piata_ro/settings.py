@@ -85,16 +85,32 @@ WSGI_APPLICATION = 'piata_ro.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': os.getenv('POSTGRES_DB', 'piata_ro'),
-        'USER': os.getenv('POSTGRES_USER', 'piata_user'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'piata_password'),
-        'HOST': os.getenv('POSTGRES_HOST', 'db'),
-        'PORT': os.getenv('POSTGRES_PORT', '5432'),
+# Database configuration - use SQLite for local development, PostgreSQL for production
+DATABASE_URL = os.getenv('DATABASE_URL')
+if DATABASE_URL:
+    # Use SQLite if DATABASE_URL is set (for local development)
+    if DATABASE_URL.startswith('sqlite'):
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': DATABASE_URL.replace('sqlite:///', ''),
+            }
+        }
+        # Remove PostGIS from installed apps to avoid GeoDjango issues with SQLite
+        if 'django.contrib.gis' in INSTALLED_APPS:
+            INSTALLED_APPS.remove('django.contrib.gis')
+else:
+    # Use PostgreSQL/PostGIS (for Docker production)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.contrib.gis.db.backends.postgis',
+            'NAME': os.getenv('POSTGRES_DB', 'piata_ro'),
+            'USER': os.getenv('POSTGRES_USER', 'piata_user'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'piata_password'),
+            'HOST': os.getenv('POSTGRES_HOST', 'db'),
+            'PORT': os.getenv('POSTGRES_PORT', '5432'),
+        }
     }
-}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -130,6 +146,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # Media files
 MEDIA_URL = '/media/'

@@ -14,9 +14,6 @@ logger = logging.getLogger(__name__)
 # Import chat models
 from .models_chat import ChatConversation, ChatMessage
 
-
-from pgvector.django import VectorField
-
 class Category(models.Model):
     name = models.CharField(max_length=100)
     slug = models.SlugField(max_length=100, unique=True)
@@ -29,7 +26,9 @@ class Category(models.Model):
         null=True,
         related_name="subcategories",
     )
-    embedding = VectorField(dimensions=384, blank=True, null=True)
+    # Use TextField for local development (SQLite compatible)
+    # For production PostgreSQL, this would be: pgvector.django.VectorField(dimensions=384)
+    embedding = models.TextField(blank=True, null=True)
 
     class Meta:
         verbose_name_plural = "Categories"
@@ -49,7 +48,7 @@ class Category(models.Model):
     def get_listings_count(self):
         """Safely get the count of listings for this category"""
         try:
-            return self.listings.count()
+            return self.listings.count()  # type: ignore[attr-defined]
         except Exception as e:
             import logging
             logger = logging.getLogger(__name__)
@@ -61,8 +60,6 @@ def listing_image_path(instance, filename):
     # Generate path like: listings/user_id/listing_id/image.jpg
     return f"listings/{instance.listing.user.id}/{instance.listing.id}/{filename}"
 
-
-from django.contrib.gis.db import models as gis_models
 
 class Listing(models.Model):
     STATUS_CHOICES = (
@@ -87,7 +84,7 @@ class Listing(models.Model):
     # Enhanced location fields for geolocation services
     latitude = models.DecimalField(max_digits=10, decimal_places=7, blank=True, null=True)
     longitude = models.DecimalField(max_digits=10, decimal_places=7, blank=True, null=True)
-    location_point = gis_models.PointField(blank=True, null=True)
+    location_point = models.TextField(blank=True, null=True)  # SQLite compatible alternative to GIS PointField
     address = models.CharField(max_length=255, blank=True, null=True)
     city = models.CharField(max_length=100, blank=True, null=True)
     county = models.CharField(max_length=100, blank=True, null=True)
@@ -139,7 +136,7 @@ class Listing(models.Model):
     @property
     def main_image(self):
         """Get the main image or first image if none marked as main"""
-        return self.images.filter(is_main=True).first() or self.images.first()
+        return self.listingimage_set.filter(is_main=True).first() or self.listingimage_set.first()  # type: ignore[attr-defined]
 
     def add_image(self, image_file, is_main=False):
         """Add new image to listing"""
@@ -149,22 +146,22 @@ class Listing(models.Model):
         processed = process_uploaded_image(image_file)
         
         # Create image record
-        image = self.images.create(
+        image = self.listingimage_set.create(  # type: ignore[attr-defined]
             image=processed['original'],
             thumbnail=processed['thumbnail'],
             is_main=is_main,
-            order=self.images.count()
+            order=self.listingimage_set.count()  # type: ignore[attr-defined]
         )
         
         # If this is main image, unset others
         if is_main:
-            self.images.exclude(pk=image.pk).update(is_main=False)
+            self.listingimage_set.exclude(pk=image.pk).update(is_main=False)  # type: ignore[attr-defined]
             
         return image
 
     def get_images_ordered(self):
         """Get all images in correct order"""
-        return self.listingimage_set.all().order_by('order') if not hasattr(self, 'images') else self.images.all().order_by('order')
+        return self.listingimage_set.all().order_by('order')  # type: ignore[attr-defined]
     
     @property
     def has_coordinates(self):
@@ -233,6 +230,23 @@ class Listing(models.Model):
         return queryset
 
 
+class ListingImage(models.Model):
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE)
+    image = models.ImageField(upload_to=listing_image_path)
+    is_main = models.BooleanField(default=False)
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'created_at']
+
+    def save(self, *args, **kwargs):
+        if self.is_main:
+            # Ensure only one main image per listing
+            ListingImage.objects.filter(listing=self.listing).update(is_main=False)
+        super().save(*args, **kwargs)
+
+
 class Report(models.Model):
     REASON_CHOICES = (
         ('spam', 'Spam or misleading'),
@@ -268,22 +282,6 @@ class Report(models.Model):
     
     def __str__(self):
         return f"Report on {self.listing.title} by {self.reporter.username}"
-
-class ListingImage(models.Model):
-    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to=listing_image_path)
-    is_main = models.BooleanField(default=False)
-    order = models.PositiveIntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['order', 'created_at']
-
-    def save(self, *args, **kwargs):
-        if self.is_main:
-            # Ensure only one main image per listing
-            ListingImage.objects.filter(listing=self.listing).update(is_main=False)
-        super().save(*args, **kwargs)
 
 
 class Message(models.Model):
@@ -398,13 +396,13 @@ class CreditPackage(models.Model):
     name = models.CharField(max_length=100)
     tier = models.CharField(max_length=20, choices=TIER_CHOICES, default='basic')
     base_credits = models.DecimalField(max_digits=10, decimal_places=1)
-    bonus_credits = models.DecimalField(max_digits=10, decimal_places=1, default=0)
+    bonus_credits = models.DecimalField(max_digits=10, decimal_places=1, default=Decimal('0'))
     price_eur = models.DecimalField(max_digits=10, decimal_places=2)
     price_ron = models.DecimalField(max_digits=10, decimal_places=2)
     is_active = models.BooleanField(default=True)
     description = models.TextField(blank=True)
     stripe_price_id = models.CharField(max_length=100, blank=True, null=True)
-    referral_bonus = models.DecimalField(max_digits=10, decimal_places=1, default=0,
+    referral_bonus = models.DecimalField(max_digits=10, decimal_places=1, default=Decimal('0'),
                                        help_text="Bonus credits for both referrer and referee")
     expires_days = models.PositiveIntegerField(default=365,
                                              help_text="Days before purchased credits expire")
@@ -689,4 +687,4 @@ class ListingReport(models.Model):
         unique_together = ('listing', 'reporter')  # One report per user per listing
     
     def __str__(self):
-        return f"Report #{self.id} - {self.get_reason_display()} by {self.reporter.username}"
+        return f"Report #{self.pk} - {self.get_reason_display()} by {self.reporter.username}"  # type: ignore
