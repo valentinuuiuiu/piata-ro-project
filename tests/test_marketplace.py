@@ -113,25 +113,38 @@ class MarketplaceTestCase(TestCase):
             response = self.client.get('/cautare/?q=iPhone')
             mock_cache.assert_called_once()
             
-    def test_deepseek_chat_api(self):
-        """Test DeepSeek chat API with error handling"""
+    def test_openrouter_chat_api(self):
+        """Test OpenRouter chat API with error handling"""
         # Test successful API call
-        response = self.client.post('/api/deepseek-chat/', {
-            'message': 'Salut, cum functioneaza platforma?'
-        }, content_type='application/json')
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        self.assertIn('response', data)
+        with patch('marketplace.services.chat_service.marketplace_chat_service.user_chat') as mock_chat:
+            mock_chat.return_value = type('MockResponse', (), {'success': True, 'content': 'Hello! How can I help you today?'})()
+            response = self.client.post('/api/openrouter-chat/', {
+                'message': 'Salut, cum functioneaza platforma?'
+            }, content_type='application/json')
+            self.assertEqual(response.status_code, 200)
+            data = response.json()
+            self.assertIn('response', data)
+            self.assertEqual(data['response'], 'Hello! How can I help you today?')
         
         # Test API error handling
-        with patch('marketplace.views.call_mcp_agent') as mock_agent:
-            mock_agent.return_value = {'error': 'API Error'}
-            response = self.client.post('/api/deepseek-chat/', {
+        with patch('marketplace.services.chat_service.marketplace_chat_service.user_chat') as mock_chat:
+            mock_chat.return_value = type('MockResponse', (), {'success': False, 'error': 'API Error'})()
+            response = self.client.post('/api/openrouter-chat/', {
                 'message': 'Test message'
             }, content_type='application/json')
             self.assertEqual(response.status_code, 200)
             data = response.json()
             self.assertIn('error', data)
+            self.assertEqual(data['error'], 'API Error')
+            
+        # Test missing message
+        response = self.client.post('/api/openrouter-chat/', {
+            # No message field
+        }, content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertIn('error', data)
+        self.assertEqual(data['error'], 'Message is required')
             
     def test_location_service(self):
         """Test location service functionality with caching"""

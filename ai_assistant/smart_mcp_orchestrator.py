@@ -16,7 +16,7 @@ if not settings.configured:
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'piata_ro.settings')
     django.setup()
 
-# Direct HTTP client for DeepSeek API
+# Direct HTTP client for OpenRouter API
 import httpx
 
 # Set up LangSmith tracing from Django settings
@@ -95,9 +95,10 @@ class SmartMCPOrchestrator(BaseModel):
     class Config:
         arbitrary_types_allowed = True
     
-    # DeepSeek API configuration
-    deepseek_api_key: str = Field(default_factory=lambda: getattr(settings, 'DEEPSEEK_API_KEY', ''))
-    deepseek_api_url: str = Field(default='https://api.deepseek.com/v1/chat/completions')
+    # OpenRouter API configuration
+    openrouter_api_key: str = Field(default_factory=lambda: getattr(settings, 'OPENROUTER_API_KEY', ''))
+    openrouter_api_url: str = Field(default='https://openrouter.ai/api/v1/chat/completions')
+    openrouter_model: str = Field(default_factory=lambda: getattr(settings, 'OPENROUTER_MODEL', 'openrouter/x-ai/grok-4-fast:free'))
     mcp_servers: Dict[MCPServerType, MCPServerConfig] = Field(
         default_factory=lambda: {
             MCPServerType.ADVERTISING: MCPServerConfig(
@@ -148,10 +149,10 @@ class SmartMCPOrchestrator(BaseModel):
     
     def __init__(self, **data):
         super().__init__(**data)
-        # Initialize DeepSeek API key - allow empty for development/testing
-        if not self.deepseek_api_key:
-            logger.warning("DeepSeek API key not configured - using fallback mode")
-            self.deepseek_api_key = "demo-key"  # Placeholder for development
+        # Initialize OpenRouter API key - allow empty for development/testing
+        if not self.openrouter_api_key:
+            logger.warning("OpenRouter API key not configured - using fallback mode")
+            self.openrouter_api_key = "demo-key"  # Placeholder for development
     
     async def analyze_intent(self, user_message: str) -> RequestIntent:
         """
@@ -161,61 +162,67 @@ class SmartMCPOrchestrator(BaseModel):
         
         try:
             # Skip actual API call if using demo key
-            if self.deepseek_api_key == "demo-key":
-                logger.info("Using demo mode - skipping DeepSeek API call")
+            if self.openrouter_api_key == "demo-key":
+                logger.info("Using demo mode - skipping OpenRouter API call")
                 return self._fallback_intent_analysis(user_message)
                 
-            # Use DeepSeek API for intent analysis
+            # Use OpenRouter API for intent analysis
             async with httpx.AsyncClient() as client:
+                headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': f'Bearer {self.openrouter_api_key}',
+                    # 'HTTP-Referer': 'https://yourdomain.com', # Optional
+                    # 'X-Title': 'Piața.ro MCP Orchestrator' # Optional
+                }
+                payload = {
+                    'model': self.openrouter_model,
+                    'messages': [
+                        {
+                            'role': 'system',
+                            'content': '''You are an intelligent routing agent for a marketplace platform. 
+                            Analyze user requests and determine which MCP server should handle them.
+                            
+                            Available servers and their capabilities:
+                            1. DATABASE (port 8002): User management, listings, SQL queries, database stats
+                            2. ADVERTISING (port 8001): Marketing optimization, pricing, content generation  
+                            3. STOCK (port 8003): Inventory management, stock tracking, supply chain
+                            
+                            Respond with JSON in this exact format:
+                            {
+                                "intent_type": "database|advertising|stock|general",
+                                "confidence": 0.8,
+                                "required_tools": [],
+                                "server_needed": "database|advertising|stock|null",
+                                "reasoning": "explanation"
+                            }'''
+                        },
+                        {
+                            'role': 'user',
+                            'content': f'User request: {user_message}'
+                        }
+                    ],
+                    'max_tokens': 200,
+                    'temperature': 0.1
+                }
                 response = await client.post(
-                    self.deepseek_api_url,
-                    headers={
-                        'Content-Type': 'application/json',
-                        'Authorization': f'Bearer {self.deepseek_api_key}'
-                    },
-                    json={
-                        'model': 'deepseek-chat',
-                        'messages': [
-                            {
-                                'role': 'system',
-                                'content': '''You are an intelligent routing agent for a marketplace platform. 
-                                Analyze user requests and determine which MCP server should handle them.
-                                
-                                Available servers and their capabilities:
-                                1. DATABASE (port 8002): User management, listings, SQL queries, database stats
-                                2. ADVERTISING (port 8001): Marketing optimization, pricing, content generation  
-                                3. STOCK (port 8003): Inventory management, stock tracking, supply chain
-                                
-                                Respond with JSON in this exact format:
-                                {
-                                    "intent_type": "database|advertising|stock|general",
-                                    "confidence": 0.8,
-                                    "required_tools": [],
-                                    "server_needed": "database|advertising|stock|null",
-                                    "reasoning": "explanation"
-                                }'''
-                            },
-                            {
-                                'role': 'user',
-                                'content': f'User request: {user_message}'
-                            }
-                        ],
-                        'max_tokens': 200,
-                        'temperature': 0.1
-                    },
+                    self.openrouter_api_url,
+                    headers=headers,
+                    json=payload,
                     timeout=30.0
                 )
                 
                 if response.status_code == 200:
                     result_data = response.json()
-                    content = result_data['choices'][0]['message']['content']
+                    # OpenRouter response structure
+                    choice = result_data.get('choices', [{}])[0].get('message', {})
+                    content = choice.get('content', '')
                     
                     # Parse JSON response
                     try:
                         intent_data = json.loads(content)
                     except json.JSONDecodeError:
                         # Handle non-JSON responses gracefully
-                        logger.warning(f"Non-JSON response from DeepSeek: {content}")
+                        logger.warning(f"Non-JSON response from OpenRouter: {content}")
                         return self._fallback_intent_analysis(user_message)
                     
                     # Map server_needed to enum
@@ -233,7 +240,7 @@ class SmartMCPOrchestrator(BaseModel):
                         reasoning=intent_data['reasoning']
                     )
                 else:
-                    logger.warning(f"DeepSeek API error: {response.status_code}, falling back to keyword analysis")
+                    logger.warning(f"OpenRouter API error: {response.status_code}, falling back to keyword analysis")
                     return self._fallback_intent_analysis(user_message)
                     
         except Exception as e:
@@ -414,10 +421,10 @@ class SmartMCPOrchestrator(BaseModel):
         tool_results: List[Dict[str, Any]],
         conversation_history: Optional[List[Dict]] = None
     ) -> str:
-        """Generate final response using DeepSeek API with tool results"""
+        """Generate final response using OpenRouter API with tool results"""
         
         # Skip API call in demo mode
-        if self.deepseek_api_key == "demo-key":
+        if self.openrouter_api_key == "demo-key":
             return self._generate_demo_response(user_message, intent, tool_results)
         
         # Prepare context
@@ -436,42 +443,49 @@ class SmartMCPOrchestrator(BaseModel):
                 context += f"❌ {result['tool']}: {result.get('error', 'Unknown error')}\n"
         
         try:
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {self.openrouter_api_key}',
+                # 'HTTP-Referer': 'https://yourdomain.com', # Optional
+                # 'X-Title': 'Piața.ro MCP Orchestrator' # Optional
+            }
+            payload = {
+                'model': self.openrouter_model,
+                'messages': [
+                    {
+                        'role': 'system',
+                        'content': f'''You are an AI assistant for Piața.ro marketplace admin panel. 
+                        
+                        Based on the tool results provided, give a helpful, concise response to the user.
+                        Be specific about the actions taken and results obtained.
+                        
+                        Context: {context}'''
+                    },
+                    {
+                        'role': 'user',
+                        'content': user_message
+                    }
+                ],
+                'max_tokens': 500,
+                'temperature': 0.3
+            }
             async with httpx.AsyncClient() as client:
                 response = await client.post(
-                    self.deepseek_api_url,
-                    headers={
-                        'Content-Type': 'application/json',
-                        'Authorization': f'Bearer {self.deepseek_api_key}'
-                    },
-                    json={
-                        'model': 'deepseek-chat',
-                        'messages': [
-                            {
-                                'role': 'system',
-                                'content': f'''You are an AI assistant for Piața.ro marketplace admin panel. 
-                                
-                                Based on the tool results provided, give a helpful, concise response to the user.
-                                Be specific about the actions taken and results obtained.
-                                
-                                Context: {context}'''
-                            },
-                            {
-                                'role': 'user',
-                                'content': user_message
-                            }
-                        ],
-                        'max_tokens': 500,
-                        'temperature': 0.3
-                    },
+                    self.openrouter_api_url,
+                    headers=headers,
+                    json=payload,
                     timeout=30.0
                 )
                 
                 if response.status_code == 200:
                     result_data = response.json()
+                    # OpenRouter response structure
+                    choice = result_data.get('choices', [{}])[0].get('message', {})
+                    content = choice.get('content', '')
                     logger.info("Generated final response successfully")
-                    return result_data['choices'][0]['message']['content']
+                    return content
                 else:
-                    logger.warning(f"DeepSeek API error: {response.status_code}, using fallback response")
+                    logger.warning(f"OpenRouter API error: {response.status_code}, using fallback response")
                     return self._generate_fallback_response(user_message, intent, tool_results)
                     
         except Exception as e:
@@ -500,7 +514,7 @@ class SmartMCPOrchestrator(BaseModel):
                     response_parts.append(f"❌ Issue with {result['tool']}: {result.get('error', 'Unknown error')}")
         
         response_parts.append(f"\nYour request '{user_message}' has been processed successfully.")
-        response_parts.append("This is a demo response - configure a DeepSeek API key for enhanced AI responses.")
+        response_parts.append("This is a demo response - configure an OpenRouter API key for enhanced AI responses.")
         
         return "\n".join(response_parts)
 

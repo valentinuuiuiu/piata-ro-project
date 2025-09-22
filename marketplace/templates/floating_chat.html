@@ -33,9 +33,9 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Django DeepSeek endpoint configuration
-    const CHAT_API_URL = '/api/deepseek-chat/';
-    console.log('Using Django DeepSeek endpoint for user chatbot');
+    // Django OpenRouter endpoint configuration
+    const CHAT_API_URL = '/api/openrouter-chat/';
+    console.log('Using Django OpenRouter endpoint for user chatbot');
     const toggle = document.getElementById('chat-toggle');
     const chatWindow = document.getElementById('chat-window');
     const close = document.getElementById('chat-close');
@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const input = document.getElementById('chat-input');
     const messages = document.getElementById('chat-messages');
     
-    async function callDeepseekChat(message) {
+    async function callOpenRouterChat(message) {
         try {
             const response = await fetch(CHAT_API_URL, {
                 method: 'POST',
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             return data.response;
         } catch (error) {
-            console.error('DeepSeek API error:', error);
+            console.error('OpenRouter API error:', error);
             return 'Îmi pare rău, asistentul nu este disponibil momentan. Te rog încearcă din nou.';
         }
     }
@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const loadingMsg = addMessage('Thinking...', false);
         try {
-            const response = await callDeepseekChat(text);
+            const response = await callOpenRouterChat(text);
             if (loadingMsg && loadingMsg.parentNode) {
                 messages.removeChild(loadingMsg);
             }

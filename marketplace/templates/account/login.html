@@ -29,7 +29,7 @@
 
             <!-- Form -->
             <div class="p-6">
-                <form class="login" method="POST" action="{% url 'marketplace:login' %}">
+                <form class="login" method="POST" action="{% url 'marketplace:clerk_login' %}">
                     {% csrf_token %}
                     
                     {% if form.errors %}

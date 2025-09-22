@@ -3,7 +3,7 @@ from django.contrib.auth.views import LogoutView, PasswordResetView, PasswordRes
 from rest_framework.routers import DefaultRouter
 
 from . import views
-from .deepseek_chat_refactored import deepseek_chat_view
+from .openrouter_chat_refactored import openrouter_chat_view
 from .recommendations import urls as recommendation_urls
 
 app_name = 'marketplace'
@@ -18,7 +18,7 @@ router.register(r"users", views.UserProfileViewSet, basename='userprofile')
 
 urlpatterns = [
     # Authentication views
-    path('auth/clerk/login/', views.login_view, name='login'),
+    path('auth/clerk/login/', views.login_view, name='clerk_login'),
     path('auth/clerk/signup/', views.signup_view, name='signup'),
     path('auth/clerk/mfa/', views.verify_mfa, name='verify_mfa'),
     path('auth/clerk/logout/', LogoutView.as_view(), name='logout'),
@@ -72,7 +72,7 @@ urlpatterns = [
     
     # Floating Chat
     path('chat/', views.floating_chat_view, name='floating_chat'),
-    path('api/deepseek-chat/', deepseek_chat_view, name='deepseek_chat'),
+    path('api/openrouter-chat/', openrouter_chat_view, name='openrouter_chat'),
 
     # API endpoints (keeping existing structure)
     path("api/", include(router.urls)),
